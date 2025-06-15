@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Search, Plus, Edit, Trash2, User } from 'lucide-react';
 import StudentForm from '@/components/Students/StudentForm';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface Student {
   id: string;
@@ -73,11 +73,18 @@ const Students: React.FC = () => {
     }
   ]);
 
-  const filteredStudents = students.filter(student =>
-    student.chinese_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.english_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.class_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStudents = students.filter(student => {
+    const searchLower = searchTerm.toLowerCase().trim();
+    if (!searchLower) return true;
+    
+    return (
+      student.chinese_name.includes(searchTerm) ||
+      student.chinese_name.toLowerCase().includes(searchLower) ||
+      student.english_name.toLowerCase().includes(searchLower) ||
+      student.class_name.includes(searchTerm) ||
+      student.class_name.toLowerCase().includes(searchLower)
+    );
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
