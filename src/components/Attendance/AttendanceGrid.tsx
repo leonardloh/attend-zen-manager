@@ -18,8 +18,13 @@ interface AttendanceStatus {
   status: 'present' | 'online' | 'leave' | 'absent' | null;
 }
 
-const AttendanceGrid: React.FC = () => {
-  // Mock students data
+interface AttendanceGridProps {
+  classId?: string;
+  classDate?: Date;
+}
+
+const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate }) => {
+  // Mock students data - in a real app, this would be fetched based on classId
   const [students] = useState<Student[]>([
     { id: '1', chinese_name: '王小明', english_name: 'Wang Xiaoming', gender: 'male' },
     { id: '2', chinese_name: '李小红', english_name: 'Li Xiaohong', gender: 'female' },
@@ -64,6 +69,18 @@ const AttendanceGrid: React.FC = () => {
     );
   };
 
+  const saveAttendance = () => {
+    // Here you would save the attendance data to your backend
+    console.log('Saving attendance:', {
+      classId,
+      classDate,
+      attendance: attendance.filter(item => item.status !== null)
+    });
+    
+    // Show success message or handle the save operation
+    alert('考勤数据已保存！');
+  };
+
   const getStatusCounts = () => {
     const counts = { present: 0, online: 0, leave: 0, absent: 0, unmarked: 0 };
     attendance.forEach(item => {
@@ -92,6 +109,10 @@ const AttendanceGrid: React.FC = () => {
               <Button onClick={clearAll} variant="outline" size="sm">
                 <RotateCcw className="h-4 w-4 mr-1" />
                 清空
+              </Button>
+              <Button onClick={saveAttendance} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Save className="h-4 w-4 mr-1" />
+                保存考勤
               </Button>
             </div>
           </CardTitle>
