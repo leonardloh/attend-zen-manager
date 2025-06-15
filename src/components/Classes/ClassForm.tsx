@@ -29,8 +29,6 @@ const classFormSchema = z.object({
   }),
   time: z.string().min(1, '上课时间不能为空'),
   class_monitor: z.string().min(1, '班长姓名不能为空'),
-  page_number: z.string().min(1, '广论页数不能为空'),
-  line_number: z.string().min(1, '广论行数不能为空'),
 });
 
 type ClassFormData = z.infer<typeof classFormSchema>;
@@ -48,8 +46,6 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
       region: undefined,
       time: '',
       class_monitor: '',
-      page_number: '',
-      line_number: '',
     },
   });
 
@@ -135,36 +131,6 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
             </FormItem>
           )}
         />
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="page_number"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>广论页数</FormLabel>
-                <FormControl>
-                  <Input placeholder="请输入广论页数" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="line_number"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>广论行数</FormLabel>
-                <FormControl>
-                  <Input placeholder="请输入广论行数" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
 
         <div className="flex gap-3 pt-4">
           <Button type="submit" className="flex-1">
