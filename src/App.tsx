@@ -13,6 +13,7 @@ import Students from '@/pages/Students';
 import Classes from '@/pages/Classes';
 import Attendance from '@/pages/Attendance';
 import Reports from '@/pages/Reports';
+import Cadres from '@/pages/Cadres';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -93,10 +94,7 @@ const AppRoutes: React.FC = () => {
         path="/cadres"
         element={
           <ProtectedRoute>
-            <div className="text-center py-20">
-              <h2 className="text-xl font-semibold mb-4">干部管理</h2>
-              <p className="text-gray-600">功能开发中...</p>
-            </div>
+            <Cadres />
           </ProtectedRoute>
         }
       />
