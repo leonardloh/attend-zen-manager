@@ -1,10 +1,12 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Search, Plus, Edit, Trash2, User } from 'lucide-react';
+import StudentForm from '@/components/Students/StudentForm';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Student {
   id: string;
@@ -20,9 +22,11 @@ interface Student {
 
 const Students: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
   
   // Mock data
-  const [students] = useState<Student[]>([
+  const [students, setStudents] = useState<Student[]>([
     {
       id: '1',
       chinese_name: '王小明',
@@ -84,6 +88,21 @@ const Students: React.FC = () => {
     }
   };
 
+  const handleAddStudent = (studentData: Omit<Student, 'id'>) => {
+    const newStudent: Student = {
+      ...studentData,
+      id: Date.now().toString()
+    };
+    
+    setStudents(prev => [...prev, newStudent]);
+    setIsDialogOpen(false);
+    
+    toast({
+      title: "学生添加成功",
+      description: `${studentData.chinese_name} 已成功添加到系统中。`
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -91,10 +110,23 @@ const Students: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">学生管理</h1>
           <p className="text-gray-600">Student Management</p>
         </div>
-        <Button className="mt-4 sm:mt-0">
-          <Plus className="h-4 w-4 mr-2" />
-          添加学生
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="mt-4 sm:mt-0">
+              <Plus className="h-4 w-4 mr-2" />
+              添加学生
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>添加新学生</DialogTitle>
+            </DialogHeader>
+            <StudentForm
+              onSubmit={handleAddStudent}
+              onCancel={() => setIsDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Search and Filters */}
