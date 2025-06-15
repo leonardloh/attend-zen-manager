@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ interface Student {
 
 const Students: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'全部' | '活跃' | '旁听' | '保留'>('全部');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   
@@ -74,16 +76,20 @@ const Students: React.FC = () => {
   ]);
 
   const filteredStudents = students.filter(student => {
+    // First apply search filter
     const searchLower = searchTerm.toLowerCase().trim();
-    if (!searchLower) return true;
-    
-    return (
+    const matchesSearch = !searchLower || (
       student.chinese_name.includes(searchTerm) ||
       student.chinese_name.toLowerCase().includes(searchLower) ||
       student.english_name.toLowerCase().includes(searchLower) ||
       student.class_name.includes(searchTerm) ||
       student.class_name.toLowerCase().includes(searchLower)
     );
+
+    // Then apply status filter
+    const matchesStatus = statusFilter === '全部' || student.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
   });
 
   const getStatusColor = (status: string) => {
@@ -150,16 +156,32 @@ const Students: React.FC = () => {
               />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant={statusFilter === '全部' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setStatusFilter('全部')}
+              >
                 全部
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant={statusFilter === '活跃' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setStatusFilter('活跃')}
+              >
                 活跃
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant={statusFilter === '旁听' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setStatusFilter('旁听')}
+              >
                 旁听
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant={statusFilter === '保留' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setStatusFilter('保留')}
+              >
                 保留
               </Button>
             </div>
