@@ -16,7 +16,8 @@ interface Cadre {
   gender: 'male' | 'female';
   date_of_birth: string;
   role: '班长' | '副班长' | '关怀员';
-  class_name: string;
+  mother_class: string;
+  support_classes: string[];
 }
 
 const Cadres: React.FC = () => {
@@ -34,7 +35,8 @@ const Cadres: React.FC = () => {
       gender: 'male',
       date_of_birth: '2000-05-15',
       role: '班长',
-      class_name: '初级班A'
+      mother_class: '初级班A',
+      support_classes: ['初级班A', '初级班D']
     },
     {
       id: '2',
@@ -43,7 +45,8 @@ const Cadres: React.FC = () => {
       gender: 'female',
       date_of_birth: '2001-03-20',
       role: '副班长',
-      class_name: '中级班B'
+      mother_class: '中级班B',
+      support_classes: ['中级班B', '中级班E']
     },
     {
       id: '3',
@@ -52,7 +55,8 @@ const Cadres: React.FC = () => {
       gender: 'male',
       date_of_birth: '2000-12-08',
       role: '关怀员',
-      class_name: '高级班C'
+      mother_class: '高级班C',
+      support_classes: ['高级班C']
     },
     {
       id: '4',
@@ -61,7 +65,8 @@ const Cadres: React.FC = () => {
       gender: 'female',
       date_of_birth: '2001-07-22',
       role: '班长',
-      class_name: '初级班D'
+      mother_class: '初级班D',
+      support_classes: ['初级班D', '高级班F']
     }
   ]);
 
@@ -69,7 +74,8 @@ const Cadres: React.FC = () => {
     cadre.chinese_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cadre.english_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cadre.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cadre.class_name.toLowerCase().includes(searchTerm.toLowerCase())
+    cadre.mother_class.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cadre.support_classes.some(cls => cls.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleAddCadre = (newCadre: Omit<Cadre, 'id'>) => {
@@ -160,7 +166,7 @@ const Cadres: React.FC = () => {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="搜索干部姓名、职位或班级..."
+                placeholder="搜索干部姓名、职位、母班或护持班..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -206,8 +212,18 @@ const Cadres: React.FC = () => {
               
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">所属班级:</span>
-                  <span className="font-medium">{cadre.class_name}</span>
+                  <span className="text-gray-600">母班班名:</span>
+                  <span className="font-medium">{cadre.mother_class}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="text-gray-600">护持班名:</span>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {cadre.support_classes.map((className, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {className}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">性别:</span>

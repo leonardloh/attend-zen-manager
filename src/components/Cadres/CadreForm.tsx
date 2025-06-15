@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Cadre {
   id: string;
@@ -11,7 +12,8 @@ interface Cadre {
   gender: 'male' | 'female';
   date_of_birth: string;
   role: '班长' | '副班长' | '关怀员';
-  class_name: string;
+  mother_class: string;
+  support_classes: string[];
 }
 
 interface CadreFormProps {
@@ -27,11 +29,26 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
     gender: initialData?.gender || 'male' as const,
     date_of_birth: initialData?.date_of_birth || '',
     role: initialData?.role || '班长' as const,
-    class_name: initialData?.class_name || ''
+    mother_class: initialData?.mother_class || '',
+    support_classes: initialData?.support_classes || []
   });
 
   const roles = ['班长', '副班长', '关怀员'];
-  const classes = ['初级班A', '中级班B', '高级班C', '初级班D', '中级班E', '高级班F'];
+  const availableClasses = ['初级班A', '中级班B', '高级班C', '初级班D', '中级班E', '高级班F'];
+
+  const handleSupportClassChange = (className: string, checked: boolean) => {
+    if (checked) {
+      setFormData({
+        ...formData,
+        support_classes: [...formData.support_classes, className]
+      });
+    } else {
+      setFormData({
+        ...formData,
+        support_classes: formData.support_classes.filter(cls => cls !== className)
+      });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,20 +128,42 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="class_name">所属班级 *</Label>
+          <Label htmlFor="mother_class">母班班名 *</Label>
           <select
-            id="class_name"
-            value={formData.class_name}
-            onChange={(e) => setFormData({ ...formData, class_name: e.target.value })}
+            id="mother_class"
+            value={formData.mother_class}
+            onChange={(e) => setFormData({ ...formData, mother_class: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           >
-            <option value="">选择班级</option>
-            {classes.map(className => (
+            <option value="">选择母班</option>
+            {availableClasses.map(className => (
               <option key={className} value={className}>{className}</option>
             ))}
           </select>
         </div>
+      </div>
+
+      <div className="space-y-3">
+        <Label>护持班名</Label>
+        <div className="grid grid-cols-2 gap-3">
+          {availableClasses.map((className) => (
+            <div key={className} className="flex items-center space-x-2">
+              <Checkbox
+                id={`support-${className}`}
+                checked={formData.support_classes.includes(className)}
+                onCheckedChange={(checked) => handleSupportClassChange(className, checked as boolean)}
+              />
+              <Label
+                htmlFor={`support-${className}`}
+                className="text-sm font-normal cursor-pointer"
+              >
+                {className}
+              </Label>
+            </div>
+          ))}
+        </div>
+        <p className="text-sm text-gray-500">可选择一个或多个护持班级</p>
       </div>
 
       <div className="flex gap-3 pt-4">
