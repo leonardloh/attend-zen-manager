@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -60,33 +59,56 @@ const Attendance: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Class Search and Selection */}
+            {/* Class Search */}
             <div>
               <Label className="block text-sm font-medium text-gray-700 mb-2">
-                搜索并选择班级 / Search and Select Class
+                搜索班级 / Search Classes
               </Label>
-              <div className="space-y-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="搜索班级名称或时间..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={selectedClass} onValueChange={setSelectedClass}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="请选择班级" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredClasses.map((cls) => (
-                      <SelectItem key={cls.id} value={cls.id}>
-                        {cls.name} - {cls.time} ({cls.students} 学生)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="搜索班级名称或时间..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Class Selection Grid */}
+            <div>
+              <Label className="block text-sm font-medium text-gray-700 mb-2">
+                选择班级 / Select Class
+              </Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                {filteredClasses.map((cls) => (
+                  <div
+                    key={cls.id}
+                    onClick={() => setSelectedClass(cls.id)}
+                    className={cn(
+                      "p-4 border rounded-lg cursor-pointer transition-all hover:bg-gray-50",
+                      selectedClass === cls.id 
+                        ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200" 
+                        : "border-gray-200"
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-gray-900">{cls.name}</h3>
+                        <p className="text-sm text-gray-600">{cls.time}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          <Users className="h-4 w-4" />
+                          {cls.students}
+                        </div>
+                        {selectedClass === cls.id && (
+                          <Badge className="bg-blue-600">已选择</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -134,35 +156,6 @@ const Attendance: React.FC = () => {
               >
                 开始考勤
               </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Today's Schedule */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar as CalendarIcon className="h-5 w-5" />
-              课程安排
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {filteredClasses.map((cls) => (
-                <div key={cls.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                  <div>
-                    <h3 className="font-medium">{cls.name}</h3>
-                    <p className="text-sm text-gray-600">{cls.time}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <Users className="h-4 w-4" />
-                      {cls.students}
-                    </div>
-                    <Badge variant="outline">可选择</Badge>
-                  </div>
-                </div>
-              ))}
             </div>
           </CardContent>
         </Card>
