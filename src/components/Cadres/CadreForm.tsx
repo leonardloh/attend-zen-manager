@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import ClassMultiSelect from './ClassMultiSelect';
 
 interface Cadre {
   id: string;
@@ -35,20 +34,6 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
 
   const roles = ['班长', '副班长', '关怀员'];
   const availableClasses = ['初级班A', '中级班B', '高级班C', '初级班D', '中级班E', '高级班F'];
-
-  const handleSupportClassChange = (className: string, checked: boolean) => {
-    if (checked) {
-      setFormData({
-        ...formData,
-        support_classes: [...formData.support_classes, className]
-      });
-    } else {
-      setFormData({
-        ...formData,
-        support_classes: formData.support_classes.filter(cls => cls !== className)
-      });
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,27 +129,11 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
         </div>
       </div>
 
-      <div className="space-y-3">
-        <Label>护持班名</Label>
-        <div className="grid grid-cols-2 gap-3">
-          {availableClasses.map((className) => (
-            <div key={className} className="flex items-center space-x-2">
-              <Checkbox
-                id={`support-${className}`}
-                checked={formData.support_classes.includes(className)}
-                onCheckedChange={(checked) => handleSupportClassChange(className, checked as boolean)}
-              />
-              <Label
-                htmlFor={`support-${className}`}
-                className="text-sm font-normal cursor-pointer"
-              >
-                {className}
-              </Label>
-            </div>
-          ))}
-        </div>
-        <p className="text-sm text-gray-500">可选择一个或多个护持班级</p>
-      </div>
+      <ClassMultiSelect
+        value={formData.support_classes}
+        onChange={(classes) => setFormData({ ...formData, support_classes: classes })}
+        availableClasses={availableClasses}
+      />
 
       <div className="flex gap-3 pt-4">
         <Button type="submit" className="flex-1">
