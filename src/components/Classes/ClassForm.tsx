@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,9 +29,8 @@ const classFormSchema = z.object({
   }),
   time: z.string().min(1, '上课时间不能为空'),
   class_monitor: z.string().min(1, '班长姓名不能为空'),
-  learning_progress: z.string().min(1, '学习进度不能为空'),
-  page_number: z.string().min(1, '页数不能为空'),
-  line_number: z.string().min(1, '行数不能为空'),
+  page_number: z.string().min(1, '广论页数不能为空'),
+  line_number: z.string().min(1, '广论行数不能为空'),
 });
 
 type ClassFormData = z.infer<typeof classFormSchema>;
@@ -48,7 +48,6 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
       region: undefined,
       time: '',
       class_monitor: '',
-      learning_progress: '',
       page_number: '',
       line_number: '',
     },
@@ -137,33 +136,15 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="learning_progress"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>学习进度</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="请描述当前学习进度"
-                  className="min-h-[80px]"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="page_number"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>页数</FormLabel>
+                <FormLabel>广论页数</FormLabel>
                 <FormControl>
-                  <Input placeholder="请输入页数" {...field} />
+                  <Input placeholder="请输入广论页数" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -175,9 +156,9 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
             name="line_number"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>行数</FormLabel>
+                <FormLabel>广论行数</FormLabel>
                 <FormControl>
-                  <Input placeholder="请输入行数" {...field} />
+                  <Input placeholder="请输入广论行数" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
