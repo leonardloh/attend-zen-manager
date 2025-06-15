@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Edit, Trash2, User, Shield } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Shield, Calendar, User2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CadreForm from '@/components/Cadres/CadreForm';
 import { useToast } from '@/hooks/use-toast';
@@ -13,14 +13,10 @@ interface Cadre {
   id: string;
   chinese_name: string;
   english_name: string;
-  email: string;
-  phone?: string;
-  position: string;
-  department: string;
-  class_assignments: string[];
-  appointment_date: string;
-  status: 'active' | 'inactive';
-  permissions: string[];
+  gender: 'male' | 'female';
+  date_of_birth: string;
+  role: '班长' | '副班长' | '关怀员';
+  class_name: string;
 }
 
 const Cadres: React.FC = () => {
@@ -29,67 +25,51 @@ const Cadres: React.FC = () => {
   const [editingCadre, setEditingCadre] = useState<Cadre | null>(null);
   const { toast } = useToast();
 
-  // Mock data
+  // Mock data with new structure
   const [cadres, setCadres] = useState<Cadre[]>([
     {
       id: '1',
-      chinese_name: '李班长',
+      chinese_name: '李明',
       english_name: 'Li Ming',
-      email: 'li.ming@example.com',
-      phone: '13800138001',
-      position: '班长',
-      department: '学生会',
-      class_assignments: ['初级班A', '中级班B'],
-      appointment_date: '2024-01-15',
-      status: 'active',
-      permissions: ['attendance_management', 'student_reports']
+      gender: 'male',
+      date_of_birth: '2000-05-15',
+      role: '班长',
+      class_name: '初级班A'
     },
     {
       id: '2',
-      chinese_name: '王副班长',
-      english_name: 'Wang Lei',
-      email: 'wang.lei@example.com',
-      phone: '13800138002',
-      position: '副班长',
-      department: '学生会',
-      class_assignments: ['高级班C'],
-      appointment_date: '2024-02-01',
-      status: 'active',
-      permissions: ['attendance_management']
+      chinese_name: '王丽',
+      english_name: 'Wang Li',
+      gender: 'female',
+      date_of_birth: '2001-03-20',
+      role: '副班长',
+      class_name: '中级班B'
     },
     {
       id: '3',
-      chinese_name: '张组长',
+      chinese_name: '张伟',
       english_name: 'Zhang Wei',
-      email: 'zhang.wei@example.com',
-      phone: '13800138003',
-      position: '学习组长',
-      department: '学习部',
-      class_assignments: ['初级班A'],
-      appointment_date: '2024-01-20',
-      status: 'active',
-      permissions: ['student_reports']
+      gender: 'male',
+      date_of_birth: '2000-12-08',
+      role: '关怀员',
+      class_name: '高级班C'
     },
     {
       id: '4',
-      chinese_name: '刘干事',
+      chinese_name: '刘华',
       english_name: 'Liu Hua',
-      email: 'liu.hua@example.com',
-      phone: '13800138004',
-      position: '宣传干事',
-      department: '宣传部',
-      class_assignments: [],
-      appointment_date: '2024-03-01',
-      status: 'inactive',
-      permissions: []
+      gender: 'female',
+      date_of_birth: '2001-07-22',
+      role: '班长',
+      class_name: '初级班D'
     }
   ]);
 
   const filteredCadres = cadres.filter(cadre =>
     cadre.chinese_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cadre.english_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cadre.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cadre.department.toLowerCase().includes(searchTerm.toLowerCase())
+    cadre.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cadre.class_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddCadre = (newCadre: Omit<Cadre, 'id'>) => {
@@ -124,14 +104,30 @@ const Cadres: React.FC = () => {
     });
   };
 
-  const getPositionColor = (position: string) => {
-    switch (position) {
+  const getRoleColor = (role: string) => {
+    switch (role) {
       case '班长': return 'bg-red-100 text-red-800';
       case '副班长': return 'bg-orange-100 text-orange-800';
-      case '学习组长': return 'bg-blue-100 text-blue-800';
-      case '宣传干事': return 'bg-green-100 text-green-800';
+      case '关怀员': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const calculateAge = (dateOfBirth: string) => {
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
+  const hasAttendancePermission = (role: string) => {
+    return role === '班长' || role === '副班长';
   };
 
   return (
@@ -164,7 +160,7 @@ const Cadres: React.FC = () => {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="搜索干部姓名、职位或部门..."
+                placeholder="搜索干部姓名、职位或班级..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -175,10 +171,13 @@ const Cadres: React.FC = () => {
                 全部
               </Button>
               <Button variant="outline" size="sm">
-                活跃
+                班长
               </Button>
               <Button variant="outline" size="sm">
-                非活跃
+                副班长
+              </Button>
+              <Button variant="outline" size="sm">
+                关怀员
               </Button>
             </div>
           </div>
@@ -200,39 +199,32 @@ const Cadres: React.FC = () => {
                     <p className="text-sm text-gray-600">{cadre.english_name}</p>
                   </div>
                 </div>
-                <Badge variant={cadre.status === 'active' ? 'default' : 'secondary'}>
-                  {cadre.status === 'active' ? '活跃' : '非活跃'}
+                <Badge className={getRoleColor(cadre.role)}>
+                  {cadre.role}
                 </Badge>
               </div>
               
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">职位:</span>
-                  <Badge className={getPositionColor(cadre.position)}>
-                    {cadre.position}
-                  </Badge>
+                  <span className="text-gray-600">所属班级:</span>
+                  <span className="font-medium">{cadre.class_name}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">部门:</span>
-                  <span className="font-medium">{cadre.department}</span>
+                  <span className="text-gray-600">性别:</span>
+                  <span className="font-medium">{cadre.gender === 'male' ? '男' : '女'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">任职日期:</span>
-                  <span className="font-medium">{cadre.appointment_date}</span>
+                  <span className="text-gray-600">年龄:</span>
+                  <span className="font-medium">{calculateAge(cadre.date_of_birth)}岁</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">负责班级:</span>
-                  <span className="font-medium">
-                    {cadre.class_assignments.length > 0 
-                      ? `${cadre.class_assignments.length}个班级`
-                      : '无'
-                    }
-                  </span>
+                  <span className="text-gray-600">出生日期:</span>
+                  <span className="font-medium">{cadre.date_of_birth}</span>
                 </div>
-                {cadre.phone && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">电话:</span>
-                    <span className="font-medium">{cadre.phone}</span>
+                {hasAttendancePermission(cadre.role) && (
+                  <div className="flex items-center gap-1 text-sm text-green-600 mt-2">
+                    <User2 className="h-4 w-4" />
+                    <span>可管理考勤和注册</span>
                   </div>
                 )}
               </div>
@@ -287,26 +279,26 @@ const Cadres: React.FC = () => {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {cadres.filter(c => c.status === 'active').length}
+            <div className="text-2xl font-bold text-red-600">
+              {cadres.filter(c => c.role === '班长').length}
             </div>
-            <div className="text-sm text-gray-600">活跃干部</div>
+            <div className="text-sm text-gray-600">班长</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-orange-600">
-              {cadres.filter(c => c.position === '班长' || c.position === '副班长').length}
+              {cadres.filter(c => c.role === '副班长').length}
             </div>
-            <div className="text-sm text-gray-600">班级干部</div>
+            <div className="text-sm text-gray-600">副班长</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {cadres.reduce((total, c) => total + c.class_assignments.length, 0)}
+            <div className="text-2xl font-bold text-green-600">
+              {cadres.filter(c => hasAttendancePermission(c.role)).length}
             </div>
-            <div className="text-sm text-gray-600">管理班级数</div>
+            <div className="text-sm text-gray-600">可管理考勤</div>
           </CardContent>
         </Card>
       </div>
