@@ -3,97 +3,107 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Clock, Users, MapPin, Calendar } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Plus, Clock, Users, MapPin, Calendar, TrendingUp, BarChart } from 'lucide-react';
+import ClassForm from '@/components/Classes/ClassForm';
+import { useToast } from '@/hooks/use-toast';
 
 interface ClassInfo {
   id: string;
   name: string;
-  day_of_week: string;
+  region: '北马' | '中马' | '南马';
   time: string;
-  location: string;
-  capacity: number;
-  enrolled: number;
-  instructor: string;
+  student_count: number;
+  class_monitor: string;
+  learning_progress: string;
+  attendance_rate: number;
   status: 'active' | 'inactive';
-  level: 'beginner' | 'intermediate' | 'advanced';
 }
 
 const Classes: React.FC = () => {
-  const [classes] = useState<ClassInfo[]>([
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+  
+  const [classes, setClasses] = useState<ClassInfo[]>([
     {
       id: '1',
       name: '初级班A',
-      day_of_week: '周一',
-      time: '09:00-11:00',
-      location: '教室101',
-      capacity: 30,
-      enrolled: 25,
-      instructor: '张老师',
-      status: 'active',
-      level: 'beginner'
+      region: '北马',
+      time: '周一 09:00-11:00',
+      student_count: 25,
+      class_monitor: '王小明',
+      learning_progress: '已完成基础语法，正在学习日常对话',
+      attendance_rate: 85,
+      status: 'active'
     },
     {
       id: '2',
       name: '中级班B',
-      day_of_week: '周三',
-      time: '14:00-16:00',
-      location: '教室102',
-      capacity: 25,
-      enrolled: 22,
-      instructor: '李老师',
-      status: 'active',
-      level: 'intermediate'
+      region: '中马',
+      time: '周三 14:00-16:00',
+      student_count: 22,
+      class_monitor: '李小红',
+      learning_progress: '已完成中级语法，正在学习商务对话',
+      attendance_rate: 92,
+      status: 'active'
     },
     {
       id: '3',
       name: '高级班C',
-      day_of_week: '周五',
-      time: '19:00-21:00',
-      location: '教室103',
-      capacity: 20,
-      enrolled: 18,
-      instructor: '王老师',
-      status: 'active',
-      level: 'advanced'
+      region: '南马',
+      time: '周五 19:00-21:00',
+      student_count: 18,
+      class_monitor: '张三',
+      learning_progress: '已完成高级语法，正在准备考试',
+      attendance_rate: 78,
+      status: 'active'
     },
     {
       id: '4',
       name: '周末班D',
-      day_of_week: '周六',
-      time: '10:00-12:00',
-      location: '教室104',
-      capacity: 35,
-      enrolled: 5,
-      instructor: '陈老师',
-      status: 'inactive',
-      level: 'beginner'
+      region: '北马',
+      time: '周六 10:00-12:00',
+      student_count: 5,
+      class_monitor: '李四',
+      learning_progress: '刚开始基础学习',
+      attendance_rate: 60,
+      status: 'inactive'
     }
   ]);
 
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case 'beginner':
+  const getRegionColor = (region: string) => {
+    switch (region) {
+      case '北马':
+        return 'bg-blue-100 text-blue-800';
+      case '中马':
         return 'bg-green-100 text-green-800';
-      case 'intermediate':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'advanced':
-        return 'bg-red-100 text-red-800';
+      case '南马':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getLevelText = (level: string) => {
-    switch (level) {
-      case 'beginner':
-        return '初级';
-      case 'intermediate':
-        return '中级';
-      case 'advanced':
-        return '高级';
-      default:
-        return '未知';
-    }
+  const getAttendanceColor = (rate: number) => {
+    if (rate >= 90) return 'text-green-600';
+    if (rate >= 75) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const handleAddClass = (classData: Omit<ClassInfo, 'id' | 'status'>) => {
+    const newClass: ClassInfo = {
+      ...classData,
+      id: Date.now().toString(),
+      status: 'active'
+    };
+    
+    setClasses(prev => [...prev, newClass]);
+    setIsDialogOpen(false);
+    
+    toast({
+      title: "班级创建成功",
+      description: `${classData.name} 已成功创建。`
+    });
   };
 
   return (
@@ -103,10 +113,23 @@ const Classes: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">班级管理</h1>
           <p className="text-gray-600">Class Management</p>
         </div>
-        <Button className="mt-4 sm:mt-0">
-          <Plus className="h-4 w-4 mr-2" />
-          创建班级
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="mt-4 sm:mt-0">
+              <Plus className="h-4 w-4 mr-2" />
+              创建班级
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>创建新班级</DialogTitle>
+            </DialogHeader>
+            <ClassForm
+              onSubmit={handleAddClass}
+              onCancel={() => setIsDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Class Stats */}
@@ -128,7 +151,7 @@ const Classes: React.FC = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-orange-600">
-              {classes.reduce((sum, c) => sum + c.enrolled, 0)}
+              {classes.reduce((sum, c) => sum + c.student_count, 0)}
             </div>
             <div className="text-sm text-gray-600">总学生数</div>
           </CardContent>
@@ -136,9 +159,9 @@ const Classes: React.FC = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-purple-600">
-              {Math.round(classes.reduce((sum, c) => sum + (c.enrolled / c.capacity), 0) / classes.length * 100)}%
+              {Math.round(classes.reduce((sum, c) => sum + c.attendance_rate, 0) / classes.length)}%
             </div>
-            <div className="text-sm text-gray-600">平均使用率</div>
+            <div className="text-sm text-gray-600">平均出席率</div>
           </CardContent>
         </Card>
       </div>
@@ -151,8 +174,8 @@ const Classes: React.FC = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">{classInfo.name}</CardTitle>
                 <div className="flex gap-2">
-                  <Badge className={getLevelColor(classInfo.level)}>
-                    {getLevelText(classInfo.level)}
+                  <Badge className={getRegionColor(classInfo.region)}>
+                    {classInfo.region}
                   </Badge>
                   <Badge variant={classInfo.status === 'active' ? 'default' : 'secondary'}>
                     {classInfo.status === 'active' ? '活跃' : '暂停'}
@@ -163,36 +186,50 @@ const Classes: React.FC = () => {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span>{classInfo.day_of_week}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
                   <Clock className="h-4 w-4 text-gray-500" />
                   <span>{classInfo.time}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <span>{classInfo.location}</span>
+                  <Users className="h-4 w-4 text-gray-500" />
+                  <span>{classInfo.student_count} 学生</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-gray-500" />
-                  <span>{classInfo.enrolled}/{classInfo.capacity} 学生</span>
+                  <MapPin className="h-4 w-4 text-gray-500" />
+                  <span>班长: {classInfo.class_monitor}</span>
                 </div>
-                <div className="text-sm">
-                  <span className="text-gray-600">教师: </span>
-                  <span className="font-medium">{classInfo.instructor}</span>
+                <div className="flex items-center gap-2 text-sm">
+                  <BarChart className="h-4 w-4 text-gray-500" />
+                  <span className={getAttendanceColor(classInfo.attendance_rate)}>
+                    出席率: {classInfo.attendance_rate}%
+                  </span>
                 </div>
                 
-                {/* Enrollment Progress */}
+                {/* Learning Progress */}
+                <div className="mt-4">
+                  <div className="flex items-center gap-2 text-sm mb-2">
+                    <TrendingUp className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">学习进度</span>
+                  </div>
+                  <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                    {classInfo.learning_progress}
+                  </p>
+                </div>
+                
+                {/* Attendance Progress Bar */}
                 <div className="mt-4">
                   <div className="flex justify-between text-sm mb-1">
-                    <span>入学率</span>
-                    <span>{Math.round((classInfo.enrolled / classInfo.capacity) * 100)}%</span>
+                    <span>出席率</span>
+                    <span className={getAttendanceColor(classInfo.attendance_rate)}>
+                      {classInfo.attendance_rate}%
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all"
-                      style={{ width: `${(classInfo.enrolled / classInfo.capacity) * 100}%` }}
+                      className={`h-2 rounded-full transition-all ${
+                        classInfo.attendance_rate >= 90 ? 'bg-green-600' :
+                        classInfo.attendance_rate >= 75 ? 'bg-yellow-500' : 'bg-red-500'
+                      }`}
+                      style={{ width: `${classInfo.attendance_rate}%` }}
                     />
                   </div>
                 </div>
