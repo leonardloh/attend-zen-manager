@@ -27,7 +27,10 @@ const classFormSchema = z.object({
   region: z.enum(['北马', '中马', '南马'], {
     required_error: '请选择地区',
   }),
-  time: z.string().min(1, '上课时间不能为空'),
+  weekday: z.enum(['周一', '周二', '周三', '周四', '周五', '周六', '周日'], {
+    required_error: '请选择星期',
+  }),
+  time: z.string().min(1, '时间不能为空'),
   class_monitor: z.string().min(1, '班长姓名不能为空'),
 });
 
@@ -44,6 +47,7 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
     defaultValues: {
       name: '',
       region: undefined,
+      weekday: undefined,
       time: '',
       class_monitor: '',
     },
@@ -56,11 +60,15 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
     // Auto-populate attendance rate (simulated frontend calculation)
     const attendance_rate = Math.floor(Math.random() * 25) + 75; // Random between 75-100%
     
-    onSubmit({
+    // Combine weekday and time for backwards compatibility
+    const combinedTimeData = {
       ...data,
+      time: `${data.weekday} ${data.time}`, // Combine for the time field expected by parent
       student_count,
       attendance_rate,
-    });
+    };
+    
+    onSubmit(combinedTimeData);
     form.reset();
   };
 
@@ -104,19 +112,48 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="time"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>上课时间</FormLabel>
-              <FormControl>
-                <Input placeholder="例：周一 09:00-11:00" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="weekday"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>星期</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="请选择星期" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="周一">周一</SelectItem>
+                    <SelectItem value="周二">周二</SelectItem>
+                    <SelectItem value="周三">周三</SelectItem>
+                    <SelectItem value="周四">周四</SelectItem>
+                    <SelectItem value="周五">周五</SelectItem>
+                    <SelectItem value="周六">周六</SelectItem>
+                    <SelectItem value="周日">周日</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="time"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>时间</FormLabel>
+                <FormControl>
+                  <Input placeholder="例：09:00-11:00" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}
