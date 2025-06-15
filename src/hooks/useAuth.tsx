@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
   id: string;
-  email: string;
+  student_id: string;
   chinese_name: string;
   english_name: string;
   role: 'admin' | 'cadre' | 'student';
@@ -12,18 +12,18 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (studentId: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demonstration
+// Mock users for demonstration - updated to use student_id
 const mockUsers: User[] = [
   {
     id: '1',
-    email: 'admin@example.com',
+    student_id: 'admin001',
     chinese_name: '管理员',
     english_name: 'Admin User',
     role: 'admin',
@@ -31,7 +31,7 @@ const mockUsers: User[] = [
   },
   {
     id: '2',
-    email: 'cadre@example.com',
+    student_id: 'cadre001',
     chinese_name: '李班长',
     english_name: 'Li Ming',
     role: 'cadre',
@@ -39,7 +39,7 @@ const mockUsers: User[] = [
   },
   {
     id: '3',
-    email: 'student@example.com',
+    student_id: 'student001',
     chinese_name: '王学生',
     english_name: 'Wang Lei',
     role: 'student',
@@ -60,9 +60,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Mock authentication
-    const foundUser = mockUsers.find(u => u.email === email);
+  const login = async (studentId: string, password: string): Promise<boolean> => {
+    // Mock authentication - now using student_id instead of email
+    const foundUser = mockUsers.find(u => u.student_id === studentId);
     if (foundUser && password === 'password') {
       setUser(foundUser);
       localStorage.setItem('user', JSON.stringify(foundUser));
