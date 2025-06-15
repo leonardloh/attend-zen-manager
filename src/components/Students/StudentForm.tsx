@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 
 interface Student {
   id: string;
+  student_id: string;
   chinese_name: string;
   english_name: string;
   gender: 'male' | 'female';
@@ -24,6 +25,7 @@ interface StudentFormProps {
 
 const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
+    student_id: initialData?.student_id || '',
     chinese_name: initialData?.chinese_name || '',
     english_name: initialData?.english_name || '',
     gender: initialData?.gender || 'male' as const,
@@ -51,6 +53,17 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
+          <Label htmlFor="student_id">学号 *</Label>
+          <Input
+            id="student_id"
+            value={formData.student_id}
+            onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
+            placeholder="例如: S2024001"
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
           <Label htmlFor="chinese_name">中文姓名 *</Label>
           <Input
             id="chinese_name"
@@ -59,7 +72,9 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
             required
           />
         </div>
-        
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="english_name">英文姓名 *</Label>
           <Input
@@ -69,9 +84,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
             required
           />
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="gender">性别 *</Label>
           <select
@@ -85,7 +98,9 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
             <option value="female">女</option>
           </select>
         </div>
-        
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="enrollment_date">入学日期 *</Label>
           <Input
@@ -96,9 +111,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
             required
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
         <div className="space-y-2">
           <Label htmlFor="class_name">班级 *</Label>
           <select
@@ -114,7 +127,9 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
             ))}
           </select>
         </div>
-        
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="status">状态 *</Label>
           <select
@@ -129,9 +144,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
             ))}
           </select>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="phone">电话</Label>
           <Input
@@ -141,17 +154,17 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
             placeholder="手机号码"
           />
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="email">邮箱</Label>
-          <Input
-            id="email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            placeholder="电子邮箱"
-          />
-        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="email">邮箱</Label>
+        <Input
+          id="email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          placeholder="电子邮箱"
+        />
       </div>
 
       <div className="flex gap-3 pt-4">

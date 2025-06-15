@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 const LoginForm: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [studentId, setStudentId] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -19,11 +19,11 @@ const LoginForm: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
+      const success = await login(studentId, password);
       if (!success) {
         toast({
           title: '登录失败',
-          description: '邮箱或密码错误，请重试',
+          description: '学号或密码错误，请重试',
           variant: 'destructive',
         });
       }
@@ -52,13 +52,13 @@ const LoginForm: React.FC = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">邮箱 / Email</Label>
+              <Label htmlFor="studentId">学号 / Student ID</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="输入您的邮箱"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="studentId"
+                type="text"
+                placeholder="输入您的学号"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
                 required
               />
             </div>
@@ -85,9 +85,9 @@ const LoginForm: React.FC = () => {
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <p className="text-xs text-gray-600 mb-2">测试账号 / Test Accounts:</p>
             <div className="space-y-1 text-xs">
-              <p><strong>管理员:</strong> admin@example.com / password</p>
-              <p><strong>干部:</strong> cadre@example.com / password</p>
-              <p><strong>学生:</strong> student@example.com / password</p>
+              <p><strong>管理员:</strong> admin001 / password</p>
+              <p><strong>干部:</strong> cadre001 / password</p>
+              <p><strong>学生:</strong> student001 / password</p>
             </div>
           </div>
         </CardContent>
