@@ -11,6 +11,8 @@ interface Cadre {
   role: '班长' | '副班长' | '关怀员';
   mother_class: string;
   support_classes: string[];
+  can_take_attendance: boolean;
+  can_register_students: boolean;
 }
 
 interface CadreStatsProps {
@@ -18,12 +20,8 @@ interface CadreStatsProps {
 }
 
 const CadreStats: React.FC<CadreStatsProps> = ({ cadres }) => {
-  const hasAttendancePermission = (role: string) => {
-    return role === '班长' || role === '副班长';
-  };
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
       <Card>
         <CardContent className="p-4 text-center">
           <div className="text-2xl font-bold text-blue-600">{cadres.length}</div>
@@ -49,9 +47,17 @@ const CadreStats: React.FC<CadreStatsProps> = ({ cadres }) => {
       <Card>
         <CardContent className="p-4 text-center">
           <div className="text-2xl font-bold text-green-600">
-            {cadres.filter(c => hasAttendancePermission(c.role)).length}
+            {cadres.filter(c => c.can_take_attendance).length}
           </div>
           <div className="text-sm text-gray-600">可管理考勤</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4 text-center">
+          <div className="text-2xl font-bold text-purple-600">
+            {cadres.filter(c => c.can_register_students).length}
+          </div>
+          <div className="text-sm text-gray-600">可注册学生</div>
         </CardContent>
       </Card>
     </div>

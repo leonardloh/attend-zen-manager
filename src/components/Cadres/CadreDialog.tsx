@@ -14,6 +14,8 @@ interface Cadre {
   role: '班长' | '副班长' | '关怀员';
   mother_class: string;
   support_classes: string[];
+  can_take_attendance: boolean;
+  can_register_students: boolean;
 }
 
 interface CadreDialogProps {

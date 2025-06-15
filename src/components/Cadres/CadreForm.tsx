@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import ClassMultiSelect from './ClassMultiSelect';
 
 interface Cadre {
@@ -13,6 +15,8 @@ interface Cadre {
   role: '班长' | '副班长' | '关怀员';
   mother_class: string;
   support_classes: string[];
+  can_take_attendance: boolean;
+  can_register_students: boolean;
 }
 
 interface CadreFormProps {
@@ -29,7 +33,9 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
     date_of_birth: initialData?.date_of_birth || '',
     role: initialData?.role || '班长' as const,
     mother_class: initialData?.mother_class || '',
-    support_classes: initialData?.support_classes || []
+    support_classes: initialData?.support_classes || [],
+    can_take_attendance: initialData?.can_take_attendance ?? true,
+    can_register_students: initialData?.can_register_students ?? true
   });
 
   const roles = ['班长', '副班长', '关怀员'];
@@ -134,6 +140,38 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
         onChange={(classes) => setFormData({ ...formData, support_classes: classes })}
         availableClasses={availableClasses}
       />
+
+      {/* Permissions Section */}
+      <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+        <h3 className="text-lg font-medium text-gray-900">权限设置</h3>
+        <p className="text-sm text-gray-600">Permission Settings</p>
+        
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label htmlFor="can_take_attendance">考勤管理权限</Label>
+              <p className="text-sm text-gray-500">允许该干部管理班级考勤</p>
+            </div>
+            <Switch
+              id="can_take_attendance"
+              checked={formData.can_take_attendance}
+              onCheckedChange={(checked) => setFormData({ ...formData, can_take_attendance: checked })}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label htmlFor="can_register_students">学生注册权限</Label>
+              <p className="text-sm text-gray-500">允许该干部注册新学生</p>
+            </div>
+            <Switch
+              id="can_register_students"
+              checked={formData.can_register_students}
+              onCheckedChange={(checked) => setFormData({ ...formData, can_register_students: checked })}
+            />
+          </div>
+        </div>
+      </div>
 
       <div className="flex gap-3 pt-4">
         <Button type="submit" className="flex-1">

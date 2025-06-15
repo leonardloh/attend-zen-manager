@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Edit, Trash2, User2 } from 'lucide-react';
+import { Shield, Edit, Trash2, User2, Check, UserPlus } from 'lucide-react';
 
 interface Cadre {
   id: string;
@@ -14,6 +14,8 @@ interface Cadre {
   role: '班长' | '副班长' | '关怀员';
   mother_class: string;
   support_classes: string[];
+  can_take_attendance: boolean;
+  can_register_students: boolean;
 }
 
 interface CadreCardProps {
@@ -43,10 +45,6 @@ const CadreCard: React.FC<CadreCardProps> = ({ cadre, onEdit, onDelete }) => {
     }
     
     return age;
-  };
-
-  const hasAttendancePermission = (role: string) => {
-    return role === '班长' || role === '副班长';
   };
 
   return (
@@ -94,12 +92,33 @@ const CadreCard: React.FC<CadreCardProps> = ({ cadre, onEdit, onDelete }) => {
             <span className="text-gray-600">出生日期:</span>
             <span className="font-medium">{cadre.date_of_birth}</span>
           </div>
-          {hasAttendancePermission(cadre.role) && (
-            <div className="flex items-center gap-1 text-sm text-green-600 mt-2">
-              <User2 className="h-4 w-4" />
-              <span>可管理考勤和注册</span>
+        </div>
+
+        {/* Permissions Section */}
+        <div className="border-t pt-3 mb-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">权限</h4>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm">
+              {cadre.can_take_attendance ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <div className="h-4 w-4" />
+              )}
+              <span className={cadre.can_take_attendance ? 'text-green-600' : 'text-gray-400'}>
+                考勤管理
+              </span>
             </div>
-          )}
+            <div className="flex items-center gap-2 text-sm">
+              {cadre.can_register_students ? (
+                <UserPlus className="h-4 w-4 text-green-600" />
+              ) : (
+                <div className="h-4 w-4" />
+              )}
+              <span className={cadre.can_register_students ? 'text-green-600' : 'text-gray-400'}>
+                学生注册
+              </span>
+            </div>
+          </div>
         </div>
         
         <div className="flex gap-2">

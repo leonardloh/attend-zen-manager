@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import CadreCard from '@/components/Cadres/CadreCard';
@@ -15,6 +14,8 @@ interface Cadre {
   role: '班长' | '副班长' | '关怀员';
   mother_class: string;
   support_classes: string[];
+  can_take_attendance: boolean;
+  can_register_students: boolean;
 }
 
 const Cadres: React.FC = () => {
@@ -33,7 +34,9 @@ const Cadres: React.FC = () => {
       date_of_birth: '2000-05-15',
       role: '班长',
       mother_class: '初级班A',
-      support_classes: ['初级班A', '初级班D']
+      support_classes: ['初级班A', '初级班D'],
+      can_take_attendance: true,
+      can_register_students: true
     },
     {
       id: '2',
@@ -43,7 +46,9 @@ const Cadres: React.FC = () => {
       date_of_birth: '2001-03-20',
       role: '副班长',
       mother_class: '中级班B',
-      support_classes: ['中级班B', '中级班E']
+      support_classes: ['中级班B', '中级班E'],
+      can_take_attendance: true,
+      can_register_students: false
     },
     {
       id: '3',
@@ -53,7 +58,9 @@ const Cadres: React.FC = () => {
       date_of_birth: '2000-12-08',
       role: '关怀员',
       mother_class: '高级班C',
-      support_classes: ['高级班C']
+      support_classes: ['高级班C'],
+      can_take_attendance: false,
+      can_register_students: true
     },
     {
       id: '4',
@@ -63,7 +70,9 @@ const Cadres: React.FC = () => {
       date_of_birth: '2001-07-22',
       role: '班长',
       mother_class: '初级班D',
-      support_classes: ['初级班D', '高级班F']
+      support_classes: ['初级班D', '高级班F'],
+      can_take_attendance: true,
+      can_register_students: true
     }
   ]);
 
