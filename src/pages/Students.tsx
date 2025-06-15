@@ -15,7 +15,7 @@ interface Student {
   email?: string;
   class_name: string;
   enrollment_date: string;
-  status: 'active' | 'inactive';
+  status: '活跃' | '旁听' | '保留';
 }
 
 const Students: React.FC = () => {
@@ -32,7 +32,7 @@ const Students: React.FC = () => {
       email: 'wang.xiaoming@example.com',
       class_name: '初级班A',
       enrollment_date: '2024-01-15',
-      status: 'active'
+      status: '活跃'
     },
     {
       id: '2',
@@ -43,7 +43,7 @@ const Students: React.FC = () => {
       email: 'li.xiaohong@example.com',
       class_name: '中级班B',
       enrollment_date: '2024-02-01',
-      status: 'active'
+      status: '旁听'
     },
     {
       id: '3',
@@ -54,7 +54,7 @@ const Students: React.FC = () => {
       email: 'zhang.san@example.com',
       class_name: '高级班C',
       enrollment_date: '2024-01-20',
-      status: 'active'
+      status: '活跃'
     },
     {
       id: '4',
@@ -65,7 +65,7 @@ const Students: React.FC = () => {
       email: 'li.si@example.com',
       class_name: '初级班A',
       enrollment_date: '2024-03-01',
-      status: 'inactive'
+      status: '保留'
     }
   ]);
 
@@ -74,6 +74,15 @@ const Students: React.FC = () => {
     student.english_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.class_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case '活跃': return 'bg-green-100 text-green-800';
+      case '旁听': return 'bg-blue-100 text-blue-800';
+      case '保留': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -109,7 +118,10 @@ const Students: React.FC = () => {
                 活跃
               </Button>
               <Button variant="outline" size="sm">
-                非活跃
+                旁听
+              </Button>
+              <Button variant="outline" size="sm">
+                保留
               </Button>
             </div>
           </div>
@@ -131,8 +143,8 @@ const Students: React.FC = () => {
                     <p className="text-sm text-gray-600">{student.english_name}</p>
                   </div>
                 </div>
-                <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
-                  {student.status === 'active' ? '活跃' : '非活跃'}
+                <Badge className={getStatusColor(student.status)}>
+                  {student.status}
                 </Badge>
               </div>
               
@@ -182,25 +194,25 @@ const Students: React.FC = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-green-600">
-              {students.filter(s => s.status === 'active').length}
+              {students.filter(s => s.status === '活跃').length}
             </div>
             <div className="text-sm text-gray-600">活跃学生</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              {students.filter(s => s.gender === 'male').length}
+            <div className="text-2xl font-bold text-blue-600">
+              {students.filter(s => s.status === '旁听').length}
             </div>
-            <div className="text-sm text-gray-600">男学生</div>
+            <div className="text-sm text-gray-600">旁听学生</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-pink-600">
-              {students.filter(s => s.gender === 'female').length}
+            <div className="text-2xl font-bold text-orange-600">
+              {students.filter(s => s.status === '保留').length}
             </div>
-            <div className="text-sm text-gray-600">女学生</div>
+            <div className="text-sm text-gray-600">保留学生</div>
           </CardContent>
         </Card>
       </div>
