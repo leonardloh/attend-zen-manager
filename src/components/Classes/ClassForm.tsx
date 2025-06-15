@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,6 +29,8 @@ const classFormSchema = z.object({
   time: z.string().min(1, '上课时间不能为空'),
   class_monitor: z.string().min(1, '班长姓名不能为空'),
   learning_progress: z.string().min(1, '学习进度不能为空'),
+  page_number: z.string().min(1, '页数不能为空'),
+  line_number: z.string().min(1, '行数不能为空'),
 });
 
 type ClassFormData = z.infer<typeof classFormSchema>;
@@ -48,6 +49,8 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
       time: '',
       class_monitor: '',
       learning_progress: '',
+      page_number: '',
+      line_number: '',
     },
   });
 
@@ -152,15 +155,34 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
           )}
         />
 
-        {/* Info section about auto-populated fields */}
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <p className="text-sm text-blue-700 mb-2">
-            <strong>自动填充字段：</strong>
-          </p>
-          <ul className="text-sm text-blue-600 space-y-1">
-            <li>• 学生人数：系统自动计算</li>
-            <li>• 出席率：前端自动生成</li>
-          </ul>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="page_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>页数</FormLabel>
+                <FormControl>
+                  <Input placeholder="请输入页数" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="line_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>行数</FormLabel>
+                <FormControl>
+                  <Input placeholder="请输入行数" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="flex gap-3 pt-4">
