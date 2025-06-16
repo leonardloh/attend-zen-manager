@@ -1,11 +1,11 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Clock, Users, MapPin, Calendar, TrendingUp, BarChart } from 'lucide-react';
+import { Plus, Clock, Users, MapPin, Calendar, TrendingUp, BarChart, Eye, Edit } from 'lucide-react';
 import ClassForm from '@/components/Classes/ClassForm';
+import ClassDetailsView from '@/components/Classes/ClassDetailsView';
 import { useToast } from '@/hooks/use-toast';
 
 interface ClassInfo {
@@ -22,6 +22,9 @@ interface ClassInfo {
 
 const Classes: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<ClassInfo | null>(null);
   const { toast } = useToast();
   
   const [classes, setClasses] = useState<ClassInfo[]>([
@@ -103,6 +106,35 @@ const Classes: React.FC = () => {
     toast({
       title: "班级创建成功",
       description: `${classData.name} 已成功创建。`
+    });
+  };
+
+  const handleViewClass = (classInfo: ClassInfo) => {
+    setSelectedClass(classInfo);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditClass = (classInfo: ClassInfo) => {
+    setSelectedClass(classInfo);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateClass = (updatedData: Omit<ClassInfo, 'id' | 'status'>) => {
+    if (!selectedClass) return;
+    
+    const updatedClass: ClassInfo = {
+      ...updatedData,
+      id: selectedClass.id,
+      status: selectedClass.status
+    };
+    
+    setClasses(prev => prev.map(c => c.id === selectedClass.id ? updatedClass : c));
+    setIsEditDialogOpen(false);
+    setSelectedClass(null);
+    
+    toast({
+      title: "班级更新成功",
+      description: `${updatedData.name} 的信息已更新。`
     });
   };
 
@@ -235,10 +267,22 @@ const Classes: React.FC = () => {
                 </div>
                 
                 <div className="flex gap-2 mt-4">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleViewClass(classInfo)}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
                     查看详情
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleEditClass(classInfo)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
                     编辑
                   </Button>
                 </div>
@@ -247,6 +291,37 @@ const Classes: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      {/* View Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>班级详情</DialogTitle>
+          </DialogHeader>
+          {selectedClass && (
+            <ClassDetailsView 
+              classInfo={selectedClass} 
+              onClose={() => setIsViewDialogOpen(false)} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>编辑班级</DialogTitle>
+          </DialogHeader>
+          {selectedClass && (
+            <ClassForm
+              initialData={selectedClass}
+              onSubmit={handleUpdateClass}
+              onCancel={() => setIsEditDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

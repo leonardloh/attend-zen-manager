@@ -32,38 +32,66 @@ const classFormSchema = z.object({
   }),
   time: z.string().min(1, '时间不能为空'),
   class_monitor: z.string().min(1, '班长姓名不能为空'),
+  learning_progress: z.string().optional(),
 });
 
 type ClassFormData = z.infer<typeof classFormSchema>;
 
+interface ClassInfo {
+  id: string;
+  name: string;
+  region: '北马' | '中马' | '南马';
+  time: string;
+  student_count: number;
+  class_monitor: string;
+  learning_progress: string;
+  attendance_rate: number;
+  status: 'active' | 'inactive';
+}
+
 interface ClassFormProps {
+  initialData?: ClassInfo;
   onSubmit: (data: ClassFormData & { student_count: number; attendance_rate: number }) => void;
   onCancel: () => void;
 }
 
-const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
+const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }) => {
+  // Parse existing time if editing
+  const parseTime = (timeString: string) => {
+    if (!timeString) return { weekday: undefined, time: '' };
+    const parts = timeString.split(' ');
+    if (parts.length >= 2) {
+      return {
+        weekday: parts[0] as ClassFormData['weekday'],
+        time: parts.slice(1).join(' ')
+      };
+    }
+    return { weekday: undefined, time: timeString };
+  };
+
+  const { weekday: initialWeekday, time: initialTime } = parseTime(initialData?.time || '');
+
   const form = useForm<ClassFormData>({
     resolver: zodResolver(classFormSchema),
     defaultValues: {
-      name: '',
-      region: undefined,
-      weekday: undefined,
-      time: '',
-      class_monitor: '',
+      name: initialData?.name || '',
+      region: initialData?.region || undefined,
+      weekday: initialWeekday || undefined,
+      time: initialTime || '',
+      class_monitor: initialData?.class_monitor || '',
+      learning_progress: initialData?.learning_progress || '',
     },
   });
 
   const handleSubmit = (data: ClassFormData) => {
-    // Auto-calculate student count (simulated system calculation)
-    const student_count = Math.floor(Math.random() * 30) + 15; // Random between 15-45 students
-    
-    // Auto-populate attendance rate (simulated frontend calculation)
-    const attendance_rate = Math.floor(Math.random() * 25) + 75; // Random between 75-100%
+    // Auto-calculate student count and attendance rate for new classes
+    const student_count = initialData?.student_count || Math.floor(Math.random() * 30) + 15;
+    const attendance_rate = initialData?.attendance_rate || Math.floor(Math.random() * 25) + 75;
     
     // Combine weekday and time for backwards compatibility
     const combinedTimeData = {
       ...data,
-      time: `${data.weekday} ${data.time}`, // Combine for the time field expected by parent
+      time: `${data.weekday} ${data.time}`,
       student_count,
       attendance_rate,
     };
@@ -95,7 +123,7 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>地区</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="请选择地区" />
@@ -119,7 +147,7 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>星期</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="请选择星期" />
@@ -169,9 +197,27 @@ const ClassForm: React.FC<ClassFormProps> = ({ onSubmit, onCancel }) => {
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="learning_progress"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>学习进度</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="请输入当前学习进度..." 
+                  {...field} 
+                  rows={3}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="flex gap-3 pt-4">
           <Button type="submit" className="flex-1">
-            创建班级
+            {initialData ? '更新班级' : '创建班级'}
           </Button>
           <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
             取消
