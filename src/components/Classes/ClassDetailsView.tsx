@@ -43,6 +43,17 @@ const ClassDetailsView: React.FC<ClassDetailsViewProps> = ({ classInfo, onClose 
     return 'text-red-600';
   };
 
+  // Format page and line numbers for display
+  const formatPageNumber = (pageNumber: string) => {
+    if (!pageNumber || pageNumber.trim() === '') return '未设置';
+    return `第${pageNumber}页`;
+  };
+
+  const formatLineNumber = (lineNumber: string) => {
+    if (!lineNumber || lineNumber.trim() === '') return '未设置';
+    return `第${lineNumber}行`;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -125,14 +136,14 @@ const ClassDetailsView: React.FC<ClassDetailsViewProps> = ({ classInfo, onClose 
               <BookOpen className="h-4 w-4 text-gray-500" />
               <div>
                 <p className="font-medium">页数</p>
-                <p className="text-gray-600">{classInfo.page_number || '未设置'}</p>
+                <p className="text-gray-600">{formatPageNumber(classInfo.page_number)}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Hash className="h-4 w-4 text-gray-500" />
               <div>
                 <p className="font-medium">行数</p>
-                <p className="text-gray-600">{classInfo.line_number || '未设置'}</p>
+                <p className="text-gray-600">{formatLineNumber(classInfo.line_number)}</p>
               </div>
             </div>
           </div>

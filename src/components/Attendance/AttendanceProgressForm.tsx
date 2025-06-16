@@ -42,6 +42,16 @@ const AttendanceProgressForm: React.FC<AttendanceProgressFormProps> = ({
     }));
   };
 
+  const handleNumberInputChange = (field: 'page_number' | 'line_number', value: string) => {
+    // Only allow numeric input
+    if (value === '' || /^\d+$/.test(value)) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+  };
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -74,9 +84,10 @@ const AttendanceProgressForm: React.FC<AttendanceProgressFormProps> = ({
               </Label>
               <Input
                 id="page_number"
-                placeholder="例：第15页"
+                type="text"
+                placeholder="请输入页数（仅数字）"
                 value={formData.page_number}
-                onChange={(e) => handleInputChange('page_number', e.target.value)}
+                onChange={(e) => handleNumberInputChange('page_number', e.target.value)}
               />
             </div>
             
@@ -87,9 +98,10 @@ const AttendanceProgressForm: React.FC<AttendanceProgressFormProps> = ({
               </Label>
               <Input
                 id="line_number"
-                placeholder="例：第8行"
+                type="text"
+                placeholder="请输入行数（仅数字）"
                 value={formData.line_number}
-                onChange={(e) => handleInputChange('line_number', e.target.value)}
+                onChange={(e) => handleNumberInputChange('line_number', e.target.value)}
               />
             </div>
           </div>

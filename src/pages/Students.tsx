@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Search, Plus, Edit, Trash2, User } from 'lucide-react';
 import StudentForm from '@/components/Students/StudentForm';
 import { useToast } from '@/hooks/use-toast';
@@ -139,6 +139,18 @@ const Students: React.FC = () => {
     toast({
       title: "学生信息更新成功",
       description: `${studentData.chinese_name} 的信息已成功更新。`
+    });
+  };
+
+  const handleDeleteStudent = (studentId: string) => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    setStudents(prev => prev.filter(s => s.id !== studentId));
+    
+    toast({
+      title: "学生删除成功",
+      description: `${student.chinese_name} 已从系统中删除。`
     });
   };
 
@@ -280,9 +292,30 @@ const Students: React.FC = () => {
                     <Edit className="h-4 w-4 mr-1" />
                     编辑
                   </Button>
-                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>确认删除学生</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          您确定要删除学生 <strong>{student.chinese_name}</strong> 吗？此操作不可撤销。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteStudent(student.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          确认删除
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               )}
             </CardContent>
