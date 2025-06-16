@@ -3,6 +3,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Student {
   id: string;
@@ -35,6 +39,8 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
     enrollment_date: initialData?.enrollment_date || new Date().toISOString().split('T')[0],
     status: initialData?.status || '活跃' as const
   });
+
+  const [open, setOpen] = useState(false);
 
   const classes = ['初级班A', '中级班B', '高级班C', '初级班D', '中级班E', '高级班F'];
   const statuses = ['活跃', '旁听', '保留'];
@@ -113,19 +119,57 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="class_name">班级 *</Label>
-          <select
-            id="class_name"
-            value={formData.class_name}
-            onChange={(e) => setFormData({ ...formData, class_name: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          >
-            <option value="">选择班级</option>
-            {classes.map(className => (
-              <option key={className} value={className}>{className}</option>
-            ))}
-          </select>
+          <Label>班级 *</Label>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full justify-between"
+              >
+                {formData.class_name || "选择或输入班级..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput 
+                  placeholder="搜索或输入班级名称..." 
+                  value={formData.class_name}
+                  onValueChange={(value) => setFormData({ ...formData, class_name: value })}
+                />
+                <CommandList>
+                  <CommandEmpty>没有找到班级。按回车键添加新班级。</CommandEmpty>
+                  <CommandGroup>
+                    {classes
+                      .filter(className => 
+                        className.toLowerCase().includes(formData.class_name.toLowerCase()) ||
+                        formData.class_name === ''
+                      )
+                      .map((className) => (
+                        <CommandItem
+                          key={className}
+                          value={className}
+                          onSelect={(currentValue) => {
+                            setFormData({ ...formData, class_name: currentValue });
+                            setOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              formData.class_name === className ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {className}
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
