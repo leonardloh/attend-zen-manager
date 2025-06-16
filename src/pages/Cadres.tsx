@@ -109,10 +109,12 @@ const Cadres: React.FC = () => {
   };
 
   const handleDeleteCadre = (cadreId: string) => {
+    const deletedCadre = cadres.find(cadre => cadre.id === cadreId);
     setCadres(cadres.filter(cadre => cadre.id !== cadreId));
     toast({
-      title: "成功",
-      description: "干部已删除"
+      title: "干部删除成功",
+      description: `${deletedCadre?.chinese_name} 的干部信息已被永久删除。`,
+      variant: "destructive"
     });
   };
 

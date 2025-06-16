@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Clock, Users, MapPin, Calendar, TrendingUp, BarChart, Eye, Edit, BookOpen, Hash } from 'lucide-react';
+import { Plus, Clock, Users, MapPin, Calendar, TrendingUp, BarChart, Eye, Edit, BookOpen, Hash, Trash2 } from 'lucide-react';
 import ClassForm from '@/components/Classes/ClassForm';
 import ClassDetailsView from '@/components/Classes/ClassDetailsView';
+import DeleteClassDialog from '@/components/Classes/DeleteClassDialog';
 import { useToast } from '@/hooks/use-toast';
 
 interface ClassInfo {
@@ -15,10 +16,10 @@ interface ClassInfo {
   region: '北马' | '中马' | '南马';
   time: string;
   student_count: number;
-  class_monitor: string;
+  class_monitor_id: string;
+  deputy_monitors?: string[];
+  care_officers?: string[];
   learning_progress: string;
-  page_number: string;
-  line_number: string;
   attendance_rate: number;
   status: 'active' | 'inactive';
 }
@@ -27,7 +28,9 @@ const Classes: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassInfo | null>(null);
+  const [classToDelete, setClassToDelete] = useState<ClassInfo | null>(null);
   const { toast } = useToast();
   
   const [classes, setClasses] = useState<ClassInfo[]>([
@@ -146,6 +149,24 @@ const Classes: React.FC = () => {
     toast({
       title: "班级更新成功",
       description: `${updatedData.name} 的信息已更新。`
+    });
+  };
+
+  const handleDeleteClass = (classInfo: ClassInfo) => {
+    setClassToDelete(classInfo);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = (classId: string) => {
+    const deletedClass = classes.find(c => c.id === classId);
+    
+    setClasses(prev => prev.filter(c => c.id !== classId));
+    setClassToDelete(null);
+    
+    toast({
+      title: "班级删除成功",
+      description: `${deletedClass?.name} 已被永久删除。`,
+      variant: "destructive"
     });
   };
 
@@ -316,6 +337,15 @@ const Classes: React.FC = () => {
                     <Edit className="h-4 w-4 mr-1" />
                     编辑
                   </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 text-red-600 hover:text-red-700 hover:border-red-300"
+                    onClick={() => handleDeleteClass(classInfo)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    删除
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -353,6 +383,14 @@ const Classes: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteClassDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        classToDelete={classToDelete}
+        onConfirmDelete={handleConfirmDelete}
+      />
     </div>
   );
 };

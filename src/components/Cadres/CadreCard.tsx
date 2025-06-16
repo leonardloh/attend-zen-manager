@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Shield, Edit, Trash2, User2, Check, UserPlus } from 'lucide-react';
 
 interface Cadre {
@@ -131,14 +132,45 @@ const CadreCard: React.FC<CadreCardProps> = ({ cadre, onEdit, onDelete }) => {
             <Edit className="h-4 w-4 mr-1" />
             编辑
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-red-600 hover:text-red-700"
-            onClick={() => onDelete(cadre.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认删除干部</AlertDialogTitle>
+                <AlertDialogDescription>
+                  您确定要删除干部 <strong>{cadre.chinese_name}</strong> 吗？
+                  <br /><br />
+                  删除后将清除以下信息：
+                  <ul className="mt-2 text-sm list-disc list-inside space-y-1">
+                    <li>干部基本资料（姓名、性别、出生日期等）</li>
+                    <li>职位信息（{cadre.role}）</li>
+                    <li>母班班名：{cadre.mother_class}</li>
+                    <li>护持班名：{cadre.support_classes.join('、')}</li>
+                    <li>管理权限设置</li>
+                  </ul>
+                  <br />
+                  <strong>此操作不可撤销。</strong>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => onDelete(cadre.id)}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  确认删除
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardContent>
     </Card>

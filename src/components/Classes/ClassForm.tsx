@@ -6,6 +6,8 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { X, Plus } from 'lucide-react';
+import StudentSearchInput from '@/components/Students/StudentSearchInput';
 import {
   Form,
   FormControl,
@@ -30,11 +32,19 @@ const classFormSchema = z.object({
   weekday: z.enum(['周一', '周二', '周三', '周四', '周五', '周六', '周日'], {
     required_error: '请选择星期',
   }),
-  time: z.string().min(1, '时间不能为空'),
-  class_monitor: z.string().min(1, '班长姓名不能为空'),
+  start_time: z.string().min(1, '开始时间不能为空'),
+  end_time: z.string().min(1, '结束时间不能为空'),
+  class_monitor_id: z.string().min(1, '班长学号不能为空'),
+  deputy_monitors: z.array(z.string()).optional(),
+  care_officers: z.array(z.string()).optional(),
   learning_progress: z.string().optional(),
-  page_number: z.string().optional(),
-  line_number: z.string().optional(),
+}).refine((data) => {
+  const startTime = parseInt(data.start_time.replace(':', ''));
+  const endTime = parseInt(data.end_time.replace(':', ''));
+  return endTime > startTime;
+}, {
+  message: '结束时间必须晚于开始时间',
+  path: ['end_time'],
 });
 
 type ClassFormData = z.infer<typeof classFormSchema>;
@@ -45,13 +55,22 @@ interface ClassInfo {
   region: '北马' | '中马' | '南马';
   time: string;
   student_count: number;
-  class_monitor: string;
+  class_monitor_id: string;
+  deputy_monitors?: string[];
+  care_officers?: string[];
   learning_progress: string;
-  page_number: string;
-  line_number: string;
   attendance_rate: number;
   status: 'active' | 'inactive';
 }
+
+
+// Time options for dropdowns
+const timeOptions = [
+  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+  '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+  '20:00', '20:30', '21:00', '21:30', '22:00'
+];
 
 interface ClassFormProps {
   initialData?: ClassInfo;
@@ -62,18 +81,21 @@ interface ClassFormProps {
 const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }) => {
   // Parse existing time if editing
   const parseTime = (timeString: string) => {
-    if (!timeString) return { weekday: undefined, time: '' };
+    if (!timeString) return { weekday: undefined, start_time: '', end_time: '' };
     const parts = timeString.split(' ');
     if (parts.length >= 2) {
+      const timeRange = parts.slice(1).join(' ');
+      const [start, end] = timeRange.split('-');
       return {
         weekday: parts[0] as ClassFormData['weekday'],
-        time: parts.slice(1).join(' ')
+        start_time: start || '',
+        end_time: end || ''
       };
     }
-    return { weekday: undefined, time: timeString };
+    return { weekday: undefined, start_time: '', end_time: '' };
   };
 
-  const { weekday: initialWeekday, time: initialTime } = parseTime(initialData?.time || '');
+  const { weekday: initialWeekday, start_time: initialStartTime, end_time: initialEndTime } = parseTime(initialData?.time || '');
 
   const form = useForm<ClassFormData>({
     resolver: zodResolver(classFormSchema),
@@ -81,11 +103,12 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
       name: initialData?.name || '',
       region: initialData?.region || undefined,
       weekday: initialWeekday || undefined,
-      time: initialTime || '',
-      class_monitor: initialData?.class_monitor || '',
+      start_time: initialStartTime || '',
+      end_time: initialEndTime || '',
+      class_monitor_id: initialData?.class_monitor_id || '',
+      deputy_monitors: initialData?.deputy_monitors || [],
+      care_officers: initialData?.care_officers || [],
       learning_progress: initialData?.learning_progress || '',
-      page_number: initialData?.page_number || '',
-      line_number: initialData?.line_number || '',
     },
   });
 
@@ -97,13 +120,25 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
     // Combine weekday and time for backwards compatibility
     const combinedTimeData = {
       ...data,
-      time: `${data.weekday} ${data.time}`,
+      time: `${data.weekday} ${data.start_time}-${data.end_time}`,
       student_count,
       attendance_rate,
     };
     
     onSubmit(combinedTimeData);
     form.reset();
+  };
+
+  // Helper function to add/remove cadre roles
+  const addCadreRole = (roleType: 'deputy_monitors' | 'care_officers') => {
+    const currentValues = form.getValues(roleType) || [];
+    form.setValue(roleType, [...currentValues, '']);
+  };
+
+  const removeCadreRole = (roleType: 'deputy_monitors' | 'care_officers', index: number) => {
+    const currentValues = form.getValues(roleType) || [];
+    const newValues = currentValues.filter((_, i) => i !== index);
+    form.setValue(roleType, newValues);
   };
 
   return (
@@ -146,27 +181,50 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="weekday"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>星期</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="请选择星期" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="周一">周一</SelectItem>
+                  <SelectItem value="周二">周二</SelectItem>
+                  <SelectItem value="周三">周三</SelectItem>
+                  <SelectItem value="周四">周四</SelectItem>
+                  <SelectItem value="周五">周五</SelectItem>
+                  <SelectItem value="周六">周六</SelectItem>
+                  <SelectItem value="周日">周日</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="weekday"
+            name="start_time"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>星期</FormLabel>
+                <FormLabel>开始时间</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="请选择星期" />
+                      <SelectValue placeholder="请选择开始时间" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="周一">周一</SelectItem>
-                    <SelectItem value="周二">周二</SelectItem>
-                    <SelectItem value="周三">周三</SelectItem>
-                    <SelectItem value="周四">周四</SelectItem>
-                    <SelectItem value="周五">周五</SelectItem>
-                    <SelectItem value="周六">周六</SelectItem>
-                    <SelectItem value="周日">周日</SelectItem>
+                    {timeOptions.map((time) => (
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -176,13 +234,22 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
 
           <FormField
             control={form.control}
-            name="time"
+            name="end_time"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>时间</FormLabel>
-                <FormControl>
-                  <Input placeholder="例：09:00-11:00" {...field} />
-                </FormControl>
+                <FormLabel>结束时间</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="请选择结束时间" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {timeOptions.map((time) => (
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -191,12 +258,20 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
 
         <FormField
           control={form.control}
-          name="class_monitor"
+          name="class_monitor_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>班长姓名</FormLabel>
+              <FormLabel>班长学号</FormLabel>
               <FormControl>
-                <Input placeholder="请输入班长姓名" {...field} />
+                <StudentSearchInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="搜索班长学号或姓名..."
+                  excludeIds={[
+                    ...(form.watch('deputy_monitors') || []),
+                    ...(form.watch('care_officers') || [])
+                  ]}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -221,34 +296,106 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="page_number"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>广论页数</FormLabel>
-                <FormControl>
-                  <Input placeholder="请输入页数" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {/* Dynamic Deputy Monitors */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <FormLabel>副班长</FormLabel>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => addCadreRole('deputy_monitors')}
+              className="flex items-center gap-1"
+            >
+              <Plus className="h-4 w-4" />
+              添加副班长
+            </Button>
+          </div>
+          {(form.watch('deputy_monitors') || []).map((_, index) => (
+            <div key={`deputy-${index}`} className="flex gap-2">
+              <FormField
+                control={form.control}
+                name={`deputy_monitors.${index}`}
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <StudentSearchInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="搜索副班长学号或姓名..."
+                        excludeIds={[
+                          form.watch('class_monitor_id'),
+                          ...(form.watch('deputy_monitors') || []).filter((_, i) => i !== index),
+                          ...(form.watch('care_officers') || [])
+                        ].filter(Boolean)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => removeCadreRole('deputy_monitors', index)}
+                className="flex items-center gap-1 text-red-600 hover:text-red-700"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
 
-          <FormField
-            control={form.control}
-            name="line_number"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>广论行数</FormLabel>
-                <FormControl>
-                  <Input placeholder="请输入行数" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {/* Dynamic Care Officers */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <FormLabel>关怀员</FormLabel>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => addCadreRole('care_officers')}
+              className="flex items-center gap-1"
+            >
+              <Plus className="h-4 w-4" />
+              添加关怀员
+            </Button>
+          </div>
+          {(form.watch('care_officers') || []).map((_, index) => (
+            <div key={`care-${index}`} className="flex gap-2">
+              <FormField
+                control={form.control}
+                name={`care_officers.${index}`}
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <StudentSearchInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="搜索关怀员学号或姓名..."
+                        excludeIds={[
+                          form.watch('class_monitor_id'),
+                          ...(form.watch('deputy_monitors') || []),
+                          ...(form.watch('care_officers') || []).filter((_, i) => i !== index)
+                        ].filter(Boolean)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => removeCadreRole('care_officers', index)}
+                className="flex items-center gap-1 text-red-600 hover:text-red-700"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
         </div>
 
         <div className="flex gap-3 pt-4">

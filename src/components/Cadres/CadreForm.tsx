@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import ClassMultiSelect from './ClassMultiSelect';
+import ClassSearchInput from '@/components/Classes/ClassSearchInput';
 
 interface Cadre {
   id: string;
@@ -39,7 +40,12 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
   });
 
   const roles = ['班长', '副班长', '关怀员'];
-  const availableClasses = ['初级班A', '中级班B', '高级班C', '初级班D', '中级班E', '高级班F'];
+  
+  // Available class names for the multi-select (extracted from our class data)
+  const availableClasses = [
+    '初级班A', '中级班B', '高级班C', '周末班D', 
+    '初级班D', '中级班E', '高级班F'
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,18 +126,13 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
         
         <div className="space-y-2">
           <Label htmlFor="mother_class">母班班名 *</Label>
-          <select
-            id="mother_class"
+          <ClassSearchInput
             value={formData.mother_class}
-            onChange={(e) => setFormData({ ...formData, mother_class: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          >
-            <option value="">选择母班</option>
-            {availableClasses.map(className => (
-              <option key={className} value={className}>{className}</option>
-            ))}
-          </select>
+            onChange={(className) => setFormData({ ...formData, mother_class: className })}
+            placeholder="搜索母班班名..."
+            excludeClasses={formData.support_classes}
+            includeInactive={false}
+          />
         </div>
       </div>
 
