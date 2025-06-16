@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Clock, Users, MapPin, Calendar, TrendingUp, BarChart, Eye, Edit } from 'lucide-react';
+import { Plus, Clock, Users, MapPin, Calendar, TrendingUp, BarChart, Eye, Edit, BookOpen, Hash } from 'lucide-react';
 import ClassForm from '@/components/Classes/ClassForm';
 import ClassDetailsView from '@/components/Classes/ClassDetailsView';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +17,8 @@ interface ClassInfo {
   student_count: number;
   class_monitor: string;
   learning_progress: string;
+  page_number: string;
+  line_number: string;
   attendance_rate: number;
   status: 'active' | 'inactive';
 }
@@ -36,6 +39,8 @@ const Classes: React.FC = () => {
       student_count: 25,
       class_monitor: '王小明',
       learning_progress: '已完成基础语法，正在学习日常对话',
+      page_number: '第15页',
+      line_number: '第8行',
       attendance_rate: 85,
       status: 'active'
     },
@@ -47,6 +52,8 @@ const Classes: React.FC = () => {
       student_count: 22,
       class_monitor: '李小红',
       learning_progress: '已完成中级语法，正在学习商务对话',
+      page_number: '第32页',
+      line_number: '第12行',
       attendance_rate: 92,
       status: 'active'
     },
@@ -58,6 +65,8 @@ const Classes: React.FC = () => {
       student_count: 18,
       class_monitor: '张三',
       learning_progress: '已完成高级语法，正在准备考试',
+      page_number: '第48页',
+      line_number: '第6行',
       attendance_rate: 78,
       status: 'active'
     },
@@ -69,6 +78,8 @@ const Classes: React.FC = () => {
       student_count: 5,
       class_monitor: '李四',
       learning_progress: '刚开始基础学习',
+      page_number: '第3页',
+      line_number: '第15行',
       attendance_rate: 60,
       status: 'inactive'
     }
@@ -245,6 +256,26 @@ const Classes: React.FC = () => {
                   <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
                     {classInfo.learning_progress}
                   </p>
+                </div>
+
+                {/* 广论进度 */}
+                <div className="mt-4">
+                  <div className="flex items-center gap-2 text-sm mb-2">
+                    <BookOpen className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">广论进度</span>
+                  </div>
+                  <div className="bg-gray-50 p-2 rounded">
+                    <div className="flex justify-between text-sm">
+                      <div className="flex items-center gap-1">
+                        <BookOpen className="h-3 w-3 text-gray-500" />
+                        <span>{classInfo.page_number}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Hash className="h-3 w-3 text-gray-500" />
+                        <span>{classInfo.line_number}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 
                 {/* Attendance Progress Bar */}

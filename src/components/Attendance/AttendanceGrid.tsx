@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User, Save, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import AttendanceProgressForm from './AttendanceProgressForm';
 
 interface Student {
   id: string;
@@ -16,6 +16,12 @@ interface Student {
 interface AttendanceStatus {
   studentId: string;
   status: 'present' | 'online' | 'leave' | 'absent' | null;
+}
+
+interface AttendanceProgressData {
+  learning_progress: string;
+  page_number: string;
+  line_number: string;
 }
 
 interface AttendanceGridProps {
@@ -39,6 +45,12 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate }) =
   const [attendance, setAttendance] = useState<AttendanceStatus[]>(
     students.map(student => ({ studentId: student.id, status: null }))
   );
+
+  const [progressData, setProgressData] = useState<AttendanceProgressData>({
+    learning_progress: '',
+    page_number: '',
+    line_number: '',
+  });
 
   const statusConfig = {
     present: { label: '√实体', color: 'bg-green-500 hover:bg-green-600 text-white' },
@@ -74,11 +86,17 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate }) =
     console.log('Saving attendance:', {
       classId,
       classDate,
-      attendance: attendance.filter(item => item.status !== null)
+      attendance: attendance.filter(item => item.status !== null),
+      progress: progressData
     });
     
     // Show success message or handle the save operation
-    alert('考勤数据已保存！');
+    alert('考勤数据和学习进度已保存！');
+  };
+
+  const handleProgressSave = (data: AttendanceProgressData) => {
+    setProgressData(data);
+    console.log('Progress data updated:', data);
   };
 
   const getStatusCounts = () => {
@@ -97,6 +115,13 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate }) =
 
   return (
     <div className="space-y-6">
+      {/* Progress Form */}
+      <AttendanceProgressForm
+        classId={classId || ''}
+        classDate={classDate}
+        onSave={handleProgressSave}
+      />
+
       {/* Header Controls */}
       <Card>
         <CardHeader>

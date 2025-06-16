@@ -33,6 +33,8 @@ const classFormSchema = z.object({
   time: z.string().min(1, '时间不能为空'),
   class_monitor: z.string().min(1, '班长姓名不能为空'),
   learning_progress: z.string().optional(),
+  page_number: z.string().optional(),
+  line_number: z.string().optional(),
 });
 
 type ClassFormData = z.infer<typeof classFormSchema>;
@@ -45,6 +47,8 @@ interface ClassInfo {
   student_count: number;
   class_monitor: string;
   learning_progress: string;
+  page_number: string;
+  line_number: string;
   attendance_rate: number;
   status: 'active' | 'inactive';
 }
@@ -80,6 +84,8 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
       time: initialTime || '',
       class_monitor: initialData?.class_monitor || '',
       learning_progress: initialData?.learning_progress || '',
+      page_number: initialData?.page_number || '',
+      line_number: initialData?.line_number || '',
     },
   });
 
@@ -214,6 +220,36 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
             </FormItem>
           )}
         />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="page_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>广论页数</FormLabel>
+                <FormControl>
+                  <Input placeholder="请输入页数" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="line_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>广论行数</FormLabel>
+                <FormControl>
+                  <Input placeholder="请输入行数" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <div className="flex gap-3 pt-4">
           <Button type="submit" className="flex-1">

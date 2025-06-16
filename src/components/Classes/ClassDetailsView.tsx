@@ -2,7 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, Users, MapPin, TrendingUp, BarChart, Calendar } from 'lucide-react';
+import { Clock, Users, MapPin, TrendingUp, BarChart, Calendar, BookOpen, Hash } from 'lucide-react';
 
 interface ClassInfo {
   id: string;
@@ -12,6 +12,8 @@ interface ClassInfo {
   student_count: number;
   class_monitor: string;
   learning_progress: string;
+  page_number: string;
+  line_number: string;
   attendance_rate: number;
   status: 'active' | 'inactive';
 }
@@ -108,6 +110,32 @@ const ClassDetailsView: React.FC<ClassDetailsViewProps> = ({ classInfo, onClose 
         </div>
         <div className="bg-gray-50 p-4 rounded-lg">
           <p className="text-gray-700">{classInfo.learning_progress}</p>
+        </div>
+      </div>
+
+      {/* 广论进度 */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <BookOpen className="h-5 w-5 text-gray-500" />
+          <h3 className="text-lg font-medium">广论进度</h3>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-3">
+              <BookOpen className="h-4 w-4 text-gray-500" />
+              <div>
+                <p className="font-medium">页数</p>
+                <p className="text-gray-600">{classInfo.page_number || '未设置'}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Hash className="h-4 w-4 text-gray-500" />
+              <div>
+                <p className="font-medium">行数</p>
+                <p className="text-gray-600">{classInfo.line_number || '未设置'}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
