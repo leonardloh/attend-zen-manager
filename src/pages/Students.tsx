@@ -8,9 +8,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Search, Plus, Edit, Trash2, User } from 'lucide-react';
 import StudentForm from '@/components/Students/StudentForm';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Student {
   id: string;
+  student_id: string;
   chinese_name: string;
   english_name: string;
   gender: 'male' | 'female';
@@ -24,13 +26,20 @@ interface Student {
 const Students: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'全部' | '活跃' | '旁听' | '保留'>('全部');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Check if user can edit students (admin or cadre)
+  const canEditStudents = user?.role === 'admin' || user?.role === 'cadre';
   
   // Mock data
   const [students, setStudents] = useState<Student[]>([
     {
       id: '1',
+      student_id: 'S2024001',
       chinese_name: '王小明',
       english_name: 'Wang Xiaoming',
       gender: 'male',
@@ -42,6 +51,7 @@ const Students: React.FC = () => {
     },
     {
       id: '2',
+      student_id: 'S2024002',
       chinese_name: '李小红',
       english_name: 'Li Xiaohong',
       gender: 'female',
@@ -53,6 +63,7 @@ const Students: React.FC = () => {
     },
     {
       id: '3',
+      student_id: 'S2024003',
       chinese_name: '张三',
       english_name: 'Zhang San',
       gender: 'male',
@@ -64,6 +75,7 @@ const Students: React.FC = () => {
     },
     {
       id: '4',
+      student_id: 'S2024004',
       chinese_name: '李四',
       english_name: 'Li Si',
       gender: 'female',
@@ -83,7 +95,8 @@ const Students: React.FC = () => {
       student.chinese_name.toLowerCase().includes(searchLower) ||
       student.english_name.toLowerCase().includes(searchLower) ||
       student.class_name.includes(searchTerm) ||
-      student.class_name.toLowerCase().includes(searchLower)
+      student.class_name.toLowerCase().includes(searchLower) ||
+      student.student_id.toLowerCase().includes(searchLower)
     );
 
     // Then apply status filter
@@ -108,12 +121,35 @@ const Students: React.FC = () => {
     };
     
     setStudents(prev => [...prev, newStudent]);
-    setIsDialogOpen(false);
+    setIsAddDialogOpen(false);
     
     toast({
       title: "学生添加成功",
       description: `${studentData.chinese_name} 已成功添加到系统中。`
     });
+  };
+
+  const handleEditStudent = (studentData: Student) => {
+    setStudents(prev => prev.map(student => 
+      student.id === studentData.id ? studentData : student
+    ));
+    setIsEditDialogOpen(false);
+    setEditingStudent(null);
+    
+    toast({
+      title: "学生信息更新成功",
+      description: `${studentData.chinese_name} 的信息已成功更新。`
+    });
+  };
+
+  const openEditDialog = (student: Student) => {
+    setEditingStudent(student);
+    setIsEditDialogOpen(true);
+  };
+
+  const closeEditDialog = () => {
+    setIsEditDialogOpen(false);
+    setEditingStudent(null);
   };
 
   return (
@@ -123,23 +159,25 @@ const Students: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">学生管理</h1>
           <p className="text-gray-600">Student Management</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="mt-4 sm:mt-0">
-              <Plus className="h-4 w-4 mr-2" />
-              添加学生
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>添加新学生</DialogTitle>
-            </DialogHeader>
-            <StudentForm
-              onSubmit={handleAddStudent}
-              onCancel={() => setIsDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        {canEditStudents && (
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="mt-4 sm:mt-0">
+                <Plus className="h-4 w-4 mr-2" />
+                添加学生
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>添加新学生</DialogTitle>
+              </DialogHeader>
+              <StudentForm
+                onSubmit={handleAddStudent}
+                onCancel={() => setIsAddDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* Search and Filters */}
@@ -149,7 +187,7 @@ const Students: React.FC = () => {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="搜索学生姓名或班级..."
+                placeholder="搜索学生姓名、学号或班级..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -202,6 +240,7 @@ const Students: React.FC = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900">{student.chinese_name}</h3>
                     <p className="text-sm text-gray-600">{student.english_name}</p>
+                    <p className="text-xs text-gray-500">{student.student_id}</p>
                   </div>
                 </div>
                 <Badge className={getStatusColor(student.status)}>
@@ -230,19 +269,42 @@ const Students: React.FC = () => {
                 )}
               </div>
               
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Edit className="h-4 w-4 mr-1" />
-                  编辑
-                </Button>
-                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+              {canEditStudents && (
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => openEditDialog(student)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    编辑
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Edit Student Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>编辑学生信息</DialogTitle>
+          </DialogHeader>
+          {editingStudent && (
+            <StudentForm
+              initialData={editingStudent}
+              onSubmit={handleEditStudent}
+              onCancel={closeEditDialog}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
