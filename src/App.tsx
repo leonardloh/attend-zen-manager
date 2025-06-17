@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -15,6 +14,7 @@ import Attendance from '@/pages/Attendance';
 import Reports from '@/pages/Reports';
 import Cadres from '@/pages/Cadres';
 import NotFound from "./pages/NotFound";
+import Settings from '@/pages/Settings';
 
 const queryClient = new QueryClient();
 
@@ -102,10 +102,7 @@ const AppRoutes: React.FC = () => {
         path="/settings"
         element={
           <ProtectedRoute>
-            <div className="text-center py-20">
-              <h2 className="text-xl font-semibold mb-4">系统设置</h2>
-              <p className="text-gray-600">功能开发中...</p>
-            </div>
+            <Settings />
           </ProtectedRoute>
         }
       />
