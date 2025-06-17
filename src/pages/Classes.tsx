@@ -17,9 +17,12 @@ interface ClassInfo {
   time: string;
   student_count: number;
   class_monitor_id: string;
+  class_monitor: string;
   deputy_monitors?: string[];
   care_officers?: string[];
   learning_progress: string;
+  page_number: string;
+  line_number: string;
   attendance_rate: number;
   status: 'active' | 'inactive';
 }
