@@ -1,11 +1,10 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { BookOpen, Hash, TrendingUp, Save } from 'lucide-react';
+import { BookOpen, Hash, TrendingUp } from 'lucide-react';
 
 interface AttendanceProgressData {
   learning_progress: string;
@@ -16,13 +15,13 @@ interface AttendanceProgressData {
 interface AttendanceProgressFormProps {
   classId: string;
   classDate?: Date;
-  onSave: (data: AttendanceProgressData) => void;
+  onDataChange: (data: AttendanceProgressData) => void;
 }
 
 const AttendanceProgressForm: React.FC<AttendanceProgressFormProps> = ({ 
   classId, 
   classDate, 
-  onSave 
+  onDataChange 
 }) => {
   const [formData, setFormData] = useState<AttendanceProgressData>({
     learning_progress: '',
@@ -30,25 +29,24 @@ const AttendanceProgressForm: React.FC<AttendanceProgressFormProps> = ({
     line_number: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
   const handleInputChange = (field: keyof AttendanceProgressData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
+    const updatedData = {
+      ...formData,
       [field]: value
-    }));
+    };
+    setFormData(updatedData);
+    onDataChange(updatedData);
   };
 
   const handleNumberInputChange = (field: 'page_number' | 'line_number', value: string) => {
     // Only allow numeric input
     if (value === '' || /^\d+$/.test(value)) {
-      setFormData(prev => ({
-        ...prev,
+      const updatedData = {
+        ...formData,
         [field]: value
-      }));
+      };
+      setFormData(updatedData);
+      onDataChange(updatedData);
     }
   };
 
@@ -61,7 +59,7 @@ const AttendanceProgressForm: React.FC<AttendanceProgressFormProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div>
             <Label htmlFor="learning_progress" className="block text-sm font-medium text-gray-700 mb-2">
               学习进度 / Learning Progress
@@ -105,14 +103,7 @@ const AttendanceProgressForm: React.FC<AttendanceProgressFormProps> = ({
               />
             </div>
           </div>
-
-          <div className="flex justify-end pt-4">
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-              <Save className="h-4 w-4 mr-2" />
-              保存进度
-            </Button>
-          </div>
-        </form>
+        </div>
       </CardContent>
     </Card>
   );

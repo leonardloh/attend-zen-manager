@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { User, Save, RotateCcw } from 'lucide-react';
+import { User, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AttendanceProgressForm from './AttendanceProgressForm';
 
@@ -27,9 +28,10 @@ interface AttendanceProgressData {
 interface AttendanceGridProps {
   classId?: string;
   classDate?: Date;
+  onDataChange?: (attendanceData: AttendanceStatus[], progressData: AttendanceProgressData) => void;
 }
 
-const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate }) => {
+const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onDataChange }) => {
   // Mock students data - in a real app, this would be fetched based on classId
   const [students] = useState<Student[]>([
     { id: '1', chinese_name: '王小明', english_name: 'Wang Xiaoming', gender: 'male' },
@@ -60,43 +62,46 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate }) =
   };
 
   const updateAttendance = (studentId: string, status: AttendanceStatus['status']) => {
-    setAttendance(prev => 
-      prev.map(item => 
-        item.studentId === studentId 
-          ? { ...item, status: item.status === status ? null : status }
-          : item
-      )
+    const updatedAttendance = attendance.map(item => 
+      item.studentId === studentId 
+        ? { ...item, status: item.status === status ? null : status }
+        : item
     );
+    setAttendance(updatedAttendance);
+    
+    // Notify parent component of data changes
+    if (onDataChange) {
+      onDataChange(updatedAttendance, progressData);
+    }
   };
 
   const markAllPresent = () => {
-    setAttendance(prev => 
-      prev.map(item => ({ ...item, status: 'present' }))
-    );
+    const updatedAttendance = attendance.map(item => ({ ...item, status: 'present' as const }));
+    setAttendance(updatedAttendance);
+    
+    // Notify parent component of data changes
+    if (onDataChange) {
+      onDataChange(updatedAttendance, progressData);
+    }
   };
 
   const clearAll = () => {
-    setAttendance(prev => 
-      prev.map(item => ({ ...item, status: null }))
-    );
-  };
-
-  const saveAttendance = () => {
-    // Here you would save the attendance data to your backend
-    console.log('Saving attendance:', {
-      classId,
-      classDate,
-      attendance: attendance.filter(item => item.status !== null),
-      progress: progressData
-    });
+    const updatedAttendance = attendance.map(item => ({ ...item, status: null }));
+    setAttendance(updatedAttendance);
     
-    // Show success message or handle the save operation
-    alert('考勤数据和学习进度已保存！');
+    // Notify parent component of data changes
+    if (onDataChange) {
+      onDataChange(updatedAttendance, progressData);
+    }
   };
 
-  const handleProgressSave = (data: AttendanceProgressData) => {
+  const handleProgressDataChange = (data: AttendanceProgressData) => {
     setProgressData(data);
-    console.log('Progress data updated:', data);
+    
+    // Notify parent component of data changes
+    if (onDataChange) {
+      onDataChange(attendance, data);
+    }
   };
 
   const getStatusCounts = () => {
@@ -119,7 +124,7 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate }) =
       <AttendanceProgressForm
         classId={classId || ''}
         classDate={classDate}
-        onSave={handleProgressSave}
+        onDataChange={handleProgressDataChange}
       />
 
       {/* Header Controls */}
@@ -134,10 +139,6 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate }) =
               <Button onClick={clearAll} variant="outline" size="sm">
                 <RotateCcw className="h-4 w-4 mr-1" />
                 清空
-              </Button>
-              <Button onClick={saveAttendance} size="sm" className="bg-blue-600 hover:bg-blue-700">
-                <Save className="h-4 w-4 mr-1" />
-                保存考勤
               </Button>
             </div>
           </CardTitle>

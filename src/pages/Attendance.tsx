@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,11 +11,28 @@ import { Calendar as CalendarIcon, Clock, Users, Save, Search } from 'lucide-rea
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
+interface AttendanceStatus {
+  studentId: string;
+  status: 'present' | 'online' | 'leave' | 'absent' | null;
+}
+
+interface AttendanceProgressData {
+  learning_progress: string;
+  page_number: string;
+  line_number: string;
+}
+
 const Attendance: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [sessionActive, setSessionActive] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [attendanceData, setAttendanceData] = useState<AttendanceStatus[]>([]);
+  const [progressData, setProgressData] = useState<AttendanceProgressData>({
+    learning_progress: '',
+    page_number: '',
+    line_number: '',
+  });
 
   const classes = [
     { id: '1', name: '初级班A', time: '09:00-11:00', students: 25 },
@@ -35,12 +51,34 @@ const Attendance: React.FC = () => {
   const startAttendanceSession = () => {
     if (selectedClass && selectedDate) {
       setSessionActive(true);
+      // Reset data when starting a new session
+      setAttendanceData([]);
+      setProgressData({
+        learning_progress: '',
+        page_number: '',
+        line_number: '',
+      });
     }
   };
 
+  const handleDataChange = (attendance: AttendanceStatus[], progress: AttendanceProgressData) => {
+    setAttendanceData(attendance);
+    setProgressData(progress);
+  };
+
   const endAttendanceSession = () => {
+    // Save all data when ending the session
+    console.log('Saving attendance:', {
+      classId: selectedClass,
+      classDate: selectedDate,
+      attendance: attendanceData.filter(item => item.status !== null),
+      progress: progressData
+    });
+    
+    // Show success message
+    alert('考勤数据和学习进度已保存！');
+    
     setSessionActive(false);
-    // Here you would typically save the attendance data
   };
 
   if (!sessionActive) {
@@ -187,7 +225,11 @@ const Attendance: React.FC = () => {
         </div>
       </div>
 
-      <AttendanceGrid classId={selectedClass} classDate={selectedDate} />
+      <AttendanceGrid 
+        classId={selectedClass} 
+        classDate={selectedDate} 
+        onDataChange={handleDataChange}
+      />
     </div>
   );
 };
