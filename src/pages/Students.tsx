@@ -16,11 +16,21 @@ interface Student {
   chinese_name: string;
   english_name: string;
   gender: 'male' | 'female';
-  phone?: string;
+  phone: string;
   email?: string;
   class_name: string;
   enrollment_date: string;
   status: '活跃' | '旁听' | '保留';
+  // Required fields
+  postal_code: string;
+  date_of_birth: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  emergency_contact_relation: string;
+  // Optional fields
+  occupation?: string;
+  academic_level?: 'Bachelor' | 'Master' | 'PhD' | 'Other';
+  marriage_status?: 'Single' | 'Married' | 'Divorced' | 'Widowed' | 'Other';
 }
 
 const Students: React.FC = () => {
@@ -47,7 +57,15 @@ const Students: React.FC = () => {
       email: 'wang.xiaoming@example.com',
       class_name: '初级班A',
       enrollment_date: '2024-01-15',
-      status: '活跃'
+      status: '活跃',
+      postal_code: '100001',
+      date_of_birth: '1995-05-15',
+      emergency_contact_name: '王大明',
+      emergency_contact_phone: '13900139001',
+      emergency_contact_relation: 'Parent',
+      occupation: '软件工程师',
+      academic_level: 'Bachelor',
+      marriage_status: 'Single'
     },
     {
       id: '2',
@@ -59,7 +77,15 @@ const Students: React.FC = () => {
       email: 'li.xiaohong@example.com',
       class_name: '中级班B',
       enrollment_date: '2024-02-01',
-      status: '旁听'
+      status: '旁听',
+      postal_code: '100002',
+      date_of_birth: '1992-08-22',
+      emergency_contact_name: '李大红',
+      emergency_contact_phone: '13900139002',
+      emergency_contact_relation: 'Spouse',
+      occupation: '设计师',
+      academic_level: 'Master',
+      marriage_status: 'Married'
     },
     {
       id: '3',
@@ -71,7 +97,15 @@ const Students: React.FC = () => {
       email: 'zhang.san@example.com',
       class_name: '高级班C',
       enrollment_date: '2024-01-20',
-      status: '活跃'
+      status: '活跃',
+      postal_code: '100003',
+      date_of_birth: '1988-12-10',
+      emergency_contact_name: '张大三',
+      emergency_contact_phone: '13900139003',
+      emergency_contact_relation: 'Parent',
+      occupation: '教师',
+      academic_level: 'PhD',
+      marriage_status: 'Married'
     },
     {
       id: '4',
@@ -83,7 +117,12 @@ const Students: React.FC = () => {
       email: 'li.si@example.com',
       class_name: '初级班A',
       enrollment_date: '2024-03-01',
-      status: '保留'
+      status: '保留',
+      postal_code: '100004',
+      date_of_birth: '1990-03-25',
+      emergency_contact_name: '李大四',
+      emergency_contact_phone: '13900139004',
+      emergency_contact_relation: 'Sibling'
     }
   ]);
 
@@ -273,10 +312,26 @@ const Students: React.FC = () => {
                   <span className="text-gray-600">入学日期:</span>
                   <span className="font-medium">{student.enrollment_date}</span>
                 </div>
-                {student.phone && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">电话:</span>
+                  <span className="font-medium">{student.phone}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">邮编:</span>
+                  <span className="font-medium">{student.postal_code}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">出生日期:</span>
+                  <span className="font-medium">{student.date_of_birth}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">紧急联系人:</span>
+                  <span className="font-medium">{student.emergency_contact_name}</span>
+                </div>
+                {student.occupation && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">电话:</span>
-                    <span className="font-medium">{student.phone}</span>
+                    <span className="text-gray-600">职业:</span>
+                    <span className="font-medium">{student.occupation}</span>
                   </div>
                 )}
               </div>
