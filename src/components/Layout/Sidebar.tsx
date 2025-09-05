@@ -46,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const getNavItems = () => {
     switch (user?.role) {
-      case 'admin':
+      case 'super_admin':
         return adminNavItems;
       case 'cadre':
         return cadreNavItems;

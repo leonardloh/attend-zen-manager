@@ -285,7 +285,7 @@ const Dashboard: React.FC = () => {
 
   const renderDashboard = () => {
     switch (user?.role) {
-      case 'admin':
+      case 'super_admin':
         return renderAdminDashboard();
       case 'cadre':
         return renderCadreDashboard();

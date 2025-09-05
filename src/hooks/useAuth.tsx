@@ -6,7 +6,7 @@ interface User {
   student_id: string;
   chinese_name: string;
   english_name: string;
-  role: 'admin' | 'cadre' | 'student';
+  role: 'super_admin' | 'cadre' | 'student';
   phone?: string;
 }
 
@@ -24,9 +24,9 @@ const mockUsers: User[] = [
   {
     id: '1',
     student_id: 'admin001',
-    chinese_name: '管理员',
-    english_name: 'Admin User',
-    role: 'admin',
+    chinese_name: '超级管理员',
+    english_name: 'Super Admin User',
+    role: 'super_admin',
     phone: '13800138000'
   },
   {

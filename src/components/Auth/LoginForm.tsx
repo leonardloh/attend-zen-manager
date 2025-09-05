@@ -85,7 +85,7 @@ const LoginForm: React.FC = () => {
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <p className="text-xs text-gray-600 mb-2">测试账号 / Test Accounts:</p>
             <div className="space-y-1 text-xs">
-              <p><strong>管理员:</strong> admin001 / password</p>
+              <p><strong>超级管理员:</strong> admin001 / password</p>
               <p><strong>干部:</strong> cadre001 / password</p>
               <p><strong>学生:</strong> student001 / password</p>
             </div>

@@ -42,8 +42,8 @@ const Students: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Check if user can edit students (admin or cadre)
-  const canEditStudents = user?.role === 'admin' || user?.role === 'cadre';
+  // Check if user can edit students (super_admin or cadre)
+  const canEditStudents = user?.role === 'super_admin' || user?.role === 'cadre';
   
   // Mock data
   const [students, setStudents] = useState<Student[]>([

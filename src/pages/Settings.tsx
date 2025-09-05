@@ -21,7 +21,7 @@ const Settings: React.FC = () => {
             <div className="text-sm text-blue-800">
               <p><strong>姓名：</strong>{user?.chinese_name}</p>
               <p><strong>学号：</strong>{user?.student_id}</p>
-              <p><strong>角色：</strong>{user?.role === 'admin' ? '管理员' : user?.role === 'cadre' ? '干部' : '学生'}</p>
+              <p><strong>角色：</strong>{user?.role === 'super_admin' ? '超级管理员' : user?.role === 'cadre' ? '干部' : '学生'}</p>
             </div>
           </div>
           <PasswordChangeForm />
