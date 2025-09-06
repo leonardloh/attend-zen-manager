@@ -8,10 +8,11 @@ import { Shield, Edit, Trash2, User2, Check, UserPlus } from 'lucide-react';
 
 interface Cadre {
   id: string;
-  chinese_name: string;
-  english_name: string;
-  gender: 'male' | 'female';
-  date_of_birth: string;
+  student_id: string; // Reference to student
+  chinese_name: string; // Auto-populated from student
+  english_name: string; // Auto-populated from student
+  gender: 'male' | 'female'; // Auto-populated from student
+  date_of_birth: string; // Auto-populated from student
   role: '班长' | '副班长' | '关怀员';
   mother_class: string;
   support_classes: string[];
@@ -61,12 +62,18 @@ const CadreCard: React.FC<CadreCardProps> = ({ cadre, onEdit, onDelete }) => {
               <p className="text-sm text-gray-600">{cadre.english_name}</p>
             </div>
           </div>
-          <Badge className={getRoleColor(cadre.role)}>
-            {cadre.role}
-          </Badge>
+          <div className="flex flex-col gap-2">
+            <Badge className={getRoleColor(cadre.role)}>
+              {cadre.role}
+            </Badge>
+          </div>
         </div>
         
         <div className="space-y-2 mb-4">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-600">学员编号:</span>
+            <span className="font-medium">{cadre.student_id}</span>
+          </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-600">母班班名:</span>
             <span className="font-medium">{cadre.mother_class}</span>

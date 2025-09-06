@@ -10,7 +10,8 @@ import {
   BarChart3, 
   Settings,
   BookOpen,
-  UserCheck
+  UserCheck,
+  Building2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -27,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { icon: Users, label: '学生管理', sublabel: 'Students', path: '/students' },
     { icon: BookOpen, label: '班级管理', sublabel: 'Classes', path: '/classes' },
     { icon: UserCheck, label: '干部管理', sublabel: 'Cadres', path: '/cadres' },
+    { icon: Building2, label: '教室管理', sublabel: 'Classrooms', path: '/classrooms' },
     { icon: ClipboardList, label: '考勤记录', sublabel: 'Attendance', path: '/attendance' },
     { icon: BarChart3, label: '报告统计', sublabel: 'Reports', path: '/reports' },
     { icon: Settings, label: '系统设置', sublabel: 'Settings', path: '/settings' },

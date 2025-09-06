@@ -1,18 +1,20 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import ClassMultiSelect from './ClassMultiSelect';
 import ClassSearchInput from '@/components/Classes/ClassSearchInput';
+import StudentSearchInput from '@/components/Students/StudentSearchInput';
 
 interface Cadre {
   id: string;
-  chinese_name: string;
-  english_name: string;
-  gender: 'male' | 'female';
-  date_of_birth: string;
+  student_id: string; // Reference to student
+  chinese_name: string; // Auto-populated from student
+  english_name: string; // Auto-populated from student
+  gender: 'male' | 'female'; // Auto-populated from student
+  date_of_birth: string; // Auto-populated from student
   role: '班长' | '副班长' | '关怀员';
   mother_class: string;
   support_classes: string[];
@@ -27,7 +29,48 @@ interface CadreFormProps {
 }
 
 const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }) => {
+  // Mock students data - in real app this would come from API or props
+  const mockStudents = [
+    {
+      id: '1',
+      student_id: 'S2024001',
+      chinese_name: '王小明',
+      english_name: 'Wang Xiaoming',
+      gender: 'male' as const,
+      date_of_birth: '1995-05-15',
+      class_name: '初级班A'
+    },
+    {
+      id: '2',
+      student_id: 'S2024002',
+      chinese_name: '李小红',
+      english_name: 'Li Xiaohong',
+      gender: 'female' as const,
+      date_of_birth: '1992-08-22',
+      class_name: '中级班B'
+    },
+    {
+      id: '3',
+      student_id: 'S2024003',
+      chinese_name: '张三',
+      english_name: 'Zhang San',
+      gender: 'male' as const,
+      date_of_birth: '1988-12-10',
+      class_name: '高级班C'
+    },
+    {
+      id: '4',
+      student_id: 'S2024004',
+      chinese_name: '李四',
+      english_name: 'Li Si',
+      gender: 'female' as const,
+      date_of_birth: '1990-03-25',
+      class_name: '初级班A'
+    }
+  ];
+
   const [formData, setFormData] = useState({
+    student_id: initialData?.student_id || '',
     chinese_name: initialData?.chinese_name || '',
     english_name: initialData?.english_name || '',
     gender: initialData?.gender || 'male' as const,
@@ -47,8 +90,31 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
     '初级班D', '中级班E', '高级班F'
   ];
 
+  // Auto-populate student information when student is selected
+  useEffect(() => {
+    if (formData.student_id) {
+      const selectedStudent = mockStudents.find(s => s.student_id === formData.student_id);
+      if (selectedStudent) {
+        setFormData(prev => ({
+          ...prev,
+          chinese_name: selectedStudent.chinese_name,
+          english_name: selectedStudent.english_name,
+          gender: selectedStudent.gender,
+          date_of_birth: selectedStudent.date_of_birth,
+          mother_class: prev.mother_class || selectedStudent.class_name // Use student's class as default if no mother class selected
+        }));
+      }
+    }
+  }, [formData.student_id]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.student_id || !formData.role || !formData.mother_class) {
+      alert('请填写所有必填字段 (Please fill in all required fields)');
+      return;
+    }
     
     if (initialData) {
       onSubmit({ ...formData, id: initialData.id });
@@ -59,81 +125,75 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="chinese_name">中文姓名 *</Label>
-          <Input
-            id="chinese_name"
-            value={formData.chinese_name}
-            onChange={(e) => setFormData({ ...formData, chinese_name: e.target.value })}
-            required
-          />
-        </div>
+      {/* Student Selection */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-gray-900 border-b pb-2">学员选择</h3>
         
         <div className="space-y-2">
-          <Label htmlFor="english_name">英文姓名 *</Label>
-          <Input
-            id="english_name"
-            value={formData.english_name}
-            onChange={(e) => setFormData({ ...formData, english_name: e.target.value })}
-            required
+          <Label htmlFor="student_id">学员编号 *</Label>
+          <StudentSearchInput
+            value={formData.student_id}
+            onChange={(studentId) => setFormData({ ...formData, student_id: studentId })}
+            placeholder="搜索学员编号或姓名..."
           />
         </div>
+
+        {/* Display selected student information */}
+        {formData.student_id && (
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">已选择学员信息</h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">中文姓名:</span>
+                <span className="ml-2 font-medium">{formData.chinese_name}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">英文姓名:</span>
+                <span className="ml-2 font-medium">{formData.english_name}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">性别:</span>
+                <span className="ml-2 font-medium">{formData.gender === 'male' ? '男' : '女'}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">出生日期:</span>
+                <span className="ml-2 font-medium">{formData.date_of_birth}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="gender">性别 *</Label>
-          <select
-            id="gender"
-            value={formData.gender}
-            onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'male' | 'female' })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          >
-            <option value="male">男</option>
-            <option value="female">女</option>
-          </select>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="date_of_birth">出生日期 *</Label>
-          <Input
-            id="date_of_birth"
-            type="date"
-            value={formData.date_of_birth}
-            onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="role">职位 *</Label>
-          <select
-            id="role"
-            value={formData.role}
-            onChange={(e) => setFormData({ ...formData, role: e.target.value as '班长' | '副班长' | '关怀员' })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          >
-            {roles.map(role => (
-              <option key={role} value={role}>{role}</option>
+      {/* Role Selection */}
+      <div className="space-y-2">
+        <Label htmlFor="role">职位 *</Label>
+        <Select
+          value={formData.role}
+          onValueChange={(value: '班长' | '副班长' | '关怀员') => 
+            setFormData({ ...formData, role: value })
+          }
+          required
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="选择职位" />
+          </SelectTrigger>
+          <SelectContent>
+            {roles.map((role) => (
+              <SelectItem key={role} value={role}>
+                {role}
+              </SelectItem>
             ))}
-          </select>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="mother_class">母班班名 *</Label>
-          <ClassSearchInput
-            value={formData.mother_class}
-            onChange={(className) => setFormData({ ...formData, mother_class: className })}
-            placeholder="搜索母班班名..."
-            excludeClasses={formData.support_classes}
-            includeInactive={false}
-          />
-        </div>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="mother_class">母班班名 *</Label>
+        <ClassSearchInput
+          value={formData.mother_class}
+          onChange={(className) => setFormData({ ...formData, mother_class: className })}
+          placeholder="选择或搜索班级..."
+        />
       </div>
 
       <ClassMultiSelect

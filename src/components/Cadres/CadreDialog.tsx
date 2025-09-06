@@ -7,10 +7,11 @@ import CadreForm from './CadreForm';
 
 interface Cadre {
   id: string;
-  chinese_name: string;
-  english_name: string;
-  gender: 'male' | 'female';
-  date_of_birth: string;
+  student_id: string; // Reference to student
+  chinese_name: string; // Auto-populated from student
+  english_name: string; // Auto-populated from student
+  gender: 'male' | 'female'; // Auto-populated from student
+  date_of_birth: string; // Auto-populated from student
   role: '班长' | '副班长' | '关怀员';
   mother_class: string;
   support_classes: string[];

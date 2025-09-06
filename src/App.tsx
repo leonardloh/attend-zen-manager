@@ -13,6 +13,7 @@ import Classes from '@/pages/Classes';
 import Attendance from '@/pages/Attendance';
 import Reports from '@/pages/Reports';
 import Cadres from '@/pages/Cadres';
+import Classrooms from '@/pages/Classrooms';
 import NotFound from "./pages/NotFound";
 import Settings from '@/pages/Settings';
 
@@ -95,6 +96,14 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <Cadres />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/classrooms"
+        element={
+          <ProtectedRoute>
+            <Classrooms />
           </ProtectedRoute>
         }
       />

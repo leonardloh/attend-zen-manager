@@ -294,14 +294,16 @@ const Students: React.FC = () => {
                     <p className="text-xs text-gray-500">{student.student_id}</p>
                   </div>
                 </div>
-                <Badge className={getStatusColor(student.status)}>
-                  {student.status}
-                </Badge>
+                <div className="flex gap-2 flex-col sm:flex-row">
+                  <Badge className={getStatusColor(student.status)}>
+                    {student.status}
+                  </Badge>
+                </div>
               </div>
               
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">班级:</span>
+                  <span className="text-gray-600">所在班级:</span>
                   <span className="font-medium">{student.class_name}</span>
                 </div>
                 <div className="flex justify-between text-sm">

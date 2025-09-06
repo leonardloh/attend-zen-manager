@@ -7,10 +7,11 @@ import CadreDialog from '@/components/Cadres/CadreDialog';
 
 interface Cadre {
   id: string;
-  chinese_name: string;
-  english_name: string;
-  gender: 'male' | 'female';
-  date_of_birth: string;
+  student_id: string; // Reference to student
+  chinese_name: string; // Auto-populated from student
+  english_name: string; // Auto-populated from student
+  gender: 'male' | 'female'; // Auto-populated from student
+  date_of_birth: string; // Auto-populated from student
   role: '班长' | '副班长' | '关怀员';
   mother_class: string;
   support_classes: string[];
@@ -28,10 +29,11 @@ const Cadres: React.FC = () => {
   const [cadres, setCadres] = useState<Cadre[]>([
     {
       id: '1',
-      chinese_name: '李明',
-      english_name: 'Li Ming',
+      student_id: 'S2024001',
+      chinese_name: '王小明',
+      english_name: 'Wang Xiaoming',
       gender: 'male',
-      date_of_birth: '2000-05-15',
+      date_of_birth: '1995-05-15',
       role: '班长',
       mother_class: '初级班A',
       support_classes: ['初级班A', '初级班D'],
@@ -40,10 +42,11 @@ const Cadres: React.FC = () => {
     },
     {
       id: '2',
-      chinese_name: '王丽',
-      english_name: 'Wang Li',
+      student_id: 'S2024002',
+      chinese_name: '李小红',
+      english_name: 'Li Xiaohong',
       gender: 'female',
-      date_of_birth: '2001-03-20',
+      date_of_birth: '1992-08-22',
       role: '副班长',
       mother_class: '中级班B',
       support_classes: ['中级班B', '中级班E'],
@@ -52,26 +55,15 @@ const Cadres: React.FC = () => {
     },
     {
       id: '3',
-      chinese_name: '张伟',
-      english_name: 'Zhang Wei',
+      student_id: 'S2024003',
+      chinese_name: '张三',
+      english_name: 'Zhang San',
       gender: 'male',
-      date_of_birth: '2000-12-08',
+      date_of_birth: '1988-12-10',
       role: '关怀员',
       mother_class: '高级班C',
       support_classes: ['高级班C'],
       can_take_attendance: false,
-      can_register_students: true
-    },
-    {
-      id: '4',
-      chinese_name: '刘华',
-      english_name: 'Liu Hua',
-      gender: 'female',
-      date_of_birth: '2001-07-22',
-      role: '班长',
-      mother_class: '初级班D',
-      support_classes: ['初级班D', '高级班F'],
-      can_take_attendance: true,
       can_register_students: true
     }
   ]);
@@ -79,6 +71,7 @@ const Cadres: React.FC = () => {
   const filteredCadres = cadres.filter(cadre =>
     cadre.chinese_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cadre.english_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cadre.student_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cadre.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cadre.mother_class.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cadre.support_classes.some(cls => cls.toLowerCase().includes(searchTerm.toLowerCase()))

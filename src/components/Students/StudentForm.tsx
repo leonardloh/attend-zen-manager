@@ -75,8 +75,9 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
     // Validate required fields
     if (!formData.student_id || !formData.chinese_name || !formData.english_name || 
         !formData.phone || !formData.class_name || !formData.enrollment_date || 
-        !formData.postal_code || !formData.date_of_birth || !formData.emergency_contact_name || 
-        !formData.emergency_contact_phone || !formData.emergency_contact_relation) {
+        !formData.postal_code || !formData.date_of_birth || 
+        !formData.emergency_contact_name || !formData.emergency_contact_phone || 
+        !formData.emergency_contact_relation) {
       alert('请填写所有必填字段 (Please fill in all required fields)');
       return;
     }
@@ -152,7 +153,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
         </div>
         
         <div className="space-y-2">
-          <Label>班级 *</Label>
+          <Label>所在班级 *</Label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
