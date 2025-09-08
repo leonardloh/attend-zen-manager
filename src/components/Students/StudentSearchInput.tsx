@@ -4,25 +4,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface Student {
-  id: string;
-  student_id: string;
-  chinese_name: string;
-  english_name: string;
-}
-
-// Mock student data - in real app this would come from props or API
-const mockStudents: Student[] = [
-  { id: '1', student_id: 'S2024001', chinese_name: '王小明', english_name: 'Wang Xiaoming' },
-  { id: '2', student_id: 'S2024002', chinese_name: '李小红', english_name: 'Li Xiaohong' },
-  { id: '3', student_id: 'S2024003', chinese_name: '张三', english_name: 'Zhang San' },
-  { id: '4', student_id: 'S2024004', chinese_name: '李四', english_name: 'Li Si' },
-  { id: '5', student_id: 'S2024005', chinese_name: '王五', english_name: 'Wang Wu' },
-  { id: '6', student_id: 'S2024006', chinese_name: '赵六', english_name: 'Zhao Liu' },
-  { id: '7', student_id: 'S2024007', chinese_name: '钱七', english_name: 'Qian Qi' },
-  { id: '8', student_id: 'S2024008', chinese_name: '孙八', english_name: 'Sun Ba' },
-];
+import { mockStudents, type Student } from '@/data/mockData';
 
 interface StudentSearchInputProps {
   value: string;

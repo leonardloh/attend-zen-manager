@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import ClassMultiSelect from './ClassMultiSelect';
 import ClassSearchInput from '@/components/Classes/ClassSearchInput';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
+import { mockStudents } from '@/data/mockData';
 
 interface Cadre {
   id: string;
@@ -29,45 +30,6 @@ interface CadreFormProps {
 }
 
 const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }) => {
-  // Mock students data - in real app this would come from API or props
-  const mockStudents = [
-    {
-      id: '1',
-      student_id: 'S2024001',
-      chinese_name: '王小明',
-      english_name: 'Wang Xiaoming',
-      gender: 'male' as const,
-      date_of_birth: '1995-05-15',
-      class_name: '初级班A'
-    },
-    {
-      id: '2',
-      student_id: 'S2024002',
-      chinese_name: '李小红',
-      english_name: 'Li Xiaohong',
-      gender: 'female' as const,
-      date_of_birth: '1992-08-22',
-      class_name: '中级班B'
-    },
-    {
-      id: '3',
-      student_id: 'S2024003',
-      chinese_name: '张三',
-      english_name: 'Zhang San',
-      gender: 'male' as const,
-      date_of_birth: '1988-12-10',
-      class_name: '高级班C'
-    },
-    {
-      id: '4',
-      student_id: 'S2024004',
-      chinese_name: '李四',
-      english_name: 'Li Si',
-      gender: 'female' as const,
-      date_of_birth: '1990-03-25',
-      class_name: '初级班A'
-    }
-  ];
 
   const [formData, setFormData] = useState({
     student_id: initialData?.student_id || '',

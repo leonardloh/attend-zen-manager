@@ -9,23 +9,8 @@ import ClassForm from '@/components/Classes/ClassForm';
 import ClassDetailsView from '@/components/Classes/ClassDetailsView';
 import DeleteClassDialog from '@/components/Classes/DeleteClassDialog';
 import { useToast } from '@/hooks/use-toast';
-
-interface ClassInfo {
-  id: string;
-  name: string;
-  region: '北马' | '中马' | '南马';
-  time: string;
-  student_count: number;
-  class_monitor_id: string;
-  class_monitor: string;
-  deputy_monitors?: string[];
-  care_officers?: string[];
-  learning_progress: string;
-  page_number: string;
-  line_number: string;
-  attendance_rate: number;
-  status: 'active' | 'inactive';
-}
+import { useData } from '@/contexts/DataContext';
+import { getStudentById, type ClassInfo } from '@/data/mockData';
 
 const Classes: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -36,64 +21,7 @@ const Classes: React.FC = () => {
   const [classToDelete, setClassToDelete] = useState<ClassInfo | null>(null);
   const { toast } = useToast();
   
-  const [classes, setClasses] = useState<ClassInfo[]>([
-    {
-      id: '1',
-      name: '初级班A',
-      region: '北马',
-      time: '周一 09:00-11:00',
-      student_count: 25,
-      class_monitor_id: 'monitor_001',
-      class_monitor: '王小明',
-      learning_progress: '已完成基础语法，正在学习日常对话',
-      page_number: '第15页',
-      line_number: '第8行',
-      attendance_rate: 85,
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: '中级班B',
-      region: '中马',
-      time: '周三 14:00-16:00',
-      student_count: 22,
-      class_monitor_id: 'monitor_002',
-      class_monitor: '李小红',
-      learning_progress: '已完成中级语法，正在学习商务对话',
-      page_number: '第32页',
-      line_number: '第12行',
-      attendance_rate: 92,
-      status: 'active'
-    },
-    {
-      id: '3',
-      name: '高级班C',
-      region: '南马',
-      time: '周五 19:00-21:00',
-      student_count: 18,
-      class_monitor_id: 'monitor_003',
-      class_monitor: '张三',
-      learning_progress: '已完成高级语法，正在准备考试',
-      page_number: '第48页',
-      line_number: '第6行',
-      attendance_rate: 78,
-      status: 'active'
-    },
-    {
-      id: '4',
-      name: '周末班D',
-      region: '北马',
-      time: '周六 10:00-12:00',
-      student_count: 5,
-      class_monitor_id: 'monitor_004',
-      class_monitor: '李四',
-      learning_progress: '刚开始基础学习',
-      page_number: '第3页',
-      line_number: '第15行',
-      attendance_rate: 60,
-      status: 'inactive'
-    }
-  ]);
+  const { classes, addClass, updateClass, deleteClass } = useData();
 
   const getRegionColor = (region: string) => {
     switch (region) {
@@ -115,13 +43,7 @@ const Classes: React.FC = () => {
   };
 
   const handleAddClass = (classData: Omit<ClassInfo, 'id' | 'status'>) => {
-    const newClass: ClassInfo = {
-      ...classData,
-      id: Date.now().toString(),
-      status: 'active'
-    };
-    
-    setClasses(prev => [...prev, newClass]);
+    addClass(classData);
     setIsDialogOpen(false);
     
     toast({
@@ -149,7 +71,7 @@ const Classes: React.FC = () => {
       status: selectedClass.status
     };
     
-    setClasses(prev => prev.map(c => c.id === selectedClass.id ? updatedClass : c));
+    updateClass(updatedClass);
     setIsEditDialogOpen(false);
     setSelectedClass(null);
     
@@ -167,7 +89,7 @@ const Classes: React.FC = () => {
   const handleConfirmDelete = (classId: string) => {
     const deletedClass = classes.find(c => c.id === classId);
     
-    setClasses(prev => prev.filter(c => c.id !== classId));
+    deleteClass(classId);
     setClassToDelete(null);
     
     toast({

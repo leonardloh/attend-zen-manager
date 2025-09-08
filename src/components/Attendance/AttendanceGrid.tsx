@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,11 +29,12 @@ interface AttendanceGridProps {
   classId?: string;
   classDate?: Date;
   onDataChange?: (attendanceData: AttendanceStatus[], progressData: AttendanceProgressData) => void;
+  students?: Student[]; // Allow passing students from parent
 }
 
-const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onDataChange }) => {
-  // Mock students data - in a real app, this would be fetched based on classId
-  const [students] = useState<Student[]>([
+const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onDataChange, students: propStudents }) => {
+  // Default mock students data - in a real app, this would be fetched based on classId
+  const defaultStudents: Student[] = [
     { id: '1', chinese_name: '王小明', english_name: 'Wang Xiaoming', gender: 'male' },
     { id: '2', chinese_name: '李小红', english_name: 'Li Xiaohong', gender: 'female' },
     { id: '3', chinese_name: '张三', english_name: 'Zhang San', gender: 'male' },
@@ -42,11 +43,17 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
     { id: '6', chinese_name: '赵六', english_name: 'Zhao Liu', gender: 'female' },
     { id: '7', chinese_name: '钱七', english_name: 'Qian Qi', gender: 'male' },
     { id: '8', chinese_name: '孙八', english_name: 'Sun Ba', gender: 'female' },
-  ]);
+  ];
+  
+  // Use passed students or default to mock data
+  const students = propStudents || defaultStudents;
 
-  const [attendance, setAttendance] = useState<AttendanceStatus[]>(
-    students.map(student => ({ studentId: student.id, status: null }))
-  );
+  const [attendance, setAttendance] = useState<AttendanceStatus[]>([]);
+
+  // Update attendance when students change
+  useEffect(() => {
+    setAttendance(students.map(student => ({ studentId: student.id, status: null })));
+  }, [students]);
 
   const [progressData, setProgressData] = useState<AttendanceProgressData>({
     learning_progress: '',

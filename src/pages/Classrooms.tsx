@@ -12,6 +12,7 @@ import MainBranchForm from '@/components/Classrooms/MainBranchForm';
 import SubBranchForm from '@/components/Classrooms/SubBranchForm';
 import MainBranchCard from '@/components/Classrooms/MainBranchCard';
 import SubBranchCard from '@/components/Classrooms/SubBranchCard';
+import { useData } from '@/contexts/DataContext';
 
 // Data interfaces
 export interface Region {
@@ -93,73 +94,8 @@ const Classrooms: React.FC = () => {
     }
   ]);
 
-  const [mainBranches, setMainBranches] = useState<MainBranch[]>([
-    {
-      id: '1',
-      name: '北马总院',
-      region_id: '1',
-      region_name: '北马',
-      student_id: 'S2024001',
-      contact_person: '王小明',
-      contact_phone: '13800138001',
-      created_date: '2024-01-01'
-    },
-    {
-      id: '2',
-      name: '中马总院',
-      region_id: '2',
-      region_name: '中马',
-      student_id: 'S2024002',
-      contact_person: '李小红',
-      contact_phone: '13800138002',
-      created_date: '2024-01-01'
-    }
-  ]);
-
-  const [subBranches, setSubBranches] = useState<SubBranch[]>([
-    {
-      id: '1',
-      name: '甲洞分院',
-      main_branch_id: '2',
-      main_branch_name: '中马总院',
-      region_id: '2',
-      region_name: '中马',
-      state: '雪隆',
-      address: '甲洞分院地址',
-      student_id: 'S2024003',
-      contact_person: '张三',
-      contact_phone: '13800138003',
-      created_date: '2024-01-01'
-    },
-    {
-      id: '2',
-      name: '八打灵分院',
-      main_branch_id: '2',
-      main_branch_name: '中马总院',
-      region_id: '2',
-      region_name: '中马',
-      state: '雪隆',
-      address: '八打灵分院地址',
-      student_id: 'S2024004',
-      contact_person: '李四',
-      contact_phone: '13800138004',
-      created_date: '2024-01-01'
-    },
-    {
-      id: '3',
-      name: '槟城分院',
-      main_branch_id: '1',
-      main_branch_name: '北马总院',
-      region_id: '1',
-      region_name: '北马',
-      state: '槟城',
-      address: '槟城分院地址',
-      student_id: 'S2024001',
-      contact_person: '王小明',
-      contact_phone: '13800138001',
-      created_date: '2024-01-01'
-    }
-  ]);
+  // Use DataContext for branches data
+  const { mainBranches, updateMainBranch, addMainBranch, deleteMainBranch, subBranches, updateSubBranch, addSubBranch, deleteSubBranch } = useData();
 
   // Check if user can manage classrooms (super_admin only)
   const canManageClassrooms = user?.role === 'super_admin';
@@ -178,11 +114,7 @@ const Classrooms: React.FC = () => {
 
   // CRUD handlers
   const handleAddMainBranch = (branchData: Omit<MainBranch, 'id'>) => {
-    const newBranch: MainBranch = {
-      ...branchData,
-      id: Date.now().toString()
-    };
-    setMainBranches(prev => [...prev, newBranch]);
+    addMainBranch(branchData);
     setIsAddDialogOpen(false);
     toast({
       title: "总院添加成功",
@@ -191,9 +123,7 @@ const Classrooms: React.FC = () => {
   };
 
   const handleEditMainBranch = (branchData: MainBranch) => {
-    setMainBranches(prev => prev.map(branch => 
-      branch.id === branchData.id ? branchData : branch
-    ));
+    updateMainBranch(branchData);
     setEditingMainBranch(null);
     setIsEditMainBranchDialogOpen(false);
     toast({
@@ -204,7 +134,7 @@ const Classrooms: React.FC = () => {
 
   const handleDeleteMainBranch = (branchId: string) => {
     const deletedBranch = mainBranches.find(branch => branch.id === branchId);
-    setMainBranches(prev => prev.filter(branch => branch.id !== branchId));
+    deleteMainBranch(branchId);
     toast({
       title: "总院删除成功",
       description: `${deletedBranch?.name} 已从系统中删除。`,
@@ -213,11 +143,7 @@ const Classrooms: React.FC = () => {
   };
 
   const handleAddSubBranch = (branchData: Omit<SubBranch, 'id'>) => {
-    const newBranch: SubBranch = {
-      ...branchData,
-      id: Date.now().toString()
-    };
-    setSubBranches(prev => [...prev, newBranch]);
+    addSubBranch(branchData);
     setIsAddDialogOpen(false);
     toast({
       title: "分院添加成功",
@@ -239,9 +165,7 @@ const Classrooms: React.FC = () => {
         region_name: branchData.region_name
       };
       
-      setSubBranches(prev => prev.map(branch => 
-        branch.id === existingBranch.id ? updatedBranch : branch
-      ));
+      updateSubBranch(updatedBranch);
       
       toast({
         title: "分院关联成功",
@@ -254,9 +178,7 @@ const Classrooms: React.FC = () => {
   };
 
   const handleEditSubBranch = (branchData: SubBranch) => {
-    setSubBranches(prev => prev.map(branch => 
-      branch.id === branchData.id ? branchData : branch
-    ));
+    updateSubBranch(branchData);
     setEditingSubBranch(null);
     setIsEditSubBranchDialogOpen(false);
     toast({
@@ -267,7 +189,7 @@ const Classrooms: React.FC = () => {
 
   const handleDeleteSubBranch = (branchId: string) => {
     const deletedBranch = subBranches.find(branch => branch.id === branchId);
-    setSubBranches(prev => prev.filter(branch => branch.id !== branchId));
+    deleteSubBranch(branchId);
     toast({
       title: "分院删除成功",
       description: `${deletedBranch?.name} 已从系统中删除。`,

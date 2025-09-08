@@ -4,76 +4,9 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { mockClasses, type ClassInfo } from '@/data/mockData';
 
-interface ClassInfo {
-  id: string;
-  name: string;
-  region: '北马' | '中马' | '南马';
-  time: string;
-  student_count: number;
-  status: 'active' | 'inactive';
-}
 
-// Mock class data - matches the actual classes from the system
-const mockClasses: ClassInfo[] = [
-  {
-    id: '1',
-    name: '初级班A',
-    region: '北马',
-    time: '周一 09:00-11:00',
-    student_count: 25,
-    status: 'active'
-  },
-  {
-    id: '2',
-    name: '中级班B',
-    region: '中马',
-    time: '周三 14:00-16:00',
-    student_count: 22,
-    status: 'active'
-  },
-  {
-    id: '3',
-    name: '高级班C',
-    region: '南马',
-    time: '周五 19:00-21:00',
-    student_count: 18,
-    status: 'active'
-  },
-  {
-    id: '4',
-    name: '周末班D',
-    region: '北马',
-    time: '周六 10:00-12:00',
-    student_count: 5,
-    status: 'inactive'
-  },
-  // Additional classes that were referenced in the original CadreForm
-  {
-    id: '5',
-    name: '初级班D',
-    region: '中马',
-    time: '周二 10:00-12:00',
-    student_count: 20,
-    status: 'active'
-  },
-  {
-    id: '6',
-    name: '中级班E',
-    region: '南马',
-    time: '周四 14:00-16:00',
-    student_count: 15,
-    status: 'active'
-  },
-  {
-    id: '7',
-    name: '高级班F',
-    region: '北马',
-    time: '周五 19:00-21:00',
-    student_count: 12,
-    status: 'active'
-  }
-];
 
 interface ClassSearchInputProps {
   value: string;

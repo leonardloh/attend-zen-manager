@@ -9,29 +9,8 @@ import { Search, Plus, Edit, Trash2, User } from 'lucide-react';
 import StudentForm from '@/components/Students/StudentForm';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-
-interface Student {
-  id: string;
-  student_id: string;
-  chinese_name: string;
-  english_name: string;
-  gender: 'male' | 'female';
-  phone: string;
-  email?: string;
-  class_name: string;
-  enrollment_date: string;
-  status: '活跃' | '旁听' | '保留';
-  // Required fields
-  postal_code: string;
-  date_of_birth: string;
-  emergency_contact_name: string;
-  emergency_contact_phone: string;
-  emergency_contact_relation: string;
-  // Optional fields
-  occupation?: string;
-  academic_level?: 'Bachelor' | 'Master' | 'PhD' | 'Other';
-  marriage_status?: 'Single' | 'Married' | 'Divorced' | 'Widowed' | 'Other';
-}
+import { useData } from '@/contexts/DataContext';
+import { type Student } from '@/data/mockData';
 
 const Students: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,86 +24,8 @@ const Students: React.FC = () => {
   // Check if user can edit students (super_admin or cadre)
   const canEditStudents = user?.role === 'super_admin' || user?.role === 'cadre';
   
-  // Mock data
-  const [students, setStudents] = useState<Student[]>([
-    {
-      id: '1',
-      student_id: 'S2024001',
-      chinese_name: '王小明',
-      english_name: 'Wang Xiaoming',
-      gender: 'male',
-      phone: '13800138001',
-      email: 'wang.xiaoming@example.com',
-      class_name: '初级班A',
-      enrollment_date: '2024-01-15',
-      status: '活跃',
-      postal_code: '100001',
-      date_of_birth: '1995-05-15',
-      emergency_contact_name: '王大明',
-      emergency_contact_phone: '13900139001',
-      emergency_contact_relation: 'Parent',
-      occupation: '软件工程师',
-      academic_level: 'Bachelor',
-      marriage_status: 'Single'
-    },
-    {
-      id: '2',
-      student_id: 'S2024002',
-      chinese_name: '李小红',
-      english_name: 'Li Xiaohong',
-      gender: 'female',
-      phone: '13800138002',
-      email: 'li.xiaohong@example.com',
-      class_name: '中级班B',
-      enrollment_date: '2024-02-01',
-      status: '旁听',
-      postal_code: '100002',
-      date_of_birth: '1992-08-22',
-      emergency_contact_name: '李大红',
-      emergency_contact_phone: '13900139002',
-      emergency_contact_relation: 'Spouse',
-      occupation: '设计师',
-      academic_level: 'Master',
-      marriage_status: 'Married'
-    },
-    {
-      id: '3',
-      student_id: 'S2024003',
-      chinese_name: '张三',
-      english_name: 'Zhang San',
-      gender: 'male',
-      phone: '13800138003',
-      email: 'zhang.san@example.com',
-      class_name: '高级班C',
-      enrollment_date: '2024-01-20',
-      status: '活跃',
-      postal_code: '100003',
-      date_of_birth: '1988-12-10',
-      emergency_contact_name: '张大三',
-      emergency_contact_phone: '13900139003',
-      emergency_contact_relation: 'Parent',
-      occupation: '教师',
-      academic_level: 'PhD',
-      marriage_status: 'Married'
-    },
-    {
-      id: '4',
-      student_id: 'S2024004',
-      chinese_name: '李四',
-      english_name: 'Li Si',
-      gender: 'female',
-      phone: '13800138004',
-      email: 'li.si@example.com',
-      class_name: '初级班A',
-      enrollment_date: '2024-03-01',
-      status: '保留',
-      postal_code: '100004',
-      date_of_birth: '1990-03-25',
-      emergency_contact_name: '李大四',
-      emergency_contact_phone: '13900139004',
-      emergency_contact_relation: 'Sibling'
-    }
-  ]);
+  // Use DataContext for students data
+  const { students, updateStudent, addStudent, deleteStudent } = useData();
 
   const filteredStudents = students.filter(student => {
     // First apply search filter
@@ -154,12 +55,7 @@ const Students: React.FC = () => {
   };
 
   const handleAddStudent = (studentData: Omit<Student, 'id'>) => {
-    const newStudent: Student = {
-      ...studentData,
-      id: Date.now().toString()
-    };
-    
-    setStudents(prev => [...prev, newStudent]);
+    addStudent(studentData);
     setIsAddDialogOpen(false);
     
     toast({
@@ -169,9 +65,7 @@ const Students: React.FC = () => {
   };
 
   const handleEditStudent = (studentData: Student) => {
-    setStudents(prev => prev.map(student => 
-      student.id === studentData.id ? studentData : student
-    ));
+    updateStudent(studentData);
     setIsEditDialogOpen(false);
     setEditingStudent(null);
     
@@ -185,7 +79,7 @@ const Students: React.FC = () => {
     const student = students.find(s => s.id === studentId);
     if (!student) return;
 
-    setStudents(prev => prev.filter(s => s.id !== studentId));
+    deleteStudent(studentId);
     
     toast({
       title: "学生删除成功",

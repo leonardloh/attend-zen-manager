@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { X, Plus } from 'lucide-react';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
+import StudentMultiSelect from '@/components/Students/StudentMultiSelect';
 import {
   Form,
   FormControl,
@@ -37,6 +38,7 @@ const classFormSchema = z.object({
   class_monitor_id: z.string().min(1, '班长学号不能为空'),
   deputy_monitors: z.array(z.string()).optional(),
   care_officers: z.array(z.string()).optional(),
+  student_ids: z.array(z.string()).optional(),
   learning_progress: z.string().optional(),
 }).refine((data) => {
   const startTime = parseInt(data.start_time.replace(':', ''));
@@ -58,6 +60,7 @@ interface ClassInfo {
   class_monitor_id: string;
   deputy_monitors?: string[];
   care_officers?: string[];
+  student_ids?: string[];
   learning_progress: string;
   attendance_rate: number;
   status: 'active' | 'inactive';
@@ -108,13 +111,14 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
       class_monitor_id: initialData?.class_monitor_id || '',
       deputy_monitors: initialData?.deputy_monitors || [],
       care_officers: initialData?.care_officers || [],
+      student_ids: initialData?.student_ids || [],
       learning_progress: initialData?.learning_progress || '',
     },
   });
 
   const handleSubmit = (data: ClassFormData) => {
-    // Auto-calculate student count and attendance rate for new classes
-    const student_count = initialData?.student_count || Math.floor(Math.random() * 30) + 15;
+    // Calculate student count from selected students
+    const student_count = data.student_ids?.length || 0;
     const attendance_rate = initialData?.attendance_rate || Math.floor(Math.random() * 25) + 75;
     
     // Combine weekday and time for backwards compatibility
@@ -397,6 +401,57 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
             </div>
           ))}
         </div>
+
+        {/* Class Student Management */}
+        <FormField
+          control={form.control}
+          name="student_ids"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex items-center justify-between">
+                <span>班级学员</span>
+                <span className="text-sm text-gray-500 font-normal">
+                  {field.value?.length || 0} 名学员
+                </span>
+              </FormLabel>
+              <FormControl>
+                <StudentMultiSelect
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  placeholder="选择班级学员..."
+                  excludeIds={[
+                    form.watch('class_monitor_id'),
+                    ...(form.watch('deputy_monitors') || []),
+                    ...(form.watch('care_officers') || [])
+                  ].filter(Boolean)}
+                />
+              </FormControl>
+              <FormMessage />
+              <div className="text-xs text-gray-500 mt-1">
+                班长和干部不会显示在此列表中，他们自动成为班级成员
+              </div>
+            </FormItem>
+          )}
+        />
+
+        {/* Learning Progress Field */}
+        <FormField
+          control={form.control}
+          name="learning_progress"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>学习进度</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="请输入当前学习进度..." 
+                  {...field} 
+                  rows={3}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="flex gap-3 pt-4">
           <Button type="submit" className="flex-1">

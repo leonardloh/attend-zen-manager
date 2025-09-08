@@ -11,6 +11,7 @@ import { Plus, Trash2, Building } from 'lucide-react';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
 import SubBranchNameSearchInput from '@/components/Classrooms/SubBranchNameSearchInput';
 import type { MainBranch, Region, SubBranch } from '@/pages/Classrooms';
+import { mockStudents } from '@/data/mockData';
 
 interface MainBranchFormProps {
   initialData?: MainBranch;
@@ -38,37 +39,6 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
   // State for sub-branch management
   const [inlineSubBranchName, setInlineSubBranchName] = useState(''); // For inline search
 
-  // Mock students data - in real app this would come from API or props
-  const mockStudents = [
-    {
-      id: '1',
-      student_id: 'S2024001',
-      chinese_name: '王小明',
-      english_name: 'Wang Xiaoming',
-      phone: '13800138001'
-    },
-    {
-      id: '2',
-      student_id: 'S2024002',
-      chinese_name: '李小红',
-      english_name: 'Li Xiaohong',
-      phone: '13800138002'
-    },
-    {
-      id: '3',
-      student_id: 'S2024003',
-      chinese_name: '张三',
-      english_name: 'Zhang San',
-      phone: '13800138003'
-    },
-    {
-      id: '4',
-      student_id: 'S2024004',
-      chinese_name: '李四',
-      english_name: 'Li Si',
-      phone: '13800138004'
-    }
-  ];
 
   const [formData, setFormData] = useState({
     name: initialData?.name || '',

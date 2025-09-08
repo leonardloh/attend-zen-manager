@@ -10,6 +10,7 @@ import AttendanceGrid from '@/components/Attendance/AttendanceGrid';
 import { Calendar as CalendarIcon, Clock, Users, Save, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useData, useClassStudents } from '@/contexts/DataContext';
 
 interface AttendanceStatus {
   studentId: string;
@@ -34,19 +35,16 @@ const Attendance: React.FC = () => {
     line_number: '',
   });
 
-  const classes = [
-    { id: '1', name: '初级班A', time: '09:00-11:00', students: 25 },
-    { id: '2', name: '中级班B', time: '14:00-16:00', students: 30 },
-    { id: '3', name: '高级班C', time: '19:00-21:00', students: 20 },
-    { id: '4', name: '初级班B', time: '10:00-12:00', students: 22 },
-    { id: '5', name: '中级班A', time: '15:00-17:00', students: 28 },
-    { id: '6', name: '高级班B', time: '18:00-20:00', students: 18 },
-  ];
+  // Use DataContext for reactive classes data
+  const { classes } = useData();
 
   const filteredClasses = classes.filter(cls =>
     cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cls.time.includes(searchTerm)
   );
+
+  // Get students for the selected class using DataContext hook
+  const selectedClassStudents = useClassStudents(selectedClass || '');
 
   const startAttendanceSession = () => {
     if (selectedClass && selectedDate) {
@@ -138,7 +136,7 @@ const Attendance: React.FC = () => {
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
                           <Users className="h-4 w-4" />
-                          {cls.students}
+                          {cls.student_count}
                         </div>
                         {selectedClass === cls.id && (
                           <Badge className="bg-blue-600">已选择</Badge>
@@ -229,6 +227,7 @@ const Attendance: React.FC = () => {
         classId={selectedClass} 
         classDate={selectedDate} 
         onDataChange={handleDataChange}
+        students={selectedClassStudents}
       />
     </div>
   );
