@@ -222,8 +222,8 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
           
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label htmlFor="can_register_students">学生注册权限</Label>
-              <p className="text-sm text-gray-500">允许该干部注册新学生</p>
+              <Label htmlFor="can_register_students">学员注册权限</Label>
+              <p className="text-sm text-gray-500">允许该干部注册新学员</p>
             </div>
             <Switch
               id="can_register_students"

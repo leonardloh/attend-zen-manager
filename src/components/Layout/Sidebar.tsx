@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const adminNavItems = [
     { icon: Home, label: '主页', sublabel: 'Dashboard', path: '/dashboard' },
-    { icon: Users, label: '学生管理', sublabel: 'Students', path: '/students' },
+    { icon: Users, label: '学员管理', sublabel: 'Students', path: '/students' },
     { icon: BookOpen, label: '班级管理', sublabel: 'Classes', path: '/classes' },
     { icon: UserCheck, label: '干部管理', sublabel: 'Cadres', path: '/cadres' },
     { icon: Building2, label: '教室管理', sublabel: 'Classrooms', path: '/classrooms' },

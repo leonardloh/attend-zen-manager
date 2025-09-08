@@ -300,7 +300,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="emergency_contact_relation">与学生关系 *</Label>
+          <Label htmlFor="emergency_contact_relation">与学员关系 *</Label>
           <Select
             value={formData.emergency_contact_relation}
             onValueChange={(value) => setFormData({ ...formData, emergency_contact_relation: value })}
@@ -393,7 +393,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
 
       <div className="flex gap-3 pt-4">
         <Button type="submit" className="flex-1">
-          {initialData ? '更新学生' : '添加学生'}
+          {initialData ? '更新学员' : '添加学员'}
         </Button>
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
           取消

@@ -31,10 +31,10 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <DashboardCard
-          title="总学生数"
+          title="总学员数"
           subtitle="Total Students"
           value="2,750"
-          description="活跃学生"
+          description="活跃学员"
           icon={Users}
           trend={{ value: 5.2, isPositive: true }}
           onClick={() => navigate('/students')}
@@ -108,7 +108,7 @@ const Dashboard: React.FC = () => {
                 <span className="font-medium">2,456</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">本月新增学生</span>
+                <span className="text-sm text-gray-600">本月新增学员</span>
                 <span className="font-medium">142</span>
               </div>
               <div className="flex items-center justify-between">
@@ -184,7 +184,7 @@ const Dashboard: React.FC = () => {
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
                     <p className="font-medium">{item.class}</p>
-                    <p className="text-sm text-gray-600">{item.time} • {item.students} 学生</p>
+                    <p className="text-sm text-gray-600">{item.time} • {item.students} 学员</p>
                   </div>
                   <Button size="sm" variant="outline">
                     考勤
@@ -210,7 +210,7 @@ const Dashboard: React.FC = () => {
                 <span className="font-medium">89.2%</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">总学生数</span>
+                <span className="text-sm text-gray-600">总学员数</span>
                 <span className="font-medium">65</span>
               </div>
             </div>
@@ -223,7 +223,7 @@ const Dashboard: React.FC = () => {
   const renderStudentDashboard = () => (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">学生仪表板</h1>
+        <h1 className="text-2xl font-bold text-gray-900">学员仪表板</h1>
         <p className="text-gray-600">Student Dashboard</p>
       </div>
 

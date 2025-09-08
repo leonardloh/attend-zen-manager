@@ -57,7 +57,7 @@ const CadreStats: React.FC<CadreStatsProps> = ({ cadres }) => {
           <div className="text-2xl font-bold text-purple-600">
             {cadres.filter(c => c.can_register_students).length}
           </div>
-          <div className="text-sm text-gray-600">可注册学生</div>
+          <div className="text-sm text-gray-600">可注册学员</div>
         </CardContent>
       </Card>
     </div>

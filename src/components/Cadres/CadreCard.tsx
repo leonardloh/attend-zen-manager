@@ -123,7 +123,7 @@ const CadreCard: React.FC<CadreCardProps> = ({ cadre, onEdit, onDelete }) => {
                 <div className="h-4 w-4" />
               )}
               <span className={cadre.can_register_students ? 'text-green-600' : 'text-gray-400'}>
-                学生注册
+                学员注册
               </span>
             </div>
           </div>

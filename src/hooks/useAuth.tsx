@@ -40,7 +40,7 @@ const mockUsers: User[] = [
   {
     id: '3',
     student_id: 'student001',
-    chinese_name: '王学生',
+    chinese_name: '王学员',
     english_name: 'Wang Lei',
     role: 'student',
     phone: '13800138002'

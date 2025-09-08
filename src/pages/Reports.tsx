@@ -97,7 +97,7 @@ const Reports: React.FC = () => {
                 <Users className="h-6 w-6 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">总学生数</p>
+                <p className="text-sm font-medium text-gray-600">总学员数</p>
                 <p className="text-2xl font-bold text-gray-900">2,750</p>
               </div>
             </div>

@@ -207,7 +207,7 @@ const Students: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">学生管理</h1>
+          <h1 className="text-2xl font-bold text-gray-900">学员管理</h1>
           <p className="text-gray-600">Student Management</p>
         </div>
         {canEditStudents && (
@@ -215,12 +215,12 @@ const Students: React.FC = () => {
             <DialogTrigger asChild>
               <Button className="mt-4 sm:mt-0">
                 <Plus className="h-4 w-4 mr-2" />
-                添加学生
+                添加学员
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>添加新学生</DialogTitle>
+                <DialogTitle>添加新学员</DialogTitle>
               </DialogHeader>
               <StudentForm
                 onSubmit={handleAddStudent}
@@ -238,7 +238,7 @@ const Students: React.FC = () => {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="搜索学生姓名、学号或班级..."
+                placeholder="搜索学员姓名、学号或班级..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -357,9 +357,9 @@ const Students: React.FC = () => {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>确认删除学生</AlertDialogTitle>
+                        <AlertDialogTitle>确认删除学员</AlertDialogTitle>
                         <AlertDialogDescription>
-                          您确定要删除学生 <strong>{student.chinese_name}</strong> 吗？此操作不可撤销。
+                          您确定要删除学员 <strong>{student.chinese_name}</strong> 吗？此操作不可撤销。
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -384,7 +384,7 @@ const Students: React.FC = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>编辑学生信息</DialogTitle>
+            <DialogTitle>编辑学员信息</DialogTitle>
           </DialogHeader>
           {editingStudent && (
             <StudentForm
@@ -401,7 +401,7 @@ const Students: React.FC = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">{students.length}</div>
-            <div className="text-sm text-gray-600">总学生数</div>
+            <div className="text-sm text-gray-600">总学员数</div>
           </CardContent>
         </Card>
         <Card>
@@ -409,7 +409,7 @@ const Students: React.FC = () => {
             <div className="text-2xl font-bold text-green-600">
               {students.filter(s => s.status === '活跃').length}
             </div>
-            <div className="text-sm text-gray-600">活跃学生</div>
+            <div className="text-sm text-gray-600">活跃学员</div>
           </CardContent>
         </Card>
         <Card>
@@ -417,7 +417,7 @@ const Students: React.FC = () => {
             <div className="text-2xl font-bold text-blue-600">
               {students.filter(s => s.status === '旁听').length}
             </div>
-            <div className="text-sm text-gray-600">旁听学生</div>
+            <div className="text-sm text-gray-600">旁听学员</div>
           </CardContent>
         </Card>
         <Card>
@@ -425,7 +425,7 @@ const Students: React.FC = () => {
             <div className="text-2xl font-bold text-orange-600">
               {students.filter(s => s.status === '保留').length}
             </div>
-            <div className="text-sm text-gray-600">保留学生</div>
+            <div className="text-sm text-gray-600">保留学员</div>
           </CardContent>
         </Card>
       </div>

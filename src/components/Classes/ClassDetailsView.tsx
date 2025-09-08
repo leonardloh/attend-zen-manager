@@ -86,8 +86,8 @@ const ClassDetailsView: React.FC<ClassDetailsViewProps> = ({ classInfo, onClose 
           <div className="flex items-center gap-3">
             <Users className="h-5 w-5 text-gray-500" />
             <div>
-              <p className="font-medium">学生人数</p>
-              <p className="text-gray-600">{classInfo.student_count} 名学生</p>
+              <p className="font-medium">学员人数</p>
+              <p className="text-gray-600">{classInfo.student_count} 名学员</p>
             </div>
           </div>
         </div>

@@ -93,7 +93,7 @@ const DeleteClassDialog: React.FC<DeleteClassDialogProps> = ({
                   <li>班级基本信息和学习进度</li>
                   <li>与该班级关联的考勤记录</li>
                   <li>干部职位分配信息</li>
-                  <li>学生班级归属记录</li>
+                  <li>学员班级归属记录</li>
                 </ul>
               </div>
             </div>
@@ -105,7 +105,7 @@ const DeleteClassDialog: React.FC<DeleteClassDialogProps> = ({
               <div><strong>班级名称：</strong>{classToDelete.name}</div>
               <div><strong>地区：</strong>{classToDelete.region}</div>
               <div><strong>上课时间：</strong>{classToDelete.time}</div>
-              <div><strong>学生人数：</strong>{classToDelete.student_count}名</div>
+              <div><strong>学员人数：</strong>{classToDelete.student_count}名</div>
               <div><strong>出席率：</strong>{classToDelete.attendance_rate}%</div>
             </div>
           </div>

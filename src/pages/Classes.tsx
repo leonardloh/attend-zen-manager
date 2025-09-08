@@ -224,7 +224,7 @@ const Classes: React.FC = () => {
             <div className="text-2xl font-bold text-orange-600">
               {classes.reduce((sum, c) => sum + c.student_count, 0)}
             </div>
-            <div className="text-sm text-gray-600">总学生数</div>
+            <div className="text-sm text-gray-600">总学员数</div>
           </CardContent>
         </Card>
         <Card>
@@ -262,7 +262,7 @@ const Classes: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Users className="h-4 w-4 text-gray-500" />
-                  <span>{classInfo.student_count} 学生</span>
+                  <span>{classInfo.student_count} 学员</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-gray-500" />

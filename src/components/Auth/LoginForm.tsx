@@ -87,7 +87,7 @@ const LoginForm: React.FC = () => {
             <div className="space-y-1 text-xs">
               <p><strong>超级管理员:</strong> admin001 / password</p>
               <p><strong>干部:</strong> cadre001 / password</p>
-              <p><strong>学生:</strong> student001 / password</p>
+              <p><strong>学员:</strong> student001 / password</p>
             </div>
           </div>
         </CardContent>

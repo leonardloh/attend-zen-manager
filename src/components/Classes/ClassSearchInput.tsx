@@ -210,7 +210,7 @@ const ClassSearchInput: React.FC<ClassSearchInputProps> = ({
                           {classInfo.region}
                         </span>
                         <span>{classInfo.time}</span>
-                        <span>{classInfo.student_count}名学生</span>
+                        <span>{classInfo.student_count}名学员</span>
                       </div>
                     </div>
                   </CommandItem>

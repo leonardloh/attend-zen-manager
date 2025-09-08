@@ -110,7 +110,7 @@ const StudentSearchInput: React.FC<StudentSearchInputProps> = ({
               onValueChange={setSearchTerm}
             />
             <CommandList>
-              <CommandEmpty>没有找到学生</CommandEmpty>
+              <CommandEmpty>没有找到学员</CommandEmpty>
               <CommandGroup>
                 {filteredStudents.map((student) => (
                   <CommandItem
