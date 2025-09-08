@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Building, Edit, Trash2, Calendar, MapPin, User, Phone, Home } from 'lucide-react';
-import type { SubBranch } from '@/pages/Classrooms';
+import type { SubBranch } from '@/data/mockData';
+import { getStudentById } from '@/data/mockData';
 
 interface SubBranchCardProps {
   branch: SubBranch;
@@ -14,15 +15,6 @@ interface SubBranchCardProps {
 }
 
 const SubBranchCard: React.FC<SubBranchCardProps> = ({ branch, canEdit, onEdit, onDelete }) => {
-  const getRegionColor = (regionName: string) => {
-    switch (regionName) {
-      case '北马': return 'bg-blue-100 text-blue-800';
-      case '中马': return 'bg-green-100 text-green-800';
-      case '南马': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getStateColor = (state: string) => {
     // Different color scheme for states
     const colors = [
@@ -35,6 +27,9 @@ const SubBranchCard: React.FC<SubBranchCardProps> = ({ branch, canEdit, onEdit, 
     const index = state.length % colors.length;
     return colors[index];
   };
+
+  // Get student information if student_id is available
+  const contactStudent = branch.student_id ? getStudentById(branch.student_id) : null;
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -50,9 +45,6 @@ const SubBranchCard: React.FC<SubBranchCardProps> = ({ branch, canEdit, onEdit, 
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <Badge className={getRegionColor(branch.region_name)} style={{ fontSize: '10px' }}>
-              {branch.region_name}
-            </Badge>
             <Badge className={getStateColor(branch.state || '未知')} style={{ fontSize: '10px' }}>
               {branch.state || '未知州属'}
             </Badge>
@@ -75,33 +67,39 @@ const SubBranchCard: React.FC<SubBranchCardProps> = ({ branch, canEdit, onEdit, 
             </div>
           )}
           
-          {branch.region_name && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">所属地区:</span>
-              <span className="font-medium">{branch.region_name}</span>
-            </div>
-          )}
           
-          {branch.student_id && (
+          {contactStudent ? (
             <div className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-600">联系人学员:</span>
-              <span className="font-medium">{branch.student_id}</span>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600">负责人:</span>
+                  <span className="font-medium">{contactStudent.chinese_name}</span>
+                  <span className="text-xs text-gray-500">({contactStudent.student_id})</span>
+                </div>
+                <div className="flex items-center gap-2 ml-4 mt-1">
+                  <Phone className="h-3 w-3 text-gray-400" />
+                  <span className="text-gray-600 text-xs">电话:</span>
+                  <span className="font-medium text-xs">{contactStudent.phone}</span>
+                </div>
+              </div>
             </div>
-          )}
-          
-          {branch.contact_person && (
-            <div className="flex justify-between text-sm ml-6">
-              <span className="text-gray-600">姓名:</span>
-              <span className="font-medium">{branch.contact_person}</span>
-            </div>
-          )}
-          
-          {branch.contact_phone && (
-            <div className="flex items-center gap-2 text-sm ml-6">
-              <Phone className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-600">电话:</span>
-              <span className="font-medium">{branch.contact_phone}</span>
+          ) : branch.contact_person && (
+            <div className="flex items-center gap-2 text-sm">
+              <User className="h-4 w-4 text-gray-400" />
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600">负责人:</span>
+                  <span className="font-medium">{branch.contact_person}</span>
+                </div>
+                {branch.contact_phone && (
+                  <div className="flex items-center gap-2 ml-4 mt-1">
+                    <Phone className="h-3 w-3 text-gray-400" />
+                    <span className="text-gray-600 text-xs">电话:</span>
+                    <span className="font-medium text-xs">{branch.contact_phone}</span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           
@@ -145,30 +143,33 @@ const SubBranchCard: React.FC<SubBranchCardProps> = ({ branch, canEdit, onEdit, 
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>确认删除分院</AlertDialogTitle>
+                  <AlertDialogTitle>确认移除分院关联</AlertDialogTitle>
                   <AlertDialogDescription>
-                    您确定要删除分院 <strong>{branch.name}</strong> 吗？
+                    您确定要将分院 <strong>{branch.name}</strong> 从该总院中移除吗？
                     <br /><br />
-                    删除后将清除以下信息：
-                    <ul className="mt-2 text-sm list-disc list-inside space-y-1">
-                      <li>分院基本信息（名称：{branch.name}）</li>
-                      {branch.main_branch_name && <li>所属总院：{branch.main_branch_name}</li>}
-                      {branch.state && <li>所在州属：{branch.state}</li>}
-                      {branch.region_name && <li>所属地区：{branch.region_name}</li>}
-                      {branch.contact_person && <li>联系人信息</li>}
-                      {branch.address && <li>地址信息</li>}
-                    </ul>
+                    <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                      <div className="text-blue-800 font-medium mb-2">ℹ️ 重要说明：</div>
+                      <ul className="text-blue-700 text-sm space-y-1">
+                        <li>• 此操作只会解除分院与该总院的隶属关系</li>
+                        <li>• <strong>{branch.name}</strong> 仍将保留在"分院管理"中</li>
+                        <li>• 分院的所有基本信息不会被删除</li>
+                        <li>• 可以重新关联到其他总院</li>
+                      </ul>
+                    </div>
                     <br />
-                    <strong>此操作不可撤销。</strong>
+                    移除后，该分院将变为未关联状态。
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>取消</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={() => onDelete(branch.id)}
+                    onClick={() => {
+                      console.log('Delete confirmation clicked for branch:', branch.name, 'ID:', branch.id);
+                      onDelete(branch.id);
+                    }}
                     className="bg-red-600 hover:bg-red-700"
                   >
-                    确认删除
+                    确认移除关联
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

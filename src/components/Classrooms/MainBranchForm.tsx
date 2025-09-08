@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Trash2, Building } from 'lucide-react';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
 import SubBranchNameSearchInput from '@/components/Classrooms/SubBranchNameSearchInput';
-import type { MainBranch, Region, SubBranch } from '@/pages/Classrooms';
+import type { Region } from '@/pages/Classrooms';
+import type { MainBranch, SubBranch } from '@/data/mockData';
 import { mockStudents } from '@/data/mockData';
 
 interface MainBranchFormProps {
@@ -42,12 +43,14 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
 
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
-    region_id: initialData?.region_id || '',
-    region_name: initialData?.region_name || '',
-    student_id: initialData?.student_id || '',
+    region: initialData?.region || ('北马' as '北马' | '中马' | '南马'),
+    address: initialData?.address || '',
+    student_id: initialData?.student_id || '', // Use the student_id from initialData
     contact_person: initialData?.contact_person || '',
     contact_phone: initialData?.contact_phone || '',
-    created_date: initialData?.created_date || new Date().toISOString().split('T')[0]
+    sub_branches_count: initialData?.sub_branches_count || 0,
+    classes_count: initialData?.classes_count || 0,
+    students_count: initialData?.students_count || 0
   });
 
   // Auto-populate contact information when student is selected
@@ -64,12 +67,10 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
     }
   }, [formData.student_id]);
 
-  const handleRegionChange = (regionId: string) => {
-    const selectedRegion = regions.find(r => r.id === regionId);
+  const handleRegionChange = (regionValue: string) => {
     setFormData({
       ...formData,
-      region_id: regionId,
-      region_name: selectedRegion?.name || ''
+      region: regionValue as '北马' | '中马' | '南马'
     });
   };
 
@@ -77,15 +78,18 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
     e.preventDefault();
     
     // Validate required fields
-    if (!formData.name || !formData.region_id) {
-      alert('请填写所有必填字段 (Please fill in all required fields)');
+    if (!formData.name || !formData.region || !formData.address || !formData.student_id) {
+      alert('请填写所有必填字段，包括选择负责人学员 (Please fill in all required fields including selecting a responsible student)');
       return;
     }
     
+    // Create the main branch data including student_id if provided
+    const mainBranchData = formData;
+    
     if (initialData) {
-      onSubmit({ ...formData, id: initialData.id });
+      onSubmit({ ...mainBranchData, id: initialData.id });
     } else {
-      onSubmit(formData);
+      onSubmit(mainBranchData);
     }
   };
 
@@ -96,9 +100,7 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
       const enrichedSubBranchData = {
         ...branchData,
         main_branch_id: initialData?.id || 'temp-id',
-        main_branch_name: formData.name,
-        region_id: formData.region_id,
-        region_name: formData.region_name
+        main_branch_name: formData.name
       };
       
       if (onSubBranchAdd) {
@@ -144,7 +146,7 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
           <div className="space-y-2">
             <Label htmlFor="region">所属地区 *</Label>
             <Select
-              value={formData.region_id}
+              value={formData.region}
               onValueChange={handleRegionChange}
               required
             >
@@ -152,52 +154,39 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
                 <SelectValue placeholder="选择地区" />
               </SelectTrigger>
               <SelectContent>
-                {regions.map((region) => (
-                  <SelectItem key={region.id} value={region.id}>
-                    {region.name} ({region.code})
-                  </SelectItem>
-                ))}
+                <SelectItem value="北马">北马</SelectItem>
+                <SelectItem value="中马">中马</SelectItem>
+                <SelectItem value="南马">南马</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="student_id">联系人学员 *</Label>
-          <StudentSearchInput
-            value={formData.student_id}
-            onChange={(studentId) => setFormData({ ...formData, student_id: studentId })}
-            placeholder="搜索学员编号或姓名..."
-          />
-        </div>
-
-        {/* Display selected student contact information */}
-        {formData.student_id && (
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">联系人信息</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">联系人:</span>
-                <span className="ml-2 font-medium">{formData.contact_person}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">电话:</span>
-                <span className="ml-2 font-medium">{formData.contact_phone}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-2">
-          <Label htmlFor="created_date">创建日期 *</Label>
-          <Input
-            id="created_date"
-            type="date"
-            value={formData.created_date}
-            onChange={(e) => setFormData({ ...formData, created_date: e.target.value })}
+          <Label htmlFor="address">地址 *</Label>
+          <Textarea
+            id="address"
+            value={formData.address}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            placeholder="例如: 吉隆坡市中心某某路123号"
             required
           />
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="student_id">负责人学员 *</Label>
+          <StudentSearchInput
+            value={formData.student_id}
+            onChange={(studentId) => setFormData({ ...formData, student_id: studentId })}
+            placeholder="搜索负责人学员..."
+          />
+          {formData.student_id && formData.contact_person && (
+            <div className="text-sm text-green-600 bg-green-50 p-2 rounded border">
+              已选择: {formData.contact_person} ({formData.student_id}) - {formData.contact_phone}
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* Sub-branch Management Section */}

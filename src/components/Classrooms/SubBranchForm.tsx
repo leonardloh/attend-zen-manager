@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
 import SubBranchNameSearchInput from '@/components/Classrooms/SubBranchNameSearchInput';
-import type { SubBranch, MainBranch } from '@/pages/Classrooms';
+import type { SubBranch, MainBranch } from '@/data/mockData';
 import { mockStudents } from '@/data/mockData';
 
 interface SubBranchFormProps {

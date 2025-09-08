@@ -56,6 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+    } else {
+      // Temporarily auto-login as super_admin for testing
+      const defaultUser = mockUsers.find(u => u.role === 'super_admin');
+      if (defaultUser) {
+        setUser(defaultUser);
+        localStorage.setItem('user', JSON.stringify(defaultUser));
+      }
     }
     setIsLoading(false);
   }, []);

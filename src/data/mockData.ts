@@ -29,7 +29,8 @@ export interface Student {
 export interface ClassInfo {
   id: string;
   name: string;
-  region: '北马' | '中马' | '南马';
+  sub_branch_id?: string; // Reference to SubBranch
+  sub_branch_name?: string; // SubBranch name for display
   time: string;
   student_count: number;
   class_monitor_id: string;
@@ -65,11 +66,9 @@ export interface MainBranch {
   name: string;
   region: '北马' | '中马' | '南马';
   address: string;
+  student_id?: string; // Reference to the student who is the contact person
   contact_person: string;
   contact_phone: string;
-  email?: string;
-  established_date: string;
-  status: 'active' | 'inactive';
   sub_branches_count: number;
   classes_count: number;
   students_count: number;
@@ -81,8 +80,9 @@ export interface SubBranch {
   name: string;
   main_branch_id: string;
   main_branch_name: string;
-  region: '北马' | '中马' | '南马';
+  state: string; // State/州属 like "雪兰莪州", "槟城州", etc.
   address: string;
+  student_id?: string; // Reference to the student who is the contact person
   contact_person: string;
   contact_phone: string;
   email?: string;
@@ -402,7 +402,8 @@ export const mockClasses: ClassInfo[] = [
   {
     id: '1',
     name: '初级班A',
-    region: '北马',
+    sub_branch_id: '3',
+    sub_branch_name: '大山脚分苑',
     time: '周一 09:00-11:00',
     student_count: 8,
     class_monitor_id: 'S2024001',
@@ -419,7 +420,8 @@ export const mockClasses: ClassInfo[] = [
   {
     id: '2',
     name: '中级班B',
-    region: '中马',
+    sub_branch_id: '2',
+    sub_branch_name: '八打灵再也分苑',
     time: '周三 14:00-16:00',
     student_count: 7,
     class_monitor_id: 'S2024002',
@@ -436,7 +438,8 @@ export const mockClasses: ClassInfo[] = [
   {
     id: '3',
     name: '高级班C',
-    region: '南马',
+    sub_branch_id: '4',
+    sub_branch_name: '新山分苑',
     time: '周五 19:00-21:00',
     student_count: 2,
     class_monitor_id: 'S2024003',
@@ -453,7 +456,8 @@ export const mockClasses: ClassInfo[] = [
   {
     id: '4',
     name: '周末班D',
-    region: '北马',
+    sub_branch_id: '3',
+    sub_branch_name: '大山脚分苑',
     time: '周六 10:00-12:00',
     student_count: 1,
     class_monitor_id: 'S2024006',
@@ -555,42 +559,36 @@ export const mockCadres: Cadre[] = [
 export const mockMainBranches: MainBranch[] = [
   {
     id: '1',
-    name: '吉隆坡主分苑',
+    name: '中马总院',
     region: '中马',
     address: '吉隆坡市中心某某路123号',
-    contact_person: '陈主任',
-    contact_phone: '03-12345678',
-    email: 'kl@lamrim.org.my',
-    established_date: '2020-01-15',
-    status: 'active',
+    student_id: 'S2024001', // 陈主任 -> 王小明
+    contact_person: '王小明',
+    contact_phone: '13800138001',
     sub_branches_count: 3,
     classes_count: 8,
     students_count: 120
   },
   {
     id: '2',
-    name: '槟城主分苑',
+    name: '北马总院',
     region: '北马',
     address: '槟城州乔治市某某街456号',
-    contact_person: '林主任',
-    contact_phone: '04-23456789',
-    email: 'penang@lamrim.org.my',
-    established_date: '2019-06-20',
-    status: 'active',
+    student_id: 'S2024002', // 林主任 -> 李小红
+    contact_person: '李小红',
+    contact_phone: '13800138002',
     sub_branches_count: 2,
     classes_count: 6,
     students_count: 85
   },
   {
     id: '3',
-    name: '新山主分苑',
+    name: '南马总院',
     region: '南马',
     address: '柔佛州新山市某某大道789号',
-    contact_person: '黄主任',
-    contact_phone: '07-34567890',
-    email: 'jb@lamrim.org.my',
-    established_date: '2021-03-10',
-    status: 'active',
+    student_id: 'S2024003', // 黄主任 -> 张三
+    contact_person: '张三',
+    contact_phone: '13800138003',
     sub_branches_count: 1,
     classes_count: 4,
     students_count: 60
@@ -604,10 +602,11 @@ export const mockSubBranches: SubBranch[] = [
     name: '蒲种分苑',
     main_branch_id: '1',
     main_branch_name: '吉隆坡主分苑',
-    region: '中马',
+    state: '雪兰莪州',
     address: '雪兰莪州蒲种某某花园101号',
-    contact_person: '张老师',
-    contact_phone: '03-87654321',
+    student_id: 'S2024005', // 张老师 -> 王五
+    contact_person: '王五',
+    contact_phone: '13800138005',
     email: 'puchong@lamrim.org.my',
     established_date: '2020-08-15',
     status: 'active',
@@ -619,10 +618,11 @@ export const mockSubBranches: SubBranch[] = [
     name: '八打灵再也分苑',
     main_branch_id: '1',
     main_branch_name: '吉隆坡主分苑',
-    region: '中马',
+    state: '雪兰莪州',
     address: '雪兰莪州八打灵再也某某路202号',
-    contact_person: '王老师',
-    contact_phone: '03-76543210',
+    student_id: 'S2024006', // 王老师 -> 赵六
+    contact_person: '赵六',
+    contact_phone: '13800138006',
     email: 'pj@lamrim.org.my',
     established_date: '2020-11-20',
     status: 'active',
@@ -634,10 +634,11 @@ export const mockSubBranches: SubBranch[] = [
     name: '大山脚分苑',
     main_branch_id: '2',
     main_branch_name: '槟城主分苑',
-    region: '北马',
+    state: '槟城州',
     address: '槟城州大山脚某某镇303号',
-    contact_person: '李老师',
-    contact_phone: '04-54321098',
+    student_id: 'S2024007', // 李老师 -> 钱七
+    contact_person: '钱七',
+    contact_phone: '13800138007',
     email: 'bsk@lamrim.org.my',
     established_date: '2021-01-10',
     status: 'active',
@@ -689,9 +690,9 @@ export const getCadreByStudentId = (studentId: string): Cadre | undefined => {
   return mockCadres.find(cadre => cadre.student_id === studentId);
 };
 
-// Get classes by region
-export const getClassesByRegion = (region: '北马' | '中马' | '南马'): ClassInfo[] => {
-  return mockClasses.filter(cls => cls.region === region);
+// Get classes by sub-branch
+export const getClassesBySubBranch = (subBranchId: string): ClassInfo[] => {
+  return mockClasses.filter(cls => cls.sub_branch_id === subBranchId);
 };
 
 // Get active classes

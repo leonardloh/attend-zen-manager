@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,40 +13,15 @@ import SubBranchForm from '@/components/Classrooms/SubBranchForm';
 import MainBranchCard from '@/components/Classrooms/MainBranchCard';
 import SubBranchCard from '@/components/Classrooms/SubBranchCard';
 import { useData } from '@/contexts/DataContext';
+import { MainBranch, SubBranch } from '@/data/mockData';
 
-// Data interfaces
+// Data interfaces - using types from mockData
 export interface Region {
   id: string;
   name: string;
   code: string;
   description?: string;
   states: string[]; // Array of states under this region
-  created_date: string;
-}
-
-export interface MainBranch {
-  id: string;
-  name: string;
-  region_id: string;
-  region_name: string;
-  student_id?: string; // Reference to student
-  contact_person?: string; // Auto-populated from student
-  contact_phone?: string; // Auto-populated from student
-  created_date: string;
-}
-
-export interface SubBranch {
-  id: string;
-  name: string;
-  main_branch_id?: string; // Optional reference to main branch
-  main_branch_name?: string; // Optional main branch name
-  region_id?: string; // Optional since can exist without main branch
-  region_name?: string; // Optional since can exist without main branch
-  state: string; // Required state field
-  address?: string;
-  student_id?: string; // Reference to student
-  contact_person?: string; // Auto-populated from student
-  contact_phone?: string; // Auto-populated from student
   created_date: string;
 }
 
@@ -95,7 +70,7 @@ const Classrooms: React.FC = () => {
   ]);
 
   // Use DataContext for branches data
-  const { mainBranches, updateMainBranch, addMainBranch, deleteMainBranch, subBranches, updateSubBranch, addSubBranch, deleteSubBranch } = useData();
+  const { mainBranches, updateMainBranch, addMainBranch, deleteMainBranch, subBranches, updateSubBranch, addSubBranch, deleteSubBranch, removeSubBranchFromMainBranch } = useData();
 
   // Check if user can manage classrooms (super_admin only)
   const canManageClassrooms = user?.role === 'super_admin';
@@ -111,6 +86,12 @@ const Classrooms: React.FC = () => {
     (branch.main_branch_name && branch.main_branch_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (branch.state && branch.state.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Debug: Monitor subBranches changes
+  useEffect(() => {
+    console.log('Classrooms component - subBranches changed:', subBranches.map(b => b.name));
+    console.log('Classrooms component - filteredSubBranches:', filteredSubBranches.map(b => b.name));
+  }, [subBranches, filteredSubBranches]);
 
   // CRUD handlers
   const handleAddMainBranch = (branchData: Omit<MainBranch, 'id'>) => {
@@ -188,13 +169,33 @@ const Classrooms: React.FC = () => {
   };
 
   const handleDeleteSubBranch = (branchId: string) => {
+    console.log('handleDeleteSubBranch called with ID:', branchId);
     const deletedBranch = subBranches.find(branch => branch.id === branchId);
+    console.log('Found branch to delete:', deletedBranch?.name);
+    
     deleteSubBranch(branchId);
+    
     toast({
       title: "分院删除成功",
       description: `${deletedBranch?.name} 已从系统中删除。`,
       variant: "destructive"
     });
+    console.log('Delete completed, toast shown');
+  };
+
+  // Handle removing sub-branch association from main branch (without deleting sub-branch)
+  const handleRemoveSubBranchAssociation = (branchId: string) => {
+    console.log('handleRemoveSubBranchAssociation called with ID:', branchId);
+    const branchToRemove = subBranches.find(branch => branch.id === branchId);
+    console.log('Found branch to remove association:', branchToRemove?.name);
+    
+    removeSubBranchFromMainBranch(branchId);
+    
+    toast({
+      title: "分院关联已移除",
+      description: `${branchToRemove?.name} 已从该总院中移除，但仍保留在分院管理中。`,
+    });
+    console.log('Association removal completed, toast shown');
   };
 
   const getAddForm = () => {
@@ -212,7 +213,7 @@ const Classrooms: React.FC = () => {
             }}
             onSubBranchAdd={handleAssociateSubBranch}
             onSubBranchEdit={handleEditSubBranch}
-            onSubBranchDelete={handleDeleteSubBranch}
+            onSubBranchDelete={handleRemoveSubBranchAssociation}
           />
         );
       case 'sub-branches':
@@ -361,7 +362,7 @@ const Classrooms: React.FC = () => {
               }}
               onSubBranchAdd={handleAssociateSubBranch}
               onSubBranchEdit={handleEditSubBranch}
-              onSubBranchDelete={handleDeleteSubBranch}
+              onSubBranchDelete={handleRemoveSubBranchAssociation}
             />
           )}
         </DialogContent>

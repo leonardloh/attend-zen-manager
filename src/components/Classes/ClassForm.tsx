@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { X, Plus } from 'lucide-react';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
 import StudentMultiSelect from '@/components/Students/StudentMultiSelect';
+import SubBranchSearchInput from '@/components/Classes/SubBranchSearchInput';
 import {
   Form,
   FormControl,
@@ -27,9 +28,8 @@ import {
 
 const classFormSchema = z.object({
   name: z.string().min(1, '班级名称不能为空'),
-  region: z.enum(['北马', '中马', '南马'], {
-    required_error: '请选择地区',
-  }),
+  sub_branch_id: z.string().min(1, '请选择所属分院'),
+  sub_branch_name: z.string().optional(),
   weekday: z.enum(['周一', '周二', '周三', '周四', '周五', '周六', '周日'], {
     required_error: '请选择星期',
   }),
@@ -54,7 +54,8 @@ type ClassFormData = z.infer<typeof classFormSchema>;
 interface ClassInfo {
   id: string;
   name: string;
-  region: '北马' | '中马' | '南马';
+  sub_branch_id?: string;
+  sub_branch_name?: string;
   time: string;
   student_count: number;
   class_monitor_id: string;
@@ -104,7 +105,8 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
     resolver: zodResolver(classFormSchema),
     defaultValues: {
       name: initialData?.name || '',
-      region: initialData?.region || undefined,
+      sub_branch_id: initialData?.sub_branch_id || '',
+      sub_branch_name: initialData?.sub_branch_name || '',
       weekday: initialWeekday || undefined,
       start_time: initialStartTime || '',
       end_time: initialEndTime || '',
@@ -164,22 +166,20 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
 
         <FormField
           control={form.control}
-          name="region"
+          name="sub_branch_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>地区</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="请选择地区" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="北马">北马</SelectItem>
-                  <SelectItem value="中马">中马</SelectItem>
-                  <SelectItem value="南马">南马</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>所属分院</FormLabel>
+              <FormControl>
+                <SubBranchSearchInput
+                  value={field.value}
+                  onChange={(subBranchId, subBranchName) => {
+                    field.onChange(subBranchId);
+                    form.setValue('sub_branch_name', subBranchName);
+                  }}
+                  placeholder="搜索并选择所属分院..."
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -434,24 +434,6 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
           )}
         />
 
-        {/* Learning Progress Field */}
-        <FormField
-          control={form.control}
-          name="learning_progress"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>学习进度</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="请输入当前学习进度..." 
-                  {...field} 
-                  rows={3}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <div className="flex gap-3 pt-4">
           <Button type="submit" className="flex-1">

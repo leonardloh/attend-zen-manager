@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronDown, X } from 'lucide-react';
@@ -25,10 +24,12 @@ const StudentSearchInput: React.FC<StudentSearchInputProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
 
   // Find selected student
-  const selectedStudent = mockStudents.find(s => s.student_id === value);
+  const safeStudentsForFind = Array.isArray(mockStudents) ? mockStudents : [];
+  const selectedStudent = safeStudentsForFind.find(s => s.student_id === value);
 
   // Filter students based on search term and exclude list
-  const filteredStudents = mockStudents.filter(student => {
+  const safeStudents = Array.isArray(mockStudents) ? mockStudents : [];
+  const filteredStudents = safeStudents.filter(student => {
     if (excludeIds.includes(student.student_id)) return false;
     
     const searchLower = searchTerm.toLowerCase();
@@ -54,11 +55,14 @@ const StudentSearchInput: React.FC<StudentSearchInputProps> = ({
     <div className={className}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button
-            variant="outline"
+          <div
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between"
+            className={cn(
+              "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer",
+              className
+            )}
+            onClick={() => setOpen(!open)}
           >
             {selectedStudent ? (
               <span className="flex items-center">
@@ -69,20 +73,19 @@ const StudentSearchInput: React.FC<StudentSearchInputProps> = ({
             )}
             <div className="flex items-center gap-1">
               {selectedStudent && (
-                <button
-                  type="button"
+                <div
                   onClick={(e) => {
                     e.stopPropagation();
                     handleClear();
                   }}
-                  className="hover:bg-gray-200 rounded-full p-1"
+                  className="hover:bg-gray-200 rounded-full p-1 cursor-pointer"
                 >
                   <X className="h-3 w-3" />
-                </button>
+                </div>
               )}
               <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
             </div>
-          </Button>
+          </div>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0" align="start">
           <Command>

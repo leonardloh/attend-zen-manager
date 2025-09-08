@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronsUpDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { SubBranch } from '@/pages/Classrooms';
+import type { SubBranch } from '@/data/mockData';
 
 interface SubBranchNameSearchInputProps {
   value: string;
