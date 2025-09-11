@@ -3,11 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface Student {
   id: string;
@@ -17,7 +13,6 @@ interface Student {
   gender: 'male' | 'female';
   phone: string;
   email?: string;
-  class_name: string;
   enrollment_date: string;
   status: '活跃' | '旁听' | '保留';
   // Required fields
@@ -46,7 +41,6 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
     gender: initialData?.gender || 'male' as const,
     phone: initialData?.phone || '',
     email: initialData?.email || '',
-    class_name: initialData?.class_name || '',
     enrollment_date: initialData?.enrollment_date || new Date().toISOString().split('T')[0],
     status: initialData?.status || '活跃' as const,
     // Required fields
@@ -61,9 +55,6 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
     marriage_status: initialData?.marriage_status || undefined
   });
 
-  const [open, setOpen] = useState(false);
-
-  const classes = ['初级班A', '中级班B', '高级班C', '初级班D', '中级班E', '高级班F'];
   const statuses = ['活跃', '旁听', '保留'];
   const academicLevels = ['Bachelor', 'Master', 'PhD', 'Other'];
   const marriageStatuses = ['Single', 'Married', 'Divorced', 'Widowed', 'Other'];
@@ -74,7 +65,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
     
     // Validate required fields
     if (!formData.student_id || !formData.chinese_name || !formData.english_name || 
-        !formData.phone || !formData.class_name || !formData.enrollment_date || 
+        !formData.phone || !formData.enrollment_date || 
         !formData.postal_code || !formData.date_of_birth || 
         !formData.emergency_contact_name || !formData.emergency_contact_phone || 
         !formData.emergency_contact_relation) {
@@ -150,60 +141,6 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
             onChange={(e) => setFormData({ ...formData, enrollment_date: e.target.value })}
             required
           />
-        </div>
-        
-        <div className="space-y-2">
-          <Label>所在班级 *</Label>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className="w-full justify-between"
-              >
-                {formData.class_name || "选择或输入班级..."}
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0" align="start">
-              <Command>
-                <CommandInput 
-                  placeholder="搜索或输入班级名称..." 
-                  value={formData.class_name}
-                  onValueChange={(value) => setFormData({ ...formData, class_name: value })}
-                />
-                <CommandList>
-                  <CommandEmpty>没有找到班级。按回车键添加新班级。</CommandEmpty>
-                  <CommandGroup>
-                    {classes
-                      .filter(className => 
-                        className.toLowerCase().includes(formData.class_name.toLowerCase()) ||
-                        formData.class_name === ''
-                      )
-                      .map((className) => (
-                        <CommandItem
-                          key={className}
-                          value={className}
-                          onSelect={(currentValue) => {
-                            setFormData({ ...formData, class_name: currentValue });
-                            setOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              formData.class_name === className ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {className}
-                        </CommandItem>
-                      ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
         </div>
       </div>
 

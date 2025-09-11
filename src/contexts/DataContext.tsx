@@ -8,6 +8,7 @@ import {
   type Student,
   type ClassInfo,
   type Cadre,
+  type CadreRole,
   type MainBranch,
   type SubBranch
 } from '@/data/mockData';
@@ -43,6 +44,14 @@ interface DataContextType {
   addSubBranch: (branch: Omit<SubBranch, 'id'>) => void;
   deleteSubBranch: (branchId: string) => void;
   removeSubBranchFromMainBranch: (branchId: string) => void;
+  
+  // Unified Management Methods
+  assignStudentToMotherClass: (studentId: string, classId: string) => void;
+  removeStudentFromMotherClass: (studentId: string) => void;
+  assignCadreRole: (studentId: string, classId: string, role: '班长' | '副班长' | '关怀员') => void;
+  removeCadreRole: (studentId: string, classId: string, role: '班长' | '副班长' | '关怀员') => void;
+  getStudentRoles: (studentId: string) => CadreRole[];
+  getClassAllStudents: (classId: string) => Student[]; // Including mother class students and cadres
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -226,6 +235,185 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     console.log('Association removed, sub-branch preserved in system');
   };
 
+  // Unified Management Methods
+  const assignStudentToMotherClass = (studentId: string, classId: string) => {
+    const targetClass = classes.find(c => c.id === classId);
+    if (!targetClass) return;
+
+    // Update student's mother class information
+    setStudents(prev => prev.map(student => 
+      student.student_id === studentId 
+        ? { 
+            ...student, 
+            mother_class_id: classId,
+            mother_class_name: targetClass.name
+          }
+        : student
+    ));
+
+    // Add student to class's mother_class_students array
+    setClasses(prev => prev.map(classInfo => 
+      classInfo.id === classId 
+        ? { 
+            ...classInfo, 
+            mother_class_students: [...(classInfo.mother_class_students || []), studentId]
+          }
+        : classInfo
+    ));
+  };
+
+  const removeStudentFromMotherClass = (studentId: string) => {
+    const student = students.find(s => s.student_id === studentId);
+    if (!student || !student.mother_class_id) return;
+
+    const oldClassId = student.mother_class_id;
+
+    // Remove mother class info from student
+    setStudents(prev => prev.map(s => 
+      s.student_id === studentId 
+        ? { ...s, mother_class_id: undefined, mother_class_name: undefined }
+        : s
+    ));
+
+    // Remove student from class's mother_class_students array
+    setClasses(prev => prev.map(classInfo => 
+      classInfo.id === oldClassId 
+        ? { 
+            ...classInfo, 
+            mother_class_students: (classInfo.mother_class_students || []).filter(id => id !== studentId)
+          }
+        : classInfo
+    ));
+  };
+
+  const assignCadreRole = (studentId: string, classId: string, role: '班长' | '副班长' | '关怀员') => {
+    const student = students.find(s => s.student_id === studentId);
+    const targetClass = classes.find(c => c.id === classId);
+    if (!student || !targetClass) return;
+
+    // Check if cadre record exists for this student
+    const existingCadre = cadres.find(c => c.student_id === studentId);
+  
+    if (existingCadre) {
+      // Add new role to existing cadre
+      const newRole: CadreRole = {
+        class_id: classId,
+        class_name: targetClass.name,
+        role: role,
+        appointment_date: new Date().toISOString().split('T')[0]
+      };
+
+      setCadres(prev => prev.map(cadre => 
+        cadre.student_id === studentId 
+          ? { 
+              ...cadre, 
+              roles: [...cadre.roles.filter(r => !(r.class_id === classId && r.role === role)), newRole]
+            }
+          : cadre
+      ));
+    } else {
+      // Create new cadre record with proper structure
+      const newCadre: Cadre = {
+        id: Date.now().toString(),
+        student_id: studentId,
+        chinese_name: student.chinese_name,
+        english_name: student.english_name,
+        phone: student.phone,
+        email: student.email,
+        roles: [{
+          class_id: classId,
+          class_name: targetClass.name,
+          role: role,
+          appointment_date: new Date().toISOString().split('T')[0]
+        }],
+        support_classes: [],
+        can_take_attendance: true,
+        can_register_students: true,
+        status: '活跃',
+        created_date: new Date().toISOString().split('T')[0]
+      };
+
+      setCadres(prev => [...prev, newCadre]);
+    }
+
+    // Update class information
+    setClasses(prev => prev.map(classInfo => {
+      if (classInfo.id !== classId) return classInfo;
+
+      let updatedClass = { ...classInfo };
+      
+      if (role === '班长') {
+        updatedClass.class_monitor_id = studentId;
+        updatedClass.class_monitor = student.chinese_name;
+      } else if (role === '副班长') {
+        const deputies = updatedClass.deputy_monitors || [];
+        if (!deputies.includes(studentId)) {
+          updatedClass.deputy_monitors = [...deputies, studentId];
+        }
+      } else if (role === '关怀员') {
+        const careOfficers = updatedClass.care_officers || [];
+        if (!careOfficers.includes(studentId)) {
+          updatedClass.care_officers = [...careOfficers, studentId];
+        }
+      }
+
+      return updatedClass;
+    }));
+  };
+
+  const removeCadreRole = (studentId: string, classId: string, role: '班长' | '副班长' | '关怀员') => {
+    // Remove role from cadre record
+    setCadres(prev => prev.map(cadre => {
+      if (cadre.student_id !== studentId) return cadre;
+      
+      const updatedRoles = cadre.roles.filter(r => !(r.class_id === classId && r.role === role));
+      
+      // If no roles left, remove the cadre entirely
+      return updatedRoles.length > 0 ? { ...cadre, roles: updatedRoles } : null;
+    }).filter(Boolean) as Cadre[]);
+
+    // Update class information
+    setClasses(prev => prev.map(classInfo => {
+      if (classInfo.id !== classId) return classInfo;
+
+      let updatedClass = { ...classInfo };
+      
+      if (role === '班长' && classInfo.class_monitor_id === studentId) {
+        updatedClass.class_monitor_id = '';
+        updatedClass.class_monitor = '';
+      } else if (role === '副班长') {
+        updatedClass.deputy_monitors = (classInfo.deputy_monitors || []).filter(id => id !== studentId);
+      } else if (role === '关怀员') {
+        updatedClass.care_officers = (classInfo.care_officers || []).filter(id => id !== studentId);
+      }
+
+      return updatedClass;
+    }));
+  };
+
+  const getStudentRoles = (studentId: string): CadreRole[] => {
+    const cadre = cadres.find(c => c.student_id === studentId);
+    return cadre ? cadre.roles : [];
+  };
+
+  const getClassAllStudents = (classId: string): Student[] => {
+    const classInfo = classes.find(c => c.id === classId);
+    if (!classInfo) return [];
+
+    const allStudentIds = [
+      ...(classInfo.mother_class_students || []),
+      ...(classInfo.regular_students || []),
+      classInfo.class_monitor_id,
+      ...(classInfo.deputy_monitors || []),
+      ...(classInfo.care_officers || [])
+    ];
+
+    const uniqueIds = [...new Set(allStudentIds.filter(Boolean))];
+    return uniqueIds
+      .map(id => students.find(s => s.student_id === id))
+      .filter(Boolean) as Student[];
+  };
+
   const value: DataContextType = {
     students,
     updateStudent,
@@ -252,6 +440,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     addSubBranch,
     deleteSubBranch,
     removeSubBranchFromMainBranch,
+    
+    // Unified Management Methods
+    assignStudentToMotherClass,
+    removeStudentFromMotherClass,
+    assignCadreRole,
+    removeCadreRole,
+    getStudentRoles,
+    getClassAllStudents,
   };
 
   return (

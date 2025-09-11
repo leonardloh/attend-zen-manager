@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -7,21 +6,8 @@ import { Switch } from '@/components/ui/switch';
 import ClassMultiSelect from './ClassMultiSelect';
 import ClassSearchInput from '@/components/Classes/ClassSearchInput';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
-import { mockStudents } from '@/data/mockData';
-
-interface Cadre {
-  id: string;
-  student_id: string; // Reference to student
-  chinese_name: string; // Auto-populated from student
-  english_name: string; // Auto-populated from student
-  gender: 'male' | 'female'; // Auto-populated from student
-  date_of_birth: string; // Auto-populated from student
-  role: '班长' | '副班长' | '关怀员';
-  mother_class: string;
-  support_classes: string[];
-  can_take_attendance: boolean;
-  can_register_students: boolean;
-}
+import { useData } from '@/contexts/DataContext';
+import { Cadre, CadreRole } from '@/data/mockData';
 
 interface CadreFormProps {
   initialData?: Cadre;
@@ -30,6 +16,12 @@ interface CadreFormProps {
 }
 
 const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }) => {
+  const { students, classes } = useData();
+
+  // Extract role information from initialData if it exists
+  const initialRole = initialData?.roles && initialData.roles.length > 0 
+    ? initialData.roles[0] 
+    : { class_name: initialData?.mother_class || '', role: initialData?.role || '班长' };
 
   const [formData, setFormData] = useState({
     student_id: initialData?.student_id || '',
@@ -37,8 +29,8 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
     english_name: initialData?.english_name || '',
     gender: initialData?.gender || 'male' as const,
     date_of_birth: initialData?.date_of_birth || '',
-    role: initialData?.role || '班长' as const,
-    mother_class: initialData?.mother_class || '',
+    role: initialRole.role as '班长' | '副班长' | '关怀员',
+    mother_class: initialRole.class_name || '',
     support_classes: initialData?.support_classes || [],
     can_take_attendance: initialData?.can_take_attendance ?? true,
     can_register_students: initialData?.can_register_students ?? true
@@ -47,15 +39,12 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
   const roles = ['班长', '副班长', '关怀员'];
   
   // Available class names for the multi-select (extracted from our class data)
-  const availableClasses = [
-    '初级班A', '中级班B', '高级班C', '周末班D', 
-    '初级班D', '中级班E', '高级班F'
-  ];
+  const availableClasses = classes.map(cls => cls.name);
 
   // Auto-populate student information when student is selected
   useEffect(() => {
     if (formData.student_id) {
-      const selectedStudent = mockStudents.find(s => s.student_id === formData.student_id);
+      const selectedStudent = students.find(s => s.student_id === formData.student_id);
       if (selectedStudent) {
         setFormData(prev => ({
           ...prev,
@@ -63,11 +52,11 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
           english_name: selectedStudent.english_name,
           gender: selectedStudent.gender,
           date_of_birth: selectedStudent.date_of_birth,
-          mother_class: prev.mother_class || selectedStudent.class_name // Use student's class as default if no mother class selected
+          mother_class: prev.mother_class || selectedStudent.class_name || '' // Use student's class as default if no mother class selected
         }));
       }
     }
-  }, [formData.student_id]);
+  }, [formData.student_id, students]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,10 +67,34 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
       return;
     }
     
+    // Find the class ID for the mother class
+    const motherClass = classes.find(c => c.name === formData.mother_class);
+    const classId = motherClass ? motherClass.id : '';
+    
+    // Create the cadre object with the new structure
+    const cadreData = {
+      student_id: formData.student_id,
+      chinese_name: formData.chinese_name,
+      english_name: formData.english_name,
+      phone: students.find(s => s.student_id === formData.student_id)?.phone || '',
+      email: students.find(s => s.student_id === formData.student_id)?.email || '',
+      roles: [{
+        class_id: classId,
+        class_name: formData.mother_class,
+        role: formData.role,
+        appointment_date: new Date().toISOString().split('T')[0]
+      }] as CadreRole[],
+      support_classes: formData.support_classes,
+      can_take_attendance: formData.can_take_attendance,
+      can_register_students: formData.can_register_students,
+      status: '活跃' as const,
+      created_date: new Date().toISOString().split('T')[0]
+    };
+
     if (initialData) {
-      onSubmit({ ...formData, id: initialData.id });
+      onSubmit({ ...cadreData, id: initialData.id });
     } else {
-      onSubmit(formData);
+      onSubmit(cadreData);
     }
   };
 

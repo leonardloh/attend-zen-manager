@@ -1,24 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Shield, Edit, Trash2, User2, Check, UserPlus } from 'lucide-react';
-
-interface Cadre {
-  id: string;
-  student_id: string; // Reference to student
-  chinese_name: string; // Auto-populated from student
-  english_name: string; // Auto-populated from student
-  gender: 'male' | 'female'; // Auto-populated from student
-  date_of_birth: string; // Auto-populated from student
-  role: '班长' | '副班长' | '关怀员';
-  mother_class: string;
-  support_classes: string[];
-  can_take_attendance: boolean;
-  can_register_students: boolean;
-}
+import { Shield, Edit, Trash2 } from 'lucide-react';
+import { Cadre, CadreRole } from '@/data/mockData';
 
 interface CadreCardProps {
   cadre: Cadre;
@@ -36,18 +22,18 @@ const CadreCard: React.FC<CadreCardProps> = ({ cadre, onEdit, onDelete }) => {
     }
   };
 
-  const calculateAge = (dateOfBirth: string) => {
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    
-    return age;
-  };
+  // Handle both old and new cadre structures
+  // New structure has 'roles' array, old structure has direct properties
+  const cadreRoles = cadre.roles 
+    ? cadre.roles 
+    : cadre.role 
+      ? [{ 
+          class_id: '', 
+          class_name: cadre.mother_class || '未分配', 
+          role: cadre.role, 
+          appointment_date: cadre.appointment_date || new Date().toISOString().split('T')[0] 
+        }] 
+      : [];
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -62,10 +48,23 @@ const CadreCard: React.FC<CadreCardProps> = ({ cadre, onEdit, onDelete }) => {
               <p className="text-sm text-gray-600">{cadre.english_name}</p>
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <Badge className={getRoleColor(cadre.role)}>
-              {cadre.role}
-            </Badge>
+          <div className="flex flex-col gap-1">
+            {cadreRoles && cadreRoles.length > 0 ? (
+              cadreRoles.slice(0, 2).map((role, index) => (
+                <Badge key={index} className={getRoleColor(role.role)} style={{ fontSize: '10px' }}>
+                  {role.role}
+                </Badge>
+              ))
+            ) : (
+              <Badge className="bg-gray-100 text-gray-800" style={{ fontSize: '10px' }}>
+                无职位
+              </Badge>
+            )}
+            {cadreRoles && cadreRoles.length > 2 && (
+              <Badge className="bg-gray-100 text-gray-800" style={{ fontSize: '10px' }}>
+                +{cadreRoles.length - 2}个
+              </Badge>
+            )}
           </div>
         </div>
         
@@ -74,60 +73,41 @@ const CadreCard: React.FC<CadreCardProps> = ({ cadre, onEdit, onDelete }) => {
             <span className="text-gray-600">学员编号:</span>
             <span className="font-medium">{cadre.student_id}</span>
           </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-600">母班班名:</span>
-            <span className="font-medium">{cadre.mother_class}</span>
-          </div>
           <div className="text-sm">
-            <span className="text-gray-600">护持班名:</span>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {cadre.support_classes.map((className, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
-                  {className}
-                </Badge>
-              ))}
+            <span className="text-gray-600">担任职位:</span>
+            <div className="mt-1 space-y-1">
+              {cadreRoles && cadreRoles.length > 0 ? (
+                cadreRoles.map((role, index) => (
+                  <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded text-xs">
+                    <span className="font-medium">{role.class_name}</span>
+                    <Badge className={getRoleColor(role.role)} style={{ fontSize: '10px' }}>
+                      {role.role}
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="text-gray-500 text-xs">暂无职位</div>
+              )}
             </div>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">性别:</span>
-            <span className="font-medium">{cadre.gender === 'male' ? '男' : '女'}</span>
+            <span className="text-gray-600">电话:</span>
+            <span className="font-medium">{cadre.phone}</span>
           </div>
+          {cadre.email && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">邮箱:</span>
+              <span className="font-medium">{cadre.email}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">年龄:</span>
-            <span className="font-medium">{calculateAge(cadre.date_of_birth)}岁</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">出生日期:</span>
-            <span className="font-medium">{cadre.date_of_birth}</span>
+            <span className="text-gray-600">创建日期:</span>
+            <span className="font-medium">
+              {cadre.created_date || cadre.appointment_date || new Date().toISOString().split('T')[0]}
+            </span>
           </div>
         </div>
 
-        {/* Permissions Section */}
-        <div className="border-t pt-3 mb-4">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">权限</h4>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-sm">
-              {cadre.can_take_attendance ? (
-                <Check className="h-4 w-4 text-green-600" />
-              ) : (
-                <div className="h-4 w-4" />
-              )}
-              <span className={cadre.can_take_attendance ? 'text-green-600' : 'text-gray-400'}>
-                考勤管理
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              {cadre.can_register_students ? (
-                <UserPlus className="h-4 w-4 text-green-600" />
-              ) : (
-                <div className="h-4 w-4" />
-              )}
-              <span className={cadre.can_register_students ? 'text-green-600' : 'text-gray-400'}>
-                学员注册
-              </span>
-            </div>
-          </div>
-        </div>
         
         <div className="flex gap-2">
           <Button 
@@ -157,11 +137,8 @@ const CadreCard: React.FC<CadreCardProps> = ({ cadre, onEdit, onDelete }) => {
                   <br /><br />
                   删除后将清除以下信息：
                   <ul className="mt-2 text-sm list-disc list-inside space-y-1">
-                    <li>干部基本资料（姓名、性别、出生日期等）</li>
-                    <li>职位信息（{cadre.role}）</li>
-                    <li>母班班名：{cadre.mother_class}</li>
-                    <li>护持班名：{cadre.support_classes.join('、')}</li>
-                    <li>管理权限设置</li>
+                    <li>干部基本资料（姓名、电话、邮箱等）</li>
+                    <li>所有职位信息：{cadreRoles.map(r => `${r.class_name}(${r.role})`).join('、') || '无职位'}</li>
                   </ul>
                   <br />
                   <strong>此操作不可撤销。</strong>

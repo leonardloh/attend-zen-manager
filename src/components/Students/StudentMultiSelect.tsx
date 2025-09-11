@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Check, ChevronDown, X, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { mockStudents, type Student } from '@/data/mockData';
+import { type Student } from '@/data/mockData';
+import { useData } from '@/contexts/DataContext';
 
 interface StudentMultiSelectProps {
   value: string[];
@@ -26,12 +27,13 @@ const StudentMultiSelect: React.FC<StudentMultiSelectProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const { students } = useData();
 
   // Find selected students
-  const selectedStudents = mockStudents.filter(s => value.includes(s.student_id));
+  const selectedStudents = students.filter(s => value.includes(s.student_id));
 
   // Filter students based on search term and exclude list
-  const filteredStudents = mockStudents.filter(student => {
+  const filteredStudents = students.filter(student => {
     if (excludeIds.includes(student.student_id)) return false;
     
     const searchLower = searchTerm.toLowerCase();
@@ -64,6 +66,13 @@ const StudentMultiSelect: React.FC<StudentMultiSelectProps> = ({
     setSearchTerm('');
   };
 
+  // Reset search term when popover closes
+  useEffect(() => {
+    if (!open) {
+      setSearchTerm('');
+    }
+  }, [open]);
+
   return (
     <div className={className}>
       <Popover open={open} onOpenChange={setOpen}>
@@ -83,16 +92,15 @@ const StudentMultiSelect: React.FC<StudentMultiSelectProps> = ({
                       <Badge
                         key={student.student_id}
                         variant="secondary"
-                        className="text-xs"
+                        className="text-xs pr-1"
                       >
-                        {student.chinese_name}
-                        <button
-                          type="button"
+                        <span>{student.chinese_name}</span>
+                        <span
                           onClick={(e) => handleRemove(student.student_id, e)}
-                          className="ml-1 hover:bg-gray-300 rounded-full"
+                          className="ml-1 hover:bg-gray-300 rounded-full cursor-pointer"
                         >
                           <X className="h-3 w-3" />
-                        </button>
+                        </span>
                       </Badge>
                     ))}
                     {selectedStudents.length > 3 && (
@@ -108,16 +116,15 @@ const StudentMultiSelect: React.FC<StudentMultiSelectProps> = ({
             </div>
             <div className="flex items-center gap-1 ml-2">
               {selectedStudents.length > 0 && (
-                <button
-                  type="button"
+                <span
                   onClick={(e) => {
                     e.stopPropagation();
                     handleClearAll();
                   }}
-                  className="hover:bg-gray-200 rounded-full p-1"
+                  className="hover:bg-gray-200 rounded-full p-1 cursor-pointer"
                 >
                   <X className="h-3 w-3" />
-                </button>
+                </span>
               )}
               <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
             </div>
@@ -158,7 +165,7 @@ const StudentMultiSelect: React.FC<StudentMultiSelectProps> = ({
                   return (
                     <CommandItem
                       key={student.id}
-                      value={student.student_id}
+                      value={`${student.student_id} ${student.chinese_name} ${student.english_name}`}
                       onSelect={() => canSelect && handleSelect(student.student_id)}
                       className={cn(
                         !canSelect && "opacity-50 cursor-not-allowed"

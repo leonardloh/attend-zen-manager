@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,15 +50,14 @@ const ClassMultiSelect: React.FC<ClassMultiSelectProps> = ({
       {value.length > 0 && (
         <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-gray-50 min-h-[40px]">
           {value.map((className) => (
-            <Badge key={className} variant="secondary" className="flex items-center gap-1">
-              {className}
-              <button
-                type="button"
+            <Badge key={className} variant="secondary" className="flex items-center gap-1 pr-1">
+              <span>{className}</span>
+              <span
                 onClick={() => handleRemove(className)}
-                className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+                className="ml-1 hover:bg-gray-300 rounded-full p-0.5 cursor-pointer"
               >
                 <X className="h-3 w-3" />
-              </button>
+              </span>
             </Badge>
           ))}
         </div>

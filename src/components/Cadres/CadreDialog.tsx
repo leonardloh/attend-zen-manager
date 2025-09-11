@@ -1,23 +1,9 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import CadreForm from './CadreForm';
-
-interface Cadre {
-  id: string;
-  student_id: string; // Reference to student
-  chinese_name: string; // Auto-populated from student
-  english_name: string; // Auto-populated from student
-  gender: 'male' | 'female'; // Auto-populated from student
-  date_of_birth: string; // Auto-populated from student
-  role: '班长' | '副班长' | '关怀员';
-  mother_class: string;
-  support_classes: string[];
-  can_take_attendance: boolean;
-  can_register_students: boolean;
-}
+import { Cadre } from '@/data/mockData';
 
 interface CadreDialogProps {
   isAddDialogOpen: boolean;

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { mockStudents, type Student } from '@/data/mockData';
+import { type Student } from '@/data/mockData';
+import { useData } from '@/contexts/DataContext';
 
 interface StudentSearchInputProps {
   value: string;
@@ -22,13 +23,14 @@ const StudentSearchInput: React.FC<StudentSearchInputProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const { students } = useData();
 
   // Find selected student
-  const safeStudentsForFind = Array.isArray(mockStudents) ? mockStudents : [];
+  const safeStudentsForFind = Array.isArray(students) ? students : [];
   const selectedStudent = safeStudentsForFind.find(s => s.student_id === value);
 
   // Filter students based on search term and exclude list
-  const safeStudents = Array.isArray(mockStudents) ? mockStudents : [];
+  const safeStudents = Array.isArray(students) ? students : [];
   const filteredStudents = safeStudents.filter(student => {
     if (excludeIds.includes(student.student_id)) return false;
     
@@ -50,6 +52,13 @@ const StudentSearchInput: React.FC<StudentSearchInputProps> = ({
     onChange('');
     setSearchTerm('');
   };
+
+  // Reset search term when popover closes
+  useEffect(() => {
+    if (!open) {
+      setSearchTerm('');
+    }
+  }, [open]);
 
   return (
     <div className={className}>
@@ -73,7 +82,7 @@ const StudentSearchInput: React.FC<StudentSearchInputProps> = ({
             )}
             <div className="flex items-center gap-1">
               {selectedStudent && (
-                <div
+                <span
                   onClick={(e) => {
                     e.stopPropagation();
                     handleClear();
@@ -81,7 +90,7 @@ const StudentSearchInput: React.FC<StudentSearchInputProps> = ({
                   className="hover:bg-gray-200 rounded-full p-1 cursor-pointer"
                 >
                   <X className="h-3 w-3" />
-                </div>
+                </span>
               )}
               <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
             </div>
@@ -100,7 +109,7 @@ const StudentSearchInput: React.FC<StudentSearchInputProps> = ({
                 {filteredStudents.map((student) => (
                   <CommandItem
                     key={student.id}
-                    value={student.student_id}
+                    value={`${student.student_id} ${student.chinese_name} ${student.english_name}`}
                     onSelect={() => handleSelect(student.student_id)}
                   >
                     <Check

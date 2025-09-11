@@ -10,9 +10,11 @@ export interface Student {
   gender: 'male' | 'female';
   phone: string;
   email?: string;
-  class_name: string;
   enrollment_date: string;
   status: '活跃' | '旁听' | '保留';
+  // Mother class information
+  mother_class_id?: string; // Reference to the class that this student primarily belongs to
+  mother_class_name?: string; // Display name of mother class
   // Required fields
   postal_code: string;
   date_of_birth: string;
@@ -33,11 +35,14 @@ export interface ClassInfo {
   sub_branch_name?: string; // SubBranch name for display
   time: string;
   student_count: number;
-  class_monitor_id: string;
-  class_monitor: string;
-  deputy_monitors?: string[];
-  care_officers?: string[];
-  student_ids?: string[];
+  // Cadre roles (single references)
+  class_monitor_id: string; // Primary class monitor
+  class_monitor: string; // Display name
+  deputy_monitors?: string[]; // Array of student IDs
+  care_officers?: string[]; // Array of student IDs
+  // Student management
+  mother_class_students?: string[]; // Students who have this as their mother class
+  regular_students?: string[]; // Other students who attend this class regularly
   learning_progress: string;
   page_number: string;
   line_number: string;
@@ -45,19 +50,28 @@ export interface ClassInfo {
   status: 'active' | 'inactive';
 }
 
-// Cadre Interface
+// Cadre Role Interface (for multiple roles support)
+export interface CadreRole {
+  class_id: string;
+  class_name: string;
+  role: '班长' | '副班长' | '关怀员';
+  appointment_date: string; // When this specific role was appointed
+}
+
+// Cadre Interface (restructured for multiple roles)
 export interface Cadre {
   id: string;
-  student_id: string;
-  chinese_name: string;
-  english_name: string;
-  role: '班长' | '副班长' | '关怀员';
-  mother_class: string;
-  support_classes: string[];
-  phone: string;
-  email?: string;
-  appointment_date: string;
+  student_id: string; // Reference to Student
+  chinese_name: string; // Auto-populated from student
+  english_name: string; // Auto-populated from student
+  phone: string; // Auto-populated from student
+  email?: string; // Auto-populated from student
+  roles: CadreRole[]; // Multiple roles this cadre holds
+  support_classes?: string[]; // Classes this cadre supports
+  can_take_attendance: boolean; // Can take attendance for classes
+  can_register_students: boolean; // Can register students for classes
   status: '活跃' | '暂停';
+  created_date: string; // When the cadre record was first created
 }
 
 // Main Branch Interface
@@ -106,9 +120,10 @@ export const mockStudents: Student[] = [
     gender: 'male',
     phone: '13800138001',
     email: 'wang.xiaoming@example.com',
-    class_name: '初级班A',
     enrollment_date: '2024-01-15',
     status: '活跃',
+    mother_class_id: '1', // 初级班A
+    mother_class_name: '初级班A',
     postal_code: '100001',
     date_of_birth: '1995-05-15',
     emergency_contact_name: '王大明',
@@ -126,9 +141,10 @@ export const mockStudents: Student[] = [
     gender: 'female',
     phone: '13800138002',
     email: 'li.xiaohong@example.com',
-    class_name: '中级班B',
     enrollment_date: '2024-02-01',
     status: '旁听',
+    mother_class_id: '2', // 中级班B
+    mother_class_name: '中级班B',
     postal_code: '100002',
     date_of_birth: '1992-08-22',
     emergency_contact_name: '李大红',
@@ -146,9 +162,10 @@ export const mockStudents: Student[] = [
     gender: 'male',
     phone: '13800138003',
     email: 'zhang.san@example.com',
-    class_name: '高级班C',
     enrollment_date: '2024-01-20',
     status: '活跃',
+    mother_class_id: '3', // 高级班C
+    mother_class_name: '高级班C',
     postal_code: '100003',
     date_of_birth: '1988-12-10',
     emergency_contact_name: '张大三',
@@ -166,7 +183,6 @@ export const mockStudents: Student[] = [
     gender: 'female',
     phone: '13800138004',
     email: 'li.si@example.com',
-    class_name: '初级班A',
     enrollment_date: '2024-03-01',
     status: '保留',
     postal_code: '100004',
@@ -183,7 +199,6 @@ export const mockStudents: Student[] = [
     gender: 'male',
     phone: '13800138005',
     email: 'wang.wu@example.com',
-    class_name: '初级班A',
     enrollment_date: '2024-01-10',
     status: '活跃',
     postal_code: '100005',
@@ -203,7 +218,6 @@ export const mockStudents: Student[] = [
     gender: 'female',
     phone: '13800138006',
     email: 'zhao.liu@example.com',
-    class_name: '初级班A',
     enrollment_date: '2024-02-15',
     status: '活跃',
     postal_code: '100006',
@@ -223,7 +237,6 @@ export const mockStudents: Student[] = [
     gender: 'male',
     phone: '13800138007',
     email: 'qian.qi@example.com',
-    class_name: '初级班A',
     enrollment_date: '2024-01-25',
     status: '活跃',
     postal_code: '100007',
@@ -243,7 +256,6 @@ export const mockStudents: Student[] = [
     gender: 'female',
     phone: '13800138008',
     email: 'sun.ba@example.com',
-    class_name: '初级班A',
     enrollment_date: '2024-03-10',
     status: '旁听',
     postal_code: '100008',
@@ -263,7 +275,6 @@ export const mockStudents: Student[] = [
     gender: 'male',
     phone: '13800138009',
     email: 'zhou.jiu@example.com',
-    class_name: '中级班B',
     enrollment_date: '2024-02-20',
     status: '活跃',
     postal_code: '100009',
@@ -283,7 +294,6 @@ export const mockStudents: Student[] = [
     gender: 'female',
     phone: '13800138010',
     email: 'wu.shi@example.com',
-    class_name: '中级班B',
     enrollment_date: '2024-01-30',
     status: '活跃',
     postal_code: '100010',
@@ -303,7 +313,6 @@ export const mockStudents: Student[] = [
     gender: 'male',
     phone: '13800138011',
     email: 'zheng.shiyi@example.com',
-    class_name: '中级班B',
     enrollment_date: '2024-02-05',
     status: '活跃',
     postal_code: '100011',
@@ -323,7 +332,6 @@ export const mockStudents: Student[] = [
     gender: 'female',
     phone: '13800138012',
     email: 'wang.shier@example.com',
-    class_name: '中级班B',
     enrollment_date: '2024-01-18',
     status: '旁听',
     postal_code: '100012',
@@ -343,7 +351,6 @@ export const mockStudents: Student[] = [
     gender: 'male',
     phone: '13800138013',
     email: 'li.shisan@example.com',
-    class_name: '中级班B',
     enrollment_date: '2024-02-12',
     status: '活跃',
     postal_code: '100013',
@@ -363,7 +370,6 @@ export const mockStudents: Student[] = [
     gender: 'female',
     phone: '13800138014',
     email: 'zhang.shisi@example.com',
-    class_name: '中级班B',
     enrollment_date: '2024-03-05',
     status: '活跃',
     postal_code: '100014',
@@ -383,7 +389,6 @@ export const mockStudents: Student[] = [
     gender: 'male',
     phone: '13800138015',
     email: 'liu.shiwu@example.com',
-    class_name: '高级班C',
     enrollment_date: '2024-01-08',
     status: '活跃',
     postal_code: '100015',
@@ -394,6 +399,26 @@ export const mockStudents: Student[] = [
     occupation: '大学教授',
     academic_level: 'PhD',
     marriage_status: 'Married'
+  },
+  // 添加罗净智作为示例 - 多职位干部
+  {
+    id: '16',
+    student_id: 'TEST001',
+    chinese_name: '罗净智',
+    english_name: 'Loh Jing Zhi',
+    gender: 'male',
+    phone: '0195995846',
+    email: 'jinzhi@example.com',
+    enrollment_date: '2018-09-01',
+    status: '活跃',
+    mother_class_id: 'pgy18003', // PGY18003班 (需要在classes中创建)
+    mother_class_name: 'PGY18003',
+    postal_code: '11400',
+    date_of_birth: '1993-07-09',
+    emergency_contact_name: 'Ong Poh Siew',
+    emergency_contact_phone: '0195995846',
+    emergency_contact_relation: 'Parent',
+    occupation: '软件工程师'
   }
 ];
 
@@ -470,6 +495,41 @@ export const mockClasses: ClassInfo[] = [
     line_number: '第15行',
     attendance_rate: 60,
     status: 'inactive'
+  },
+  // 添加罗净智的母班
+  {
+    id: 'pgy18003',
+    name: 'PGY18003',
+    sub_branch_id: '3',
+    sub_branch_name: '大山脚分苑',
+    time: '周三 19:30-21:30',
+    student_count: 1,
+    class_monitor_id: 'TEST001',
+    class_monitor: '罗净智',
+    mother_class_students: ['TEST001'], // 罗净智的母班
+    learning_progress: '广论第二轮学习',
+    page_number: '第156页',
+    line_number: '第8行',
+    attendance_rate: 95,
+    status: 'active'
+  },
+  // 添加新班级 PGY25001
+  {
+    id: 'pgy25001',
+    name: 'PGY25001',
+    sub_branch_id: '3',
+    sub_branch_name: '大山脚分苑',
+    time: '周五 20:00-22:00',
+    student_count: 15,
+    class_monitor_id: 'S2024002', // 其他人当班长
+    class_monitor: '李小红',
+    care_officers: ['TEST001'], // 罗净智当关怀员
+    regular_students: ['S2024004', 'S2024005', 'S2024006'], // 其他学员
+    learning_progress: '广论第一轮学习',
+    page_number: '第25页',
+    line_number: '第3行',
+    attendance_rate: 88,
+    status: 'active'
   }
 ];
 
@@ -480,78 +540,126 @@ export const mockCadres: Cadre[] = [
     student_id: 'S2024001',
     chinese_name: '王小明',
     english_name: 'Wang Xiaoming',
-    role: '班长',
-    mother_class: '初级班A',
-    support_classes: [],
     phone: '13800138001',
     email: 'wang.xiaoming@example.com',
-    appointment_date: '2024-01-15',
-    status: '活跃'
+    roles: [
+      {
+        class_id: '1',
+        class_name: '初级班A',
+        role: '班长',
+        appointment_date: '2024-01-15'
+      }
+    ],
+    support_classes: [],
+    can_take_attendance: true,
+    can_register_students: true,
+    status: '活跃',
+    created_date: '2024-01-15'
   },
   {
     id: '2',
     student_id: 'S2024002',
     chinese_name: '李小红',
     english_name: 'Li Xiaohong',
-    role: '班长',
-    mother_class: '中级班B',
-    support_classes: ['初级班A'],
     phone: '13800138002',
     email: 'li.xiaohong@example.com',
-    appointment_date: '2024-02-01',
-    status: '活跃'
+    roles: [
+      {
+        class_id: '2',
+        class_name: '中级班B',
+        role: '班长',
+        appointment_date: '2024-02-01'
+      }
+    ],
+    support_classes: ['初级班A'],
+    can_take_attendance: true,
+    can_register_students: true,
+    status: '活跃',
+    created_date: '2024-02-01'
   },
   {
     id: '3',
     student_id: 'S2024003',
     chinese_name: '张三',
     english_name: 'Zhang San',
-    role: '班长',
-    mother_class: '高级班C',
-    support_classes: ['中级班B'],
     phone: '13800138003',
     email: 'zhang.san@example.com',
-    appointment_date: '2024-01-20',
-    status: '活跃'
+    roles: [
+      {
+        class_id: '3',
+        class_name: '高级班C',
+        role: '班长',
+        appointment_date: '2024-01-20'
+      }
+    ],
+    support_classes: ['中级班B'],
+    can_take_attendance: true,
+    can_register_students: true,
+    status: '活跃',
+    created_date: '2024-01-20'
   },
   {
     id: '4',
     student_id: 'S2024005',
     chinese_name: '王五',
     english_name: 'Wang Wu',
-    role: '副班长',
-    mother_class: '初级班A',
-    support_classes: [],
     phone: '13800138005',
     email: 'wang.wu@example.com',
-    appointment_date: '2024-01-20',
-    status: '活跃'
+    roles: [
+      {
+        class_id: '1',
+        class_name: '初级班A',
+        role: '副班长',
+        appointment_date: '2024-01-20'
+      }
+    ],
+    support_classes: [],
+    can_take_attendance: true,
+    can_register_students: true,
+    status: '活跃',
+    created_date: '2024-01-20'
   },
   {
     id: '5',
     student_id: 'S2024006',
     chinese_name: '赵六',
     english_name: 'Zhao Liu',
-    role: '关怀员',
-    mother_class: '初级班A',
-    support_classes: [],
     phone: '13800138006',
     email: 'zhao.liu@example.com',
-    appointment_date: '2024-02-15',
-    status: '活跃'
+    roles: [
+      {
+        class_id: '1',
+        class_name: '初级班A',
+        role: '关怀员',
+        appointment_date: '2024-02-15'
+      }
+    ],
+    support_classes: [],
+    can_take_attendance: true,
+    can_register_students: true,
+    status: '活跃',
+    created_date: '2024-02-15'
   },
   {
     id: '6',
     student_id: 'S2024010',
     chinese_name: '吴十',
     english_name: 'Wu Shi',
-    role: '副班长',
-    mother_class: '中级班B',
-    support_classes: [],
     phone: '13800138010',
     email: 'wu.shi@example.com',
-    appointment_date: '2024-02-01',
-    status: '活跃'
+    roles: [
+      {
+        class_id: '2',
+        class_name: '中级班B',
+        role: '副班长',
+        appointment_date: '2024-02-01'
+      }
+    ],
+    support_classes: [],
+    can_take_attendance: true,
+    can_register_students: true,
+    status: '活跃',
+    created_date: '2024-02-01'
   }
 ];
 
