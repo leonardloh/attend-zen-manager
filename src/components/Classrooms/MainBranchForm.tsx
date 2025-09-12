@@ -52,6 +52,7 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
     students_count: initialData?.students_count || 0
   });
 
+
   const { students } = useDatabase();
 
   // Auto-populate contact information when student is selected
@@ -67,6 +68,24 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
       }
     }
   }, [formData.student_id, students]);
+
+  // Find selected sub-branch for detailed display
+  const selectedSubBranch = subBranches?.find(sb => sb.name === formData.sub_branch_responsible);
+
+  // Sync responsibleSubBranch state with initialData changes (for editing existing branches)
+  useEffect(() => {
+    console.log('🔄 useEffect triggered with initialData:', initialData);
+    if (initialData?.sub_branch_responsible) {
+      console.log('📝 Setting responsibleSubBranch to:', initialData.sub_branch_responsible);
+      setResponsibleSubBranch(initialData.sub_branch_responsible);
+      setFormData(prev => ({
+        ...prev,
+        sub_branch_responsible: initialData.sub_branch_responsible
+      }));
+    } else {
+      console.log('❌ No sub_branch_responsible in initialData');
+    }
+  }, [initialData]);
 
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -168,9 +187,21 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
             placeholder="搜索负责分院..."
             subBranches={subBranches}
           />
-          {formData.sub_branch_responsible && (
+          {formData.sub_branch_responsible && selectedSubBranch && (
             <div className="text-sm text-green-600 bg-green-50 p-2 rounded border">
-              已选择: {formData.sub_branch_responsible}
+              <div className="font-medium">已选择: {selectedSubBranch.name}</div>
+              {selectedSubBranch.state && (
+                <div className="mt-1">州属: {selectedSubBranch.state}</div>
+              )}
+              {selectedSubBranch.contact_person && (
+                <div>联系人: {selectedSubBranch.contact_person}</div>
+              )}
+              {selectedSubBranch.contact_phone && (
+                <div>电话: {selectedSubBranch.contact_phone}</div>
+              )}
+              {selectedSubBranch.address && (
+                <div>地址: {selectedSubBranch.address}</div>
+              )}
             </div>
           )}
         </div>

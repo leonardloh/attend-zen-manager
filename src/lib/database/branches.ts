@@ -4,7 +4,7 @@ import { DbMainBranch, DbSubBranch, MainBranchWithDetails, SubBranchWithDetails 
 // Main Branch interfaces
 export interface CreateMainBranchData {
   name: string;
-  sub_branch_responsible?: string;
+  sub_branch_responsible?: number;
   manage_sub_branches?: number[]; // Changed from number to number[]
   person_in_charge?: number;
 }
@@ -57,6 +57,26 @@ export const mapDbMainBranchToFrontend = async (dbBranch: DbMainBranch): Promise
     classesCount = count || 0;
   }
 
+  // Get responsible sub-branch name - handle both ID and name cases
+  let responsibleSubBranchName = '';
+  if (dbBranch.sub_branch_responsible) {
+    // Check if it's already a name (string that's not a number)
+    if (isNaN(Number(dbBranch.sub_branch_responsible))) {
+      // It's already a name, use it directly
+      responsibleSubBranchName = dbBranch.sub_branch_responsible;
+    } else {
+      // It's an ID, look up the name
+      const { data: subBranch } = await supabase
+        .from('sub_branches')
+        .select('name')
+        .eq('id', dbBranch.sub_branch_responsible)
+        .single();
+      if (subBranch) {
+        responsibleSubBranchName = subBranch.name || '';
+      }
+    }
+  }
+
   // Count students through classes
   const studentsCount = 0;
   // This would be complex, setting to 0 for now
@@ -66,7 +86,7 @@ export const mapDbMainBranchToFrontend = async (dbBranch: DbMainBranch): Promise
     student_id, // Map person_in_charge ID to student_id string
     contact_person,
     contact_phone,
-    sub_branch_responsible: dbBranch.sub_branch_responsible || '', // Include responsible sub-branch
+    sub_branch_responsible: responsibleSubBranchName, // Map sub_branch_responsible ID to name
     manage_sub_branches: dbBranch.manage_sub_branches ? dbBranch.manage_sub_branches.map(id => id.toString()) : [], // Convert to string array
     sub_branches_count: subBranchesCount,
     classes_count: classesCount,

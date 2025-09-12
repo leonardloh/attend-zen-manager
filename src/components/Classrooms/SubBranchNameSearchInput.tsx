@@ -143,32 +143,6 @@ const SubBranchNameSearchInput: React.FC<SubBranchNameSearchInputProps> = ({
         </PopoverContent>
       </Popover>
 
-      {/* Display selected branch details */}
-      {selectedBranch && (
-        <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-          <h4 className="text-sm font-medium text-blue-700 mb-1">已选择分院信息</h4>
-          <div className="grid grid-cols-2 gap-2 text-xs text-blue-600">
-            <div>
-              <span className="font-medium">州属:</span> {selectedBranch.state}
-            </div>
-            {selectedBranch.address && (
-              <div>
-                <span className="font-medium">地址:</span> {selectedBranch.address}
-              </div>
-            )}
-            {selectedBranch.contact_person && (
-              <div>
-                <span className="font-medium">联系人:</span> {selectedBranch.contact_person}
-              </div>
-            )}
-            {selectedBranch.contact_phone && (
-              <div>
-                <span className="font-medium">电话:</span> {selectedBranch.contact_phone}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

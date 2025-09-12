@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { 
   useStudents, 
   useClasses, 
@@ -28,7 +28,8 @@ import {
   type CreateMainBranchData,
   type UpdateMainBranchData,
   type CreateSubBranchData,
-  type UpdateSubBranchData
+  type UpdateSubBranchData,
+  mapDbMainBranchToFrontend
 } from '@/lib/database/branches';
 import {
   type CreateClassData,
@@ -173,9 +174,11 @@ const mapDbMainBranchToMainBranch = (dbBranch: any): MainBranch => ({
   name: dbBranch.name || '',
   region: dbBranch.region || '中马',
   address: dbBranch.address || '',
-  student_id: dbBranch.person_in_charge?.toString(),
+  student_id: dbBranch.student_id || '', // Use mapped student_id
   contact_person: dbBranch.contact_person || '',
   contact_phone: dbBranch.contact_phone || '',
+  sub_branch_responsible: dbBranch.sub_branch_responsible || '', // Use mapped sub_branch_responsible name
+  manage_sub_branches: dbBranch.manage_sub_branches || [],
   sub_branches_count: dbBranch.sub_branches_count || 0,
   classes_count: dbBranch.classes_count || 0,
   students_count: dbBranch.students_count || 0,
@@ -244,10 +247,33 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     [dbClasses]
   );
   
-  const mainBranches = useMemo(() => 
-    (dbMainBranches || []).map(mapDbMainBranchToMainBranch),
-    [dbMainBranches]
-  );
+  // Use state for mainBranches due to async mapping
+  const [mainBranches, setMainBranches] = useState<MainBranch[]>([]);
+
+  // Handle async mapping for main branches
+  useEffect(() => {
+    if (!dbMainBranches) {
+      setMainBranches([]);
+      return;
+    }
+
+    const mapMainBranches = async () => {
+      try {
+        const mappedBranches = await Promise.all(
+          dbMainBranches.map(async (dbBranch) => {
+            const branchWithDetails = await mapDbMainBranchToFrontend(dbBranch);
+            return mapDbMainBranchToMainBranch(branchWithDetails);
+          })
+        );
+        setMainBranches(mappedBranches);
+      } catch (error) {
+        console.error('Error mapping main branches:', error);
+        setMainBranches([]);
+      }
+    };
+
+    mapMainBranches();
+  }, [dbMainBranches]);
   
   const subBranches = useMemo(() => 
     (dbSubBranches || []).map(mapDbSubBranchToFrontend),
@@ -376,22 +402,58 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
 
   // Main Branch methods
   const addMainBranch = async (branchData: Omit<MainBranch, 'id'>) => {
+    // Find the student by student_id to get their database ID
+    let personInCharge: number | undefined = undefined;
+    if (branchData.student_id) {
+      const selectedStudent = students.find(s => s.student_id === branchData.student_id);
+      if (selectedStudent) {
+        personInCharge = parseInt(selectedStudent.id);
+      }
+    }
+    
+    // Find the sub-branch by name to get their database ID
+    let responsibleSubBranchId: number | undefined = undefined;
+    if (branchData.sub_branch_responsible) {
+      const selectedSubBranch = subBranches.find(sb => sb.name === branchData.sub_branch_responsible);
+      if (selectedSubBranch) {
+        responsibleSubBranchId = parseInt(selectedSubBranch.id);
+      }
+    }
+    
     const dbBranchData: CreateMainBranchData = {
       name: branchData.name,
-      sub_branch_responsible: branchData.sub_branch_responsible,
+      sub_branch_responsible: responsibleSubBranchId,
       manage_sub_branches: branchData.manage_sub_branches ? branchData.manage_sub_branches.map(id => parseInt(id)) : undefined,
-      person_in_charge: branchData.student_id ? parseInt(branchData.student_id) : undefined,
+      person_in_charge: personInCharge,
     };
     await createMainBranchMutation.mutateAsync(dbBranchData);
   };
 
   const updateMainBranch = async (branch: MainBranch) => {
+    // Find the student by student_id to get their database ID
+    let personInCharge: number | undefined = undefined;
+    if (branch.student_id) {
+      const selectedStudent = students.find(s => s.student_id === branch.student_id);
+      if (selectedStudent) {
+        personInCharge = parseInt(selectedStudent.id);
+      }
+    }
+    
+    // Find the sub-branch by name to get their database ID
+    let responsibleSubBranchId: number | undefined = undefined;
+    if (branch.sub_branch_responsible) {
+      const selectedSubBranch = subBranches.find(sb => sb.name === branch.sub_branch_responsible);
+      if (selectedSubBranch) {
+        responsibleSubBranchId = parseInt(selectedSubBranch.id);
+      }
+    }
+    
     const updateData: UpdateMainBranchData = {
       id: parseInt(branch.id),
       name: branch.name,
-      sub_branch_responsible: branch.sub_branch_responsible,
+      sub_branch_responsible: responsibleSubBranchId,
       manage_sub_branches: branch.manage_sub_branches ? branch.manage_sub_branches.map(id => parseInt(id)) : undefined,
-      person_in_charge: branch.student_id ? parseInt(branch.student_id) : undefined,
+      person_in_charge: personInCharge,
     };
     await updateMainBranchMutation.mutateAsync(updateData);
   };
