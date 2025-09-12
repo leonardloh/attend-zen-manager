@@ -4,6 +4,10 @@
 
 **URL**: https://lovable.dev/projects/97ee267c-94c1-4c32-9494-4ac70d08d745
 
+## Documentation
+
+For comprehensive documentation, please refer to our [Wiki](wiki/Home.md).
+
 ## How can I edit this code?
 
 There are several ways of editing your application.

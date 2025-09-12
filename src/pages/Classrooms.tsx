@@ -162,6 +162,22 @@ const Classrooms: React.FC = () => {
       
       updateSubBranch(updatedBranch);
       
+      // Also update the main branch to include this sub-branch in manage_sub_branches
+      if (branchData.main_branch_id) {
+        const mainBranchToUpdate = mainBranches.find(mb => mb.id === branchData.main_branch_id);
+        if (mainBranchToUpdate) {
+          const currentManaged = mainBranchToUpdate.manage_sub_branches || [];
+          if (!currentManaged.includes(existingBranch.id)) {
+            const updatedMainBranch = {
+              ...mainBranchToUpdate,
+              manage_sub_branches: [...currentManaged, existingBranch.id]
+            };
+            console.log('🔗 Adding sub-branch to main branch manage_sub_branches:', existingBranch.id);
+            updateMainBranch(updatedMainBranch);
+          }
+        }
+      }
+      
       toast({
         title: "分院关联成功",
         description: `${branchData.name} 已成功关联到${branchData.main_branch_name}。`

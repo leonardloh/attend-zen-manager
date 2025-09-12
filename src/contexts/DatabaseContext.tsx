@@ -420,16 +420,33 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       }
     }
     
+    // Prepare manage_sub_branches array and auto-include responsible sub-branch
+    let manageSubBranches: number[] = [];
+    if (branchData.manage_sub_branches) {
+      manageSubBranches = branchData.manage_sub_branches.map(id => parseInt(id));
+    }
+    
+    // Auto-append responsible sub-branch ID if not already included
+    if (responsibleSubBranchId && !manageSubBranches.includes(responsibleSubBranchId)) {
+      manageSubBranches.push(responsibleSubBranchId);
+    }
+    
     const dbBranchData: CreateMainBranchData = {
       name: branchData.name,
       sub_branch_responsible: responsibleSubBranchId,
-      manage_sub_branches: branchData.manage_sub_branches ? branchData.manage_sub_branches.map(id => parseInt(id)) : undefined,
+      manage_sub_branches: manageSubBranches.length > 0 ? manageSubBranches.map(id => id.toString()) : undefined,
       person_in_charge: personInCharge,
     };
     await createMainBranchMutation.mutateAsync(dbBranchData);
   };
 
   const updateMainBranch = async (branch: MainBranch) => {
+    console.log('🔧 updateMainBranch called with:', {
+      name: branch.name,
+      manage_sub_branches: branch.manage_sub_branches,
+      sub_branch_responsible: branch.sub_branch_responsible
+    });
+    
     // Find the student by student_id to get their database ID
     let personInCharge: number | undefined = undefined;
     if (branch.student_id) {
@@ -445,16 +462,41 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       const selectedSubBranch = subBranches.find(sb => sb.name === branch.sub_branch_responsible);
       if (selectedSubBranch) {
         responsibleSubBranchId = parseInt(selectedSubBranch.id);
+        console.log('🔧 Found responsible sub-branch ID:', responsibleSubBranchId, 'for name:', branch.sub_branch_responsible);
       }
     }
+    
+    // Prepare manage_sub_branches array and auto-include responsible sub-branch
+    let manageSubBranches: number[] = [];
+    if (branch.manage_sub_branches) {
+      manageSubBranches = branch.manage_sub_branches.map(id => parseInt(id));
+      console.log('🔧 Initial manage_sub_branches from form:', manageSubBranches);
+    }
+    
+    // For updates, respect user's explicit manage_sub_branches choices
+    // Only auto-append if the form didn't provide any manage_sub_branches (legacy support)
+    const shouldAutoAppend = !branch.manage_sub_branches || branch.manage_sub_branches.length === 0;
+    
+    if (shouldAutoAppend && responsibleSubBranchId && !manageSubBranches.includes(responsibleSubBranchId)) {
+      console.log('🔧 AUTO-APPENDING responsible sub-branch ID (no explicit management):', responsibleSubBranchId);
+      manageSubBranches.push(responsibleSubBranchId);
+    } else if (!shouldAutoAppend) {
+      console.log('🔧 Respecting user\'s explicit manage_sub_branches choices, not auto-appending');
+    } else if (responsibleSubBranchId) {
+      console.log('🔧 Responsible sub-branch ID already in manage_sub_branches, not appending');
+    }
+    
+    console.log('🔧 Final manage_sub_branches before database update:', manageSubBranches);
     
     const updateData: UpdateMainBranchData = {
       id: parseInt(branch.id),
       name: branch.name,
       sub_branch_responsible: responsibleSubBranchId,
-      manage_sub_branches: branch.manage_sub_branches ? branch.manage_sub_branches.map(id => parseInt(id)) : undefined,
+      manage_sub_branches: manageSubBranches.length > 0 ? manageSubBranches.map(id => id.toString()) : undefined,
       person_in_charge: personInCharge,
     };
+    
+    console.log('🔧 Sending to database:', updateData);
     await updateMainBranchMutation.mutateAsync(updateData);
   };
 
@@ -507,8 +549,25 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   };
 
   const removeSubBranchFromMainBranch = async (branchId: string) => {
-    // TODO: Implement this based on database schema
-    console.log('removeSubBranchFromMainBranch not yet implemented');
+    console.log('🔍 Removing sub-branch from main branch association:', branchId);
+    
+    // Find all main branches that contain this sub-branch in their manage_sub_branches array
+    const mainBranchesToUpdate = mainBranches.filter(mb => 
+      mb.manage_sub_branches && mb.manage_sub_branches.includes(branchId)
+    );
+    
+    console.log('🔍 Main branches to update:', mainBranchesToUpdate.map(mb => mb.name));
+    
+    // Update each main branch by removing the sub-branch ID from manage_sub_branches
+    for (const mainBranch of mainBranchesToUpdate) {
+      const updatedManageSubBranches = mainBranch.manage_sub_branches?.filter(id => id !== branchId) || [];
+      console.log('🔍 Updated manage_sub_branches for', mainBranch.name, ':', updatedManageSubBranches);
+      
+      await updateMainBranch({
+        ...mainBranch,
+        manage_sub_branches: updatedManageSubBranches
+      });
+    }
   };
 
   // Enrollment management

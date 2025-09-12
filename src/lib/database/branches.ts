@@ -5,7 +5,7 @@ import { DbMainBranch, DbSubBranch, MainBranchWithDetails, SubBranchWithDetails 
 export interface CreateMainBranchData {
   name: string;
   sub_branch_responsible?: number;
-  manage_sub_branches?: number[]; // Changed from number to number[]
+  manage_sub_branches?: string[]; // Database stores as strings despite our intentions
   person_in_charge?: number;
 }
 
@@ -87,7 +87,7 @@ export const mapDbMainBranchToFrontend = async (dbBranch: DbMainBranch): Promise
     contact_person,
     contact_phone,
     sub_branch_responsible: responsibleSubBranchName, // Map sub_branch_responsible ID to name
-    manage_sub_branches: dbBranch.manage_sub_branches ? dbBranch.manage_sub_branches.map(id => id.toString()) : [], // Convert to string array
+    manage_sub_branches: dbBranch.manage_sub_branches || [], // Database already stores as strings, keep as-is for frontend
     sub_branches_count: subBranchesCount,
     classes_count: classesCount,
     students_count: studentsCount,
@@ -201,6 +201,7 @@ export const createMainBranch = async (branchData: CreateMainBranchData): Promis
     .insert(branchData)
     .select()
     .single();
+  
 
   if (error) {
     throw new Error(`Failed to create main branch: ${error.message}`);

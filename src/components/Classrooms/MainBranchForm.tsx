@@ -40,6 +40,8 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
   // State for sub-branch management
   const [inlineSubBranchName, setInlineSubBranchName] = useState(''); // For inline search
   const [responsibleSubBranch, setResponsibleSubBranch] = useState(initialData?.sub_branch_responsible || ''); // For responsible sub-branch search
+  const [managedSubBranches, setManagedSubBranches] = useState<SubBranch[]>([]); // Local state for managed sub-branches
+  const [isEditingMode, setIsEditingMode] = useState(false); // Track if we're editing existing main branch
 
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
@@ -87,6 +89,23 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
     }
   }, [initialData]);
 
+  // Set editing mode and initialize managed sub-branches when subBranches data changes
+  useEffect(() => {
+    // Determine if we're in editing mode
+    const editingMode = !!initialData?.id;
+    setIsEditingMode(editingMode);
+    console.log('📝 Edit mode:', editingMode);
+    
+    if (subBranches && initialData?.id) {
+      const currentManagedSubBranches = subBranches.filter(sb => 
+        sb.main_branch_id === initialData.id || 
+        (sb.main_branch_name === formData.name && formData.name)
+      );
+      setManagedSubBranches(currentManagedSubBranches);
+      console.log('🏢 Initialized managedSubBranches:', currentManagedSubBranches);
+    }
+  }, [subBranches, initialData?.id, formData.name]);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +115,13 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
       alert('请填写所有必填字段，包括选择负责分院和负责人学员 (Please fill in all required fields including selecting responsible sub-branch and student)');
       return;
     }
+    
+    // Build manage_sub_branches array from local managed sub-branches
+    const currentManagedSubBranches = managedSubBranches.map(sb => sb.id);
+    console.log('🔍 Debug - managedSubBranches state:', managedSubBranches.map(sb => `${sb.name}(${sb.id})`));
+    console.log('🔍 Debug - currentManagedSubBranches to send:', currentManagedSubBranches);
+    console.log('🔍 Debug - isEditingMode:', isEditingMode);
+    console.log('🔍 Debug - initialData?.id:', initialData?.id);
     
     // Create the main branch data with proper MainBranch interface structure
     const mainBranchData: Omit<MainBranch, 'id'> = {
@@ -107,8 +133,14 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
       sub_branches_count: formData.sub_branches_count,
       classes_count: formData.classes_count,
       students_count: formData.students_count,
-      manage_sub_branches: [], // Initialize as empty array, will be populated when managing sub-branches
+      manage_sub_branches: currentManagedSubBranches, // Use actual managed sub-branches
     };
+    
+    console.log('🚀 Submitting main branch data:', {
+      name: mainBranchData.name,
+      manage_sub_branches: mainBranchData.manage_sub_branches,
+      isUpdate: !!initialData
+    });
     
     if (initialData) {
       onSubmit({ ...mainBranchData, id: initialData.id });
@@ -133,15 +165,27 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
   // Handle inline sub-branch selection
   const handleInlineSubBranchSelect = (branchName: string, branchData?: SubBranch) => {
     if (branchData && branchName) {
-      // Auto-create sub-branch association when selected from search
-      const enrichedSubBranchData = {
-        ...branchData,
-        main_branch_id: initialData?.id || 'temp-id',
-        main_branch_name: formData.name
-      };
-      
-      if (onSubBranchAdd) {
-        onSubBranchAdd(enrichedSubBranchData);
+      // Check if already added to avoid duplicates
+      const isAlreadyManaged = managedSubBranches.some(sb => sb.id === branchData.id);
+      if (!isAlreadyManaged) {
+        // Auto-create sub-branch association when selected from search
+        const enrichedSubBranchData = {
+          ...branchData,
+          main_branch_id: initialData?.id || 'temp-id',
+          main_branch_name: formData.name
+        };
+        
+        // Add to local state immediately for visual feedback
+        setManagedSubBranches(prev => [...prev, enrichedSubBranchData]);
+        console.log('➕ Added sub-branch to local state:', enrichedSubBranchData.name);
+        
+        // Only call database callback if NOT in editing mode (to prevent race conditions)
+        if (!isEditingMode && onSubBranchAdd) {
+          console.log('🔄 Calling database callback for add (not in edit mode)');
+          onSubBranchAdd(enrichedSubBranchData);
+        } else if (isEditingMode) {
+          console.log('⏸️ Skipping database callback - in editing mode, will update on form submission');
+        }
       }
       setInlineSubBranchName(''); // Clear search after adding
     } else {
@@ -150,18 +194,20 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
   };
 
   // Handle delete sub-branch
-
   const handleDeleteSubBranch = (subBranchId: string) => {
-    if (onSubBranchDelete) {
+    // Remove from local state immediately for visual feedback
+    setManagedSubBranches(prev => prev.filter(sb => sb.id !== subBranchId));
+    console.log('➖ Removed sub-branch from local state:', subBranchId);
+    
+    // Only call database callback if NOT in editing mode (to prevent race conditions)
+    if (!isEditingMode && onSubBranchDelete) {
+      console.log('🔄 Calling database callback for delete (not in edit mode)');
       onSubBranchDelete(subBranchId);
+    } else if (isEditingMode) {
+      console.log('⏸️ Skipping database callback - in editing mode, will update on form submission');
     }
   };
 
-  // Filter sub-branches that belong to this main branch
-  const mainBranchSubBranches = subBranches?.filter(sb => 
-    sb.main_branch_id === initialData?.id || 
-    (sb.main_branch_name === formData.name && formData.name)
-  ) || [];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -241,14 +287,14 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
 
           {/* Sub-branches List */}
           <div className="space-y-3">
-            {mainBranchSubBranches.length === 0 ? (
+            {managedSubBranches.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Building className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                 <p>该总院下暂无分院</p>
                 <p className="text-sm">使用上方搜索栏添加分院</p>
               </div>
             ) : (
-              mainBranchSubBranches.map((subBranch) => (
+              managedSubBranches.map((subBranch) => (
                 <Card key={subBranch.id} className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
