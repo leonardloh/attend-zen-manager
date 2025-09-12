@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Building, Edit, Trash2, Calendar, MapPin, User, Phone, Home } from 'lucide-react';
-import type { SubBranch } from '@/data/mockData';
-import { getStudentById } from '@/data/mockData';
+import type { SubBranch } from '@/data/types';
+import { getStudentById } from '@/data/types';
 
 interface SubBranchCardProps {
   branch: SubBranch;

@@ -3,8 +3,8 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type Student } from '@/data/mockData';
-import { useData } from '@/contexts/DataContext';
+import { type Student } from '@/data/types';
+import { useDatabase } from '@/contexts/DatabaseContext';
 
 interface StudentSearchInputProps {
   value: string;
@@ -23,7 +23,7 @@ const StudentSearchInput: React.FC<StudentSearchInputProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const { students } = useData();
+  const { students } = useDatabase();
 
   // Find selected student
   const safeStudentsForFind = Array.isArray(students) ? students : [];

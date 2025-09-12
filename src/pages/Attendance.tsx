@@ -10,7 +10,7 @@ import AttendanceGrid from '@/components/Attendance/AttendanceGrid';
 import { Calendar as CalendarIcon, Clock, Users, Save, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useData, useClassStudents } from '@/contexts/DataContext';
+import { useDatabase } from '@/contexts/DatabaseContext';
 
 interface AttendanceStatus {
   studentId: string;
@@ -35,16 +35,16 @@ const Attendance: React.FC = () => {
     line_number: '',
   });
 
-  // Use DataContext for reactive classes data
-  const { classes } = useData();
+  // Use DatabaseContext for reactive classes data
+  const { classes, getClassAllStudents } = useDatabase();
 
   const filteredClasses = classes.filter(cls =>
     cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cls.time.includes(searchTerm)
   );
 
-  // Get students for the selected class using DataContext hook
-  const selectedClassStudents = useClassStudents(selectedClass || '');
+  // Get students for the selected class using DatabaseContext
+  const selectedClassStudents = selectedClass ? getClassAllStudents(selectedClass) : [];
 
   const startAttendanceSession = () => {
     if (selectedClass && selectedDate) {

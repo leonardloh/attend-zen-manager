@@ -11,8 +11,8 @@ import { Plus, Trash2, Building } from 'lucide-react';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
 import SubBranchNameSearchInput from '@/components/Classrooms/SubBranchNameSearchInput';
 import type { Region } from '@/pages/Classrooms';
-import type { MainBranch, SubBranch } from '@/data/mockData';
-import { mockStudents } from '@/data/mockData';
+import type { MainBranch, SubBranch } from '@/data/types';
+import { useDatabase } from '@/contexts/DatabaseContext';
 
 interface MainBranchFormProps {
   initialData?: MainBranch;
@@ -39,12 +39,11 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
 }) => {
   // State for sub-branch management
   const [inlineSubBranchName, setInlineSubBranchName] = useState(''); // For inline search
-
+  const [responsibleSubBranch, setResponsibleSubBranch] = useState(initialData?.sub_branch_responsible || ''); // For responsible sub-branch search
 
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
-    region: initialData?.region || ('北马' as '北马' | '中马' | '南马'),
-    address: initialData?.address || '',
+    sub_branch_responsible: initialData?.sub_branch_responsible || '',
     student_id: initialData?.student_id || '', // Use the student_id from initialData
     contact_person: initialData?.contact_person || '',
     contact_phone: initialData?.contact_phone || '',
@@ -53,10 +52,12 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
     students_count: initialData?.students_count || 0
   });
 
+  const { students } = useDatabase();
+
   // Auto-populate contact information when student is selected
   useEffect(() => {
     if (formData.student_id) {
-      const selectedStudent = mockStudents.find(s => s.student_id === formData.student_id);
+      const selectedStudent = students.find(s => s.student_id === formData.student_id);
       if (selectedStudent) {
         setFormData(prev => ({
           ...prev,
@@ -65,31 +66,48 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
         }));
       }
     }
-  }, [formData.student_id]);
+  }, [formData.student_id, students]);
 
-  const handleRegionChange = (regionValue: string) => {
-    setFormData({
-      ...formData,
-      region: regionValue as '北马' | '中马' | '南马'
-    });
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate required fields
-    if (!formData.name || !formData.region || !formData.address || !formData.student_id) {
-      alert('请填写所有必填字段，包括选择负责人学员 (Please fill in all required fields including selecting a responsible student)');
+    if (!formData.name || !formData.sub_branch_responsible || !formData.student_id) {
+      alert('请填写所有必填字段，包括选择负责分院和负责人学员 (Please fill in all required fields including selecting responsible sub-branch and student)');
       return;
     }
     
-    // Create the main branch data including student_id if provided
-    const mainBranchData = formData;
+    // Create the main branch data with proper MainBranch interface structure
+    const mainBranchData: Omit<MainBranch, 'id'> = {
+      name: formData.name,
+      sub_branch_responsible: formData.sub_branch_responsible,
+      student_id: formData.student_id,
+      contact_person: formData.contact_person,
+      contact_phone: formData.contact_phone,
+      sub_branches_count: formData.sub_branches_count,
+      classes_count: formData.classes_count,
+      students_count: formData.students_count,
+      manage_sub_branches: [], // Initialize as empty array, will be populated when managing sub-branches
+    };
     
     if (initialData) {
       onSubmit({ ...mainBranchData, id: initialData.id });
     } else {
       onSubmit(mainBranchData);
+    }
+  };
+
+  // Handle responsible sub-branch selection
+  const handleResponsibleSubBranchSelect = (branchName: string, branchData?: SubBranch) => {
+    if (branchData && branchName) {
+      setFormData(prev => ({
+        ...prev,
+        sub_branch_responsible: branchData.name
+      }));
+      setResponsibleSubBranch(branchData.name);
+    } else {
+      setResponsibleSubBranch(branchName);
     }
   };
 
@@ -131,46 +149,30 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
       <div className="space-y-4">
         <h3 className="text-lg font-medium text-gray-900 border-b pb-2">总院基本信息</h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">总院名称 *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="例如: 北马总院"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="region">所属地区 *</Label>
-            <Select
-              value={formData.region}
-              onValueChange={handleRegionChange}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="选择地区" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="北马">北马</SelectItem>
-                <SelectItem value="中马">中马</SelectItem>
-                <SelectItem value="南马">南马</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="name">总院名称 *</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="例如: 北马总院"
+            required
+          />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="address">地址 *</Label>
-          <Textarea
-            id="address"
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            placeholder="例如: 吉隆坡市中心某某路123号"
-            required
+          <Label htmlFor="responsible_subbranch">负责分院 *</Label>
+          <SubBranchNameSearchInput
+            value={responsibleSubBranch}
+            onChange={handleResponsibleSubBranchSelect}
+            placeholder="搜索负责分院..."
+            subBranches={subBranches}
           />
+          {formData.sub_branch_responsible && (
+            <div className="text-sm text-green-600 bg-green-50 p-2 rounded border">
+              已选择: {formData.sub_branch_responsible}
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">

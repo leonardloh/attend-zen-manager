@@ -6,8 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
 import SubBranchNameSearchInput from '@/components/Classrooms/SubBranchNameSearchInput';
-import type { SubBranch, MainBranch } from '@/data/mockData';
-import { mockStudents } from '@/data/mockData';
+import type { SubBranch, MainBranch } from '@/data/types';
+import { useDatabase } from '@/contexts/DatabaseContext';
 
 interface SubBranchFormProps {
   initialData?: SubBranch;
@@ -45,10 +45,12 @@ const SubBranchForm: React.FC<SubBranchFormProps> = ({
     created_date: initialData?.created_date || new Date().toISOString().split('T')[0]
   });
 
+  const { students } = useDatabase();
+
   // Auto-populate contact information when student is selected
   useEffect(() => {
     if (formData.student_id) {
-      const selectedStudent = mockStudents.find(s => s.student_id === formData.student_id);
+      const selectedStudent = students.find(s => s.student_id === formData.student_id);
       if (selectedStudent) {
         setFormData(prev => ({
           ...prev,
@@ -57,7 +59,7 @@ const SubBranchForm: React.FC<SubBranchFormProps> = ({
         }));
       }
     }
-  }, [formData.student_id]);
+  }, [formData.student_id, students]);
 
   // Auto-populate information when sub-branch is selected from search
   const handleSubBranchSelect = (branchName: string, branchData?: SubBranch) => {

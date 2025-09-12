@@ -12,8 +12,8 @@ CREATE TABLE public.class_attendance (
   student_id bigint,
   attendance_status bigint,
   CONSTRAINT class_attendance_pkey PRIMARY KEY (id),
-  CONSTRAINT class_attendance_class_id_fkey FOREIGN KEY (class_id) REFERENCES public.classes(id),
-  CONSTRAINT class_attendance_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.students(id)
+  CONSTRAINT class_attendance_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.students(id),
+  CONSTRAINT class_attendance_class_id_fkey FOREIGN KEY (class_id) REFERENCES public.classes(id)
 );
 CREATE TABLE public.class_enrollments (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -37,22 +37,20 @@ CREATE TABLE public.classes (
   vice_monitor_id bigint,
   care_officer_id bigint,
   CONSTRAINT classes_pkey PRIMARY KEY (id),
-  CONSTRAINT classes_new_manage_by_sub_branch_id_fkey FOREIGN KEY (manage_by_sub_branch_id) REFERENCES public.sub_branches(id),
-  CONSTRAINT classes_new_vice_monitor_id_fkey FOREIGN KEY (vice_monitor_id) REFERENCES public.students(id),
   CONSTRAINT classes_new_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.students(id),
-  CONSTRAINT classes_new_care_officer_id_fkey FOREIGN KEY (care_officer_id) REFERENCES public.students(id)
+  CONSTRAINT classes_new_manage_by_sub_branch_id_fkey FOREIGN KEY (manage_by_sub_branch_id) REFERENCES public.sub_branches(id),
+  CONSTRAINT classes_new_care_officer_id_fkey FOREIGN KEY (care_officer_id) REFERENCES public.students(id),
+  CONSTRAINT classes_new_vice_monitor_id_fkey FOREIGN KEY (vice_monitor_id) REFERENCES public.students(id)
 );
 CREATE TABLE public.main_branches (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   name text,
   sub_branch_responsible text,
-  manage_sub_branches bigint,
   person_in_charge bigint,
+  manage_sub_branches ARRAY,
   CONSTRAINT main_branches_pkey PRIMARY KEY (id),
-  CONSTRAINT main_branches_person_in_charge_fkey FOREIGN KEY (person_in_charge) REFERENCES public.students(id),
-  CONSTRAINT main_branches_manage_sub_branches_fkey FOREIGN KEY (manage_sub_branches) REFERENCES public.sub_branches(id),
-  CONSTRAINT main_branches_id_fkey FOREIGN KEY (id) REFERENCES public.sub_branches(id)
+  CONSTRAINT main_branches_person_in_charge_fkey FOREIGN KEY (person_in_charge) REFERENCES public.students(id)
 );
 CREATE TABLE public.students (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,

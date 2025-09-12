@@ -3,7 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input';
 import { Check, ChevronsUpDown, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useData } from '@/contexts/DataContext';
+import { useDatabase } from '@/contexts/DatabaseContext';
 
 interface SubBranchSearchInputProps {
   value?: string;
@@ -22,7 +22,7 @@ const SubBranchSearchInput: React.FC<SubBranchSearchInputProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   
   try {
-    const { subBranches } = useData();
+    const { subBranches } = useDatabase();
     console.log('SubBranchSearchInput - subBranches:', subBranches);
     
     // Ensure subBranches is always an array

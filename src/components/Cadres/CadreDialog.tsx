@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import CadreForm from './CadreForm';
-import { Cadre } from '@/data/mockData';
+import { Cadre } from '@/data/types';
 
 interface CadreDialogProps {
   isAddDialogOpen: boolean;

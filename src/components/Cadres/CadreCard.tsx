@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Shield, Edit, Trash2 } from 'lucide-react';
-import { Cadre, CadreRole } from '@/data/mockData';
+import { Cadre, CadreRole } from '@/data/types';
 
 interface CadreCardProps {
   cadre: Cadre;

@@ -12,8 +12,8 @@ import MainBranchForm from '@/components/Classrooms/MainBranchForm';
 import SubBranchForm from '@/components/Classrooms/SubBranchForm';
 import MainBranchCard from '@/components/Classrooms/MainBranchCard';
 import SubBranchCard from '@/components/Classrooms/SubBranchCard';
-import { useData } from '@/contexts/DataContext';
-import { MainBranch, SubBranch } from '@/data/mockData';
+import { useDatabase } from '@/contexts/DatabaseContext';
+import { MainBranch, SubBranch } from '@/data/types';
 
 // Data interfaces - using types from mockData
 export interface Region {
@@ -70,7 +70,21 @@ const Classrooms: React.FC = () => {
   ]);
 
   // Use DataContext for branches data
-  const { mainBranches, updateMainBranch, addMainBranch, deleteMainBranch, subBranches, updateSubBranch, addSubBranch, deleteSubBranch, removeSubBranchFromMainBranch } = useData();
+  const { 
+    mainBranches, 
+    updateMainBranch, 
+    addMainBranch, 
+    deleteMainBranch, 
+    subBranches, 
+    updateSubBranch, 
+    addSubBranch, 
+    deleteSubBranch, 
+    removeSubBranchFromMainBranch,
+    isLoadingMainBranches,
+    isLoadingSubBranches,
+    mainBranchesError,
+    subBranchesError 
+  } = useDatabase();
 
   // Check if user can manage classrooms (super_admin only)
   const canManageClassrooms = user?.role === 'super_admin';

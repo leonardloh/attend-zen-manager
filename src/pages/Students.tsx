@@ -9,8 +9,8 @@ import { Search, Plus, Edit, Trash2, User } from 'lucide-react';
 import StudentForm from '@/components/Students/StudentForm';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useData } from '@/contexts/DataContext';
-import { type Student } from '@/data/mockData';
+import { useDatabase } from '@/contexts/DatabaseContext';
+import { type Student } from '@/data/types';
 
 const Students: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,8 +24,15 @@ const Students: React.FC = () => {
   // Check if user can edit students (super_admin or cadre)
   const canEditStudents = user?.role === 'super_admin' || user?.role === 'cadre';
   
-  // Use DataContext for students data
-  const { students, updateStudent, addStudent, deleteStudent } = useData();
+  // Use DatabaseContext for students data
+  const { 
+    students, 
+    updateStudent, 
+    addStudent, 
+    deleteStudent, 
+    isLoadingStudents, 
+    studentsError 
+  } = useDatabase();
 
   const filteredStudents = students.filter(student => {
     // First apply search filter
@@ -96,6 +103,31 @@ const Students: React.FC = () => {
     setIsEditDialogOpen(false);
     setEditingStudent(null);
   };
+
+  // Handle loading and error states
+  if (isLoadingStudents) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2">加载学员数据中...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (studentsError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <p className="text-red-600 mb-2">加载学员数据失败</p>
+            <p className="text-sm text-gray-600">{studentsError.message}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

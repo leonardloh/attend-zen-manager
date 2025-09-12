@@ -5,7 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
-import { DataProvider } from '@/contexts/DataContext';
+import { SupabaseAuthProvider } from '@/hooks/useSupabaseAuth';
+import { HybridAuthProvider } from '@/hooks/useHybridAuth';
+import { DatabaseProvider } from '@/contexts/DatabaseContext';
 import LoginForm from '@/components/Auth/LoginForm';
 import MainLayout from '@/components/Layout/MainLayout';
 import Dashboard from '@/pages/Dashboard';
@@ -138,11 +140,15 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <DataProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </DataProvider>
+        <SupabaseAuthProvider>
+          <HybridAuthProvider>
+            <DatabaseProvider>
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </DatabaseProvider>
+          </HybridAuthProvider>
+        </SupabaseAuthProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

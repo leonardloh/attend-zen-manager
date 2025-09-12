@@ -4,7 +4,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { mockClasses, type ClassInfo } from '@/data/mockData';
+import { mockClasses, type ClassInfo } from '@/data/types';
 
 
 

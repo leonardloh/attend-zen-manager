@@ -78,8 +78,9 @@ export interface Cadre {
 export interface MainBranch {
   id: string;
   name: string;
-  region: '北马' | '中马' | '南马';
-  address: string;
+  region?: '北马' | '中马' | '南马'; // Optional region field
+  sub_branch_responsible?: string; // Name of responsible sub-branch
+  manage_sub_branches?: string[]; // Array of sub-branch IDs this main branch manages
   student_id?: string; // Reference to the student who is the contact person
   contact_person: string;
   contact_phone: string;

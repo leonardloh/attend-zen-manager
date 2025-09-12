@@ -4,8 +4,8 @@ import CadreCard from '@/components/Cadres/CadreCard';
 import CadreStats from '@/components/Cadres/CadreStats';
 import CadreFilters from '@/components/Cadres/CadreFilters';
 import CadreDialog from '@/components/Cadres/CadreDialog';
-import { useData } from '@/contexts/DataContext';
-import { type Cadre } from '@/data/mockData';
+import { useDatabase } from '@/contexts/DatabaseContext';
+import { type Cadre } from '@/data/types';
 
 
 const Cadres: React.FC = () => {
@@ -14,16 +14,18 @@ const Cadres: React.FC = () => {
   const [editingCadre, setEditingCadre] = useState<Cadre | null>(null);
   const { toast } = useToast();
 
-  // Use DataContext for cadres data
-  const { cadres, updateCadre, addCadre, deleteCadre } = useData();
+  // Use DatabaseContext for cadres data
+  const { cadres, updateCadre, addCadre, deleteCadre } = useDatabase();
 
   const filteredCadres = cadres.filter(cadre =>
     cadre.chinese_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cadre.english_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cadre.student_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cadre.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cadre.mother_class.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cadre.support_classes.some(cls => cls.toLowerCase().includes(searchTerm.toLowerCase()))
+    cadre.roles.some(role => 
+      role.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      role.class_name.toLowerCase().includes(searchTerm.toLowerCase())
+    ) ||
+    cadre.support_classes?.some(cls => cls.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleAddCadre = (newCadre: Omit<Cadre, 'id'>) => {

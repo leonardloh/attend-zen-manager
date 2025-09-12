@@ -6,8 +6,8 @@ import { Switch } from '@/components/ui/switch';
 import ClassMultiSelect from './ClassMultiSelect';
 import ClassSearchInput from '@/components/Classes/ClassSearchInput';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
-import { useData } from '@/contexts/DataContext';
-import { Cadre, CadreRole } from '@/data/mockData';
+import { useDatabase } from '@/contexts/DatabaseContext';
+import { Cadre, CadreRole } from '@/data/types';
 
 interface CadreFormProps {
   initialData?: Cadre;
@@ -16,7 +16,7 @@ interface CadreFormProps {
 }
 
 const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }) => {
-  const { students, classes } = useData();
+  const { students, classes } = useDatabase();
 
   // Extract role information from initialData if it exists
   const initialRole = initialData?.roles && initialData.roles.length > 0 

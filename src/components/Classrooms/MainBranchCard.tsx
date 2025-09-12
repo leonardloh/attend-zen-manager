@@ -3,9 +3,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Building2, Edit, Trash2, MapPin, User, Phone } from 'lucide-react';
-import type { MainBranch, SubBranch } from '@/data/mockData';
-import { getStudentById } from '@/data/mockData';
+import { Building2, Edit, Trash2, User, Phone } from 'lucide-react';
+import type { MainBranch, SubBranch } from '@/data/types';
+import { getStudentById } from '@/data/types';
 
 interface MainBranchCardProps {
   branch: MainBranch;
@@ -16,14 +16,6 @@ interface MainBranchCardProps {
 }
 
 const MainBranchCard: React.FC<MainBranchCardProps> = ({ branch, canEdit, onEdit, onDelete, subBranches }) => {
-  const getRegionColor = (regionName: string) => {
-    switch (regionName) {
-      case '北马': return 'bg-blue-100 text-blue-800';
-      case '中马': return 'bg-green-100 text-green-800';
-      case '南马': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   // Count sub-branches under this main branch
   const subBranchCount = subBranches?.filter(sb => sb.main_branch_id === branch.id).length || 0;
@@ -44,17 +36,9 @@ const MainBranchCard: React.FC<MainBranchCardProps> = ({ branch, canEdit, onEdit
               <p className="text-sm text-gray-600">总院</p>
             </div>
           </div>
-          <Badge className={getRegionColor(branch.region)}>
-            {branch.region}
-          </Badge>
         </div>
         
         <div className="space-y-2 mb-4">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">所属地区:</span>
-            <span className="font-medium">{branch.region}</span>
-          </div>
-          
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">管理分院:</span>
             <span className="font-medium">{subBranchCount} 个分院</span>
@@ -127,7 +111,6 @@ const MainBranchCard: React.FC<MainBranchCardProps> = ({ branch, canEdit, onEdit
                     删除后将清除以下信息：
                     <ul className="mt-2 text-sm list-disc list-inside space-y-1">
                       <li>总院基本信息（名称：{branch.name}）</li>
-                      <li>所属地区：{branch.region}</li>
                       <li>管理分院：{subBranchCount} 个分院</li>
                       {branch.contact_person && <li>联系人信息</li>}
                       <li>该总院下的所有分院信息</li>

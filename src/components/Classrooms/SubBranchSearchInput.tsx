@@ -4,7 +4,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronDown, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { SubBranch } from '@/data/mockData';
+import type { SubBranch } from '@/data/types';
 
 interface SubBranchSearchInputProps {
   value: string;

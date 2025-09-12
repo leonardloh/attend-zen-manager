@@ -9,8 +9,8 @@ import ClassForm from '@/components/Classes/ClassForm';
 import ClassDetailsView from '@/components/Classes/ClassDetailsView';
 import DeleteClassDialog from '@/components/Classes/DeleteClassDialog';
 import { useToast } from '@/hooks/use-toast';
-import { useData } from '@/contexts/DataContext';
-import { getStudentById, type ClassInfo } from '@/data/mockData';
+import { useDatabase } from '@/contexts/DatabaseContext';
+import { getStudentById, type ClassInfo } from '@/data/types';
 
 const Classes: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -21,7 +21,14 @@ const Classes: React.FC = () => {
   const [classToDelete, setClassToDelete] = useState<ClassInfo | null>(null);
   const { toast } = useToast();
   
-  const { classes, addClass, updateClass, deleteClass } = useData();
+  const { 
+    classes, 
+    addClass, 
+    updateClass, 
+    deleteClass, 
+    isLoadingClasses, 
+    classesError 
+  } = useDatabase();
 
   const getRegionColor = (region: string) => {
     switch (region) {
@@ -98,6 +105,31 @@ const Classes: React.FC = () => {
       variant: "destructive"
     });
   };
+
+  // Handle loading and error states
+  if (isLoadingClasses) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2">加载班级数据中...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (classesError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <p className="text-red-600 mb-2">加载班级数据失败</p>
+            <p className="text-sm text-gray-600">{classesError.message}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

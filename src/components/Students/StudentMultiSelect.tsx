@@ -5,8 +5,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { Check, ChevronDown, X, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type Student } from '@/data/mockData';
-import { useData } from '@/contexts/DataContext';
+import { type Student } from '@/data/types';
+import { useDatabase } from '@/contexts/DatabaseContext';
 
 interface StudentMultiSelectProps {
   value: string[];
@@ -27,7 +27,7 @@ const StudentMultiSelect: React.FC<StudentMultiSelectProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const { students } = useData();
+  const { students } = useDatabase();
 
   // Find selected students
   const selectedStudents = students.filter(s => value.includes(s.student_id));
