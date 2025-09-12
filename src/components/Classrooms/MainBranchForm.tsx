@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Trash2, Building } from 'lucide-react';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
@@ -294,46 +295,52 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
                 <p className="text-sm">使用上方搜索栏添加分院</p>
               </div>
             ) : (
-              managedSubBranches.map((subBranch) => (
-                <Card key={subBranch.id} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-medium text-gray-900">{subBranch.name}</h4>
-                        <Badge variant="outline" className="text-xs">
-                          {subBranch.state}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        {subBranch.address && (
-                          <p><span className="font-medium">地址:</span> {subBranch.address}</p>
-                        )}
-                        {subBranch.contact_person && (
-                          <p><span className="font-medium">联系人:</span> {subBranch.contact_person}</p>
-                        )}
-                        {subBranch.contact_phone && (
-                          <p><span className="font-medium">电话:</span> {subBranch.contact_phone}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => {
-                          if (confirm(`确定要删除分院"${subBranch.name}"吗？`)) {
-                            handleDeleteSubBranch(subBranch.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>分院名称</TableHead>
+                      <TableHead>州属</TableHead>
+                      <TableHead>联系人</TableHead>
+                      <TableHead>电话</TableHead>
+                      <TableHead className="w-[80px]">操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {managedSubBranches.map((subBranch) => (
+                      <TableRow key={subBranch.id}>
+                        <TableCell className="font-medium">{subBranch.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {subBranch.state}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {subBranch.contact_person || '-'}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {subBranch.contact_phone || '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => {
+                              if (confirm(`确定要删除分院"${subBranch.name}"吗？`)) {
+                                handleDeleteSubBranch(subBranch.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </div>
         </div>

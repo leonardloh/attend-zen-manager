@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,13 +27,10 @@ export interface Region {
 }
 
 const Classrooms: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('main-branches');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  
-  // Main branch editing state
-  const [editingMainBranch, setEditingMainBranch] = useState<MainBranch | null>(null);
-  const [isEditMainBranchDialogOpen, setIsEditMainBranchDialogOpen] = useState(false);
   
   // Sub branch editing state
   const [editingSubBranch, setEditingSubBranch] = useState<SubBranch | null>(null);
@@ -117,15 +115,6 @@ const Classrooms: React.FC = () => {
     });
   };
 
-  const handleEditMainBranch = (branchData: MainBranch) => {
-    updateMainBranch(branchData);
-    setEditingMainBranch(null);
-    setIsEditMainBranchDialogOpen(false);
-    toast({
-      title: "总院更新成功",
-      description: `${branchData.name} 的信息已成功更新。`
-    });
-  };
 
   const handleDeleteMainBranch = (branchId: string) => {
     const deletedBranch = mainBranches.find(branch => branch.id === branchId);
@@ -327,8 +316,7 @@ const Classrooms: React.FC = () => {
                 canEdit={canManageClassrooms}
                 subBranches={subBranches}
                 onEdit={(branch) => {
-                  setEditingMainBranch(branch);
-                  setIsEditMainBranchDialogOpen(true);
+                  navigate(`/classrooms/main-branches/${branch.id}/edit`);
                 }}
                 onDelete={handleDeleteMainBranch}
               />
@@ -370,33 +358,6 @@ const Classrooms: React.FC = () => {
         </Card>
       </div>
 
-      {/* Edit Main Branch Dialog */}
-      <Dialog open={isEditMainBranchDialogOpen} onOpenChange={setIsEditMainBranchDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>编辑总院信息</DialogTitle>
-          </DialogHeader>
-          {editingMainBranch && (
-            <MainBranchForm 
-              initialData={editingMainBranch}
-              onSubmit={handleEditMainBranch} 
-              onCancel={() => {
-                setEditingMainBranch(null);
-                setIsEditMainBranchDialogOpen(false);
-              }}
-              regions={regions}
-              subBranches={subBranches}
-              onNavigateToSubBranches={() => {
-                setIsEditMainBranchDialogOpen(false);
-                setActiveTab('sub-branches');
-              }}
-              onSubBranchAdd={handleAssociateSubBranch}
-              onSubBranchEdit={handleEditSubBranch}
-              onSubBranchDelete={handleRemoveSubBranchAssociation}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Sub Branch Dialog */}
       <Dialog open={isEditSubBranchDialogOpen} onOpenChange={setIsEditSubBranchDialogOpen}>

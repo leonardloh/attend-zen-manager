@@ -17,6 +17,7 @@ import Attendance from '@/pages/Attendance';
 import Reports from '@/pages/Reports';
 import Cadres from '@/pages/Cadres';
 import Classrooms from '@/pages/Classrooms';
+import EditMainBranch from '@/pages/EditMainBranch';
 import NotFound from "./pages/NotFound";
 import Settings from '@/pages/Settings';
 
@@ -107,6 +108,14 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <Classrooms />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/classrooms/main-branches/:id/edit"
+        element={
+          <ProtectedRoute>
+            <EditMainBranch />
           </ProtectedRoute>
         }
       />
