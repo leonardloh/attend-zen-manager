@@ -48,9 +48,14 @@ export interface DbClass {
   day_of_week?: string;
   class_start_time?: string;
   class_end_time?: string;
-  monitor_id?: number;
-  vice_monitor_id?: number;
-  care_officer_id?: number;
+}
+
+export interface DbClassCadre {
+  id: number;
+  created_at: string;
+  class_id: number;
+  student_id: number;
+  role: '班长' | '副班长' | '关怀员';
 }
 
 export interface DbClassEnrollment {
@@ -83,9 +88,12 @@ export interface StudentWithDetails extends DbStudent {
 export interface ClassWithDetails extends DbClass {
   sub_branch_name?: string;
   student_count: number;
-  class_monitor_name?: string;
-  deputy_monitors?: number[];
-  care_officers?: number[];
+  monitor_id?: number; // Monitor student ID from junction table
+  class_monitor_name?: string; // Monitor name from junction table
+  deputy_monitors?: number[]; // Array of student IDs who are deputy monitors
+  care_officers?: number[]; // Array of student IDs who are care officers  
+  deputy_monitor_names?: string[]; // Array of deputy monitor names for display
+  care_officer_names?: string[]; // Array of care officer names for display
   time?: string; // Formatted time string
   attendance_rate?: number;
   learning_progress?: string;

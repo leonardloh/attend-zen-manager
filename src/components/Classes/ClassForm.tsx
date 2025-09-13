@@ -1,15 +1,16 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { X, Plus } from 'lucide-react';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
 import StudentMultiSelect from '@/components/Students/StudentMultiSelect';
 import SubBranchSearchInput from '@/components/Classes/SubBranchSearchInput';
+import { ClassInfo } from '@/data/types';
+import { useDatabase } from '@/contexts/DatabaseContext';
 import {
   Form,
   FormControl,
@@ -39,7 +40,6 @@ const classFormSchema = z.object({
   deputy_monitors: z.array(z.string()).optional(),
   care_officers: z.array(z.string()).optional(),
   student_ids: z.array(z.string()).optional(),
-  learning_progress: z.string().optional(),
 }).refine((data) => {
   const startTime = parseInt(data.start_time.replace(':', ''));
   const endTime = parseInt(data.end_time.replace(':', ''));
@@ -51,21 +51,7 @@ const classFormSchema = z.object({
 
 type ClassFormData = z.infer<typeof classFormSchema>;
 
-interface ClassInfo {
-  id: string;
-  name: string;
-  sub_branch_id?: string;
-  sub_branch_name?: string;
-  time: string;
-  student_count: number;
-  class_monitor_id: string;
-  deputy_monitors?: string[];
-  care_officers?: string[];
-  student_ids?: string[];
-  learning_progress: string;
-  attendance_rate: number;
-  status: 'active' | 'inactive';
-}
+// ClassInfo interface is now imported from @/data/types
 
 
 // Time options for dropdowns
@@ -76,6 +62,34 @@ const timeOptions = [
   '20:00', '20:30', '21:00', '21:30', '22:00'
 ];
 
+// Helper functions to convert between database IDs and student IDs
+const convertDatabaseIdsToStudentIds = (databaseIds: number[], students: any[]): string[] => {
+  return databaseIds.map(dbId => {
+    const student = students.find(s => s.id === dbId.toString());
+    return student ? student.student_id : '';
+  }).filter(id => id !== '');
+};
+
+const getStudentIdFromDatabaseId = (databaseId: number | undefined, students: any[]): string => {
+  if (!databaseId) return '';
+  const student = students.find(s => s.id === databaseId.toString());
+  return student ? student.student_id : '';
+};
+
+// Helper functions to convert student IDs to database IDs (for form submission)
+const convertStudentIdsToDatabaseIds = (studentIds: string[], students: any[]): number[] => {
+  return studentIds.map(studentId => {
+    const student = students.find(s => s.student_id === studentId);
+    return student ? parseInt(student.id) : null;
+  }).filter((id): id is number => id !== null);
+};
+
+const getStudentDatabaseIdFromStudentId = (studentId: string, students: any[]): number | undefined => {
+  if (!studentId) return undefined;
+  const student = students.find(s => s.student_id === studentId);
+  return student ? parseInt(student.id) : undefined;
+};
+
 interface ClassFormProps {
   initialData?: ClassInfo;
   onSubmit: (data: ClassFormData & { student_count: number; attendance_rate: number }) => void;
@@ -83,52 +97,133 @@ interface ClassFormProps {
 }
 
 const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }) => {
-  // Parse existing time if editing
+  // Get students data from context for ID conversion
+  const { students } = useDatabase();
+  
+  // Parse existing time if editing (handles both HH:MM and HH:MM:SS formats)
   const parseTime = (timeString: string) => {
+    console.log('🔧 parseTime - Input:', timeString);
+    
     if (!timeString) return { weekday: undefined, start_time: '', end_time: '' };
+    
     const parts = timeString.split(' ');
     if (parts.length >= 2) {
       const timeRange = parts.slice(1).join(' ');
       const [start, end] = timeRange.split('-');
-      return {
-        weekday: parts[0] as ClassFormData['weekday'],
-        start_time: start || '',
-        end_time: end || ''
+      
+      // Strip seconds if present (08:00:00 -> 08:00)
+      const formatTime = (time: string) => {
+        if (!time) return '';
+        return time.substring(0, 5); // Get only HH:MM part
       };
+      
+      const result = {
+        weekday: parts[0] as ClassFormData['weekday'],
+        start_time: formatTime(start || ''),
+        end_time: formatTime(end || '')
+      };
+      
+      console.log('🔧 parseTime - Output:', result);
+      return result;
     }
+    
+    console.log('🔧 parseTime - Failed to parse, returning defaults');
     return { weekday: undefined, start_time: '', end_time: '' };
   };
-
-  const { weekday: initialWeekday, start_time: initialStartTime, end_time: initialEndTime } = parseTime(initialData?.time || '');
+  
+  // Convert database data to form format for editing
+  const getInitialFormData = () => {
+    if (!initialData) {
+      // Default values for new class creation
+      return {
+        name: '',
+        sub_branch_id: '',
+        sub_branch_name: '',
+        weekday: undefined,
+        start_time: '',
+        end_time: '',
+        class_monitor_id: '',
+        deputy_monitors: [],
+        care_officers: [],
+        student_ids: [],
+      };
+    }
+    
+    // Parse time data fresh every time this function is called
+    const { weekday, start_time, end_time } = parseTime(initialData.time || '');
+    
+    console.log('🔧 getInitialFormData - Time parsing:', {
+      originalTime: initialData.time,
+      parsedWeekday: weekday,
+      parsedStartTime: start_time,
+      parsedEndTime: end_time
+    });
+    
+    // Values for editing existing class
+    return {
+      name: initialData.name || '',
+      sub_branch_id: initialData.sub_branch_id || '',
+      sub_branch_name: initialData.sub_branch_name || '',
+      weekday: weekday || undefined,
+      start_time: start_time || '',
+      end_time: end_time || '',
+      class_monitor_id: getStudentIdFromDatabaseId(initialData.monitor_id, students),
+      deputy_monitors: convertDatabaseIdsToStudentIds(initialData.deputy_monitors || [], students),
+      care_officers: convertDatabaseIdsToStudentIds(initialData.care_officers || [], students),
+      student_ids: initialData.mother_class_students || initialData.regular_students || [],
+    };
+  };
 
   const form = useForm<ClassFormData>({
     resolver: zodResolver(classFormSchema),
-    defaultValues: {
-      name: initialData?.name || '',
-      sub_branch_id: initialData?.sub_branch_id || '',
-      sub_branch_name: initialData?.sub_branch_name || '',
-      weekday: initialWeekday || undefined,
-      start_time: initialStartTime || '',
-      end_time: initialEndTime || '',
-      class_monitor_id: initialData?.class_monitor_id || '',
-      deputy_monitors: initialData?.deputy_monitors || [],
-      care_officers: initialData?.care_officers || [],
-      student_ids: initialData?.student_ids || [],
-      learning_progress: initialData?.learning_progress || '',
-    },
+    defaultValues: getInitialFormData(),
   });
+
+  // Reset form when students data changes (important for edit mode)
+  useEffect(() => {
+    if (initialData && students && students.length > 0) {
+      const formData = getInitialFormData();
+      console.log('🔧 useEffect - Resetting form with data:', {
+        hasInitialData: !!initialData,
+        studentsCount: students.length,
+        formData: formData
+      });
+      form.reset(formData);
+    }
+  }, [initialData, students]);
 
   const handleSubmit = (data: ClassFormData) => {
     // Calculate student count from selected students
     const student_count = data.student_ids?.length || 0;
     const attendance_rate = initialData?.attendance_rate || Math.floor(Math.random() * 25) + 75;
     
-    // Combine weekday and time for backwards compatibility
+    // Convert student IDs to database IDs for submission
+    const monitorDatabaseId = getStudentDatabaseIdFromStudentId(data.class_monitor_id, students);
+    const deputyMonitorDatabaseIds = convertStudentIdsToDatabaseIds(data.deputy_monitors || [], students);
+    const careOfficerDatabaseIds = convertStudentIdsToDatabaseIds(data.care_officers || [], students);
+    
+    console.log('🔧 ClassForm conversion - Student IDs to Database IDs:', {
+      form_monitor_id: data.class_monitor_id,
+      converted_monitor_id: monitorDatabaseId,
+      form_deputy_monitors: data.deputy_monitors,
+      converted_deputy_monitors: deputyMonitorDatabaseIds,
+      form_care_officers: data.care_officers,
+      converted_care_officers: careOfficerDatabaseIds
+    });
+    
+    // Combine data with proper field names and converted IDs
     const combinedTimeData = {
       ...data,
       time: `${data.weekday} ${data.start_time}-${data.end_time}`,
       student_count,
       attendance_rate,
+      // Use new field names with converted database IDs
+      monitor_id: monitorDatabaseId,
+      deputy_monitors: deputyMonitorDatabaseIds,
+      care_officers: careOfficerDatabaseIds,
+      // Keep student management fields as is
+      mother_class_students: data.student_ids || [],
+      regular_students: [], // Default empty for now
     };
     
     onSubmit(combinedTimeData);
@@ -275,24 +370,6 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
                     ...(form.watch('deputy_monitors') || []),
                     ...(form.watch('care_officers') || [])
                   ]}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="learning_progress"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>学习进度</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="请输入当前学习进度..." 
-                  {...field} 
-                  rows={3}
                 />
               </FormControl>
               <FormMessage />

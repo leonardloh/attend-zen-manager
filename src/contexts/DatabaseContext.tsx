@@ -19,6 +19,7 @@ import {
   useCreateEnrollment,
   useDeleteEnrollment
 } from '@/hooks/useDatabase';
+import { addClassCadre, removeClassCadre, updateClassCadres } from '@/lib/database/classes';
 import { 
   fetchStudentByStudentId,
   mapFrontendStudentToDb,
@@ -33,7 +34,9 @@ import {
 } from '@/lib/database/branches';
 import {
   type CreateClassData,
-  type UpdateClassData
+  type UpdateClassData,
+  type ClassWithDetails,
+  mapDbClassToFrontend
 } from '@/lib/database/classes';
 import {
   type CreateStudentData,
@@ -149,24 +152,6 @@ const convertStudentWithDetailsToStudent = (studentDetails: StudentWithDetails):
   };
 };
 
-// Helper function to convert database class to frontend format
-const mapDbClassToFrontend = (dbClass: any): ClassInfo => ({
-  id: dbClass.id.toString(),
-  name: dbClass.name || '',
-  sub_branch_id: dbClass.manage_by_sub_branch_id?.toString(),
-  sub_branch_name: dbClass.sub_branch_name || '',
-  time: dbClass.time || '',
-  student_count: dbClass.student_count || 0,
-  class_monitor_id: dbClass.monitor_id?.toString() || '',
-  class_monitor: dbClass.class_monitor_name || '',
-  deputy_monitors: dbClass.deputy_monitors?.map((id: number) => id.toString()) || [],
-  care_officers: dbClass.care_officers?.map((id: number) => id.toString()) || [],
-  learning_progress: dbClass.learning_progress || '',
-  page_number: dbClass.page_number || '',
-  line_number: dbClass.line_number || '',
-  attendance_rate: dbClass.attendance_rate || 0,
-  status: dbClass.status || 'active'
-});
 
 // Helper function to convert database main branch to frontend format (local version for context usage)
 const mapDbMainBranchToMainBranch = (dbBranch: any): MainBranch => ({
@@ -242,10 +227,31 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   }, [dbStudents]);
   
-  const classes = useMemo(() => 
-    (dbClasses || []).map(mapDbClassToFrontend),
-    [dbClasses]
-  );
+  // Use state for classes due to async mapping
+  const [classes, setClasses] = useState<ClassWithDetails[]>([]);
+  
+  // Handle async mapping of classes with enrollment data
+  useEffect(() => {
+    const mapClasses = async () => {
+      if (dbClasses && dbClasses.length > 0) {
+        try {
+          console.log('🔧 DatabaseContext - Starting async mapping of classes:', dbClasses.length);
+          const mappedClasses = await Promise.all(
+            dbClasses.map(cls => mapDbClassToFrontend(cls))
+          );
+          console.log('🔧 DatabaseContext - Classes mapped successfully:', mappedClasses.length);
+          setClasses(mappedClasses);
+        } catch (error) {
+          console.error('❌ DatabaseContext - Error mapping classes:', error);
+          setClasses([]);
+        }
+      } else {
+        setClasses([]);
+      }
+    };
+    
+    mapClasses();
+  }, [dbClasses]);
   
   // Use state for mainBranches due to async mapping
   const [mainBranches, setMainBranches] = useState<MainBranch[]>([]);
@@ -286,8 +292,8 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     
     classes.forEach(classInfo => {
       // Add monitor
-      if (classInfo.class_monitor_id && classInfo.class_monitor) {
-        const student = students.find(s => s.id === classInfo.class_monitor_id);
+      if (classInfo.monitor_id && classInfo.class_monitor_name) {
+        const student = students.find(s => s.id === classInfo.monitor_id?.toString());
         if (student) {
           const cadreId = student.id;
           if (!cadreMap.has(cadreId)) {
@@ -372,18 +378,68 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
 
   // Class methods
   const addClass = async (classData: Omit<ClassInfo, 'id' | 'status'>) => {
+    // monitor_id is already the database ID, no conversion needed
+    const monitorDatabaseId = classData.monitor_id;
+
+    // deputy_monitors and care_officers are already database IDs
+    const deputyMonitorDatabaseIds = classData.deputy_monitors || [];
+    const careOfficerDatabaseIds = classData.care_officers || [];
+
+    // Convert student IDs from mother_class_students to database IDs for enrollment
+    const studentEnrollmentIds: number[] = [];
+    if (classData.mother_class_students && classData.mother_class_students.length > 0) {
+      classData.mother_class_students.forEach(studentId => {
+        const student = students.find(s => s.student_id === studentId);
+        if (student) {
+          studentEnrollmentIds.push(parseInt(student.id));
+        }
+      });
+    }
+    
     const dbClassData: CreateClassData = {
       name: classData.name,
       manage_by_sub_branch_id: classData.sub_branch_id ? parseInt(classData.sub_branch_id) : undefined,
       day_of_week: classData.time?.split(' ')[0],
       class_start_time: classData.time?.split(' ')[1]?.split('-')[0],
       class_end_time: classData.time?.split(' ')[1]?.split('-')[1],
-      monitor_id: classData.class_monitor_id ? parseInt(classData.class_monitor_id) : undefined,
+      monitor_id: monitorDatabaseId,
+      deputy_monitors: deputyMonitorDatabaseIds,
+      care_officers: careOfficerDatabaseIds,
+      student_ids: studentEnrollmentIds,
     };
+    
+    console.log('🔧 Final CREATE class data being sent to database:', {
+      monitor_id: monitorDatabaseId,
+      deputy_monitors: deputyMonitorDatabaseIds,
+      care_officers: careOfficerDatabaseIds,
+      student_ids: studentEnrollmentIds,
+      deputy_count: deputyMonitorDatabaseIds.length,
+      care_count: careOfficerDatabaseIds.length,
+      enrollment_count: studentEnrollmentIds.length
+    });
+    
     await createClassMutation.mutateAsync(dbClassData);
   };
 
   const updateClass = async (classData: ClassInfo) => {
+    // monitor_id is already the database ID, no conversion needed
+    const monitorDatabaseId = classData.monitor_id;
+
+    // deputy_monitors and care_officers are already database IDs
+    const deputyMonitorDatabaseIds = classData.deputy_monitors;
+    const careOfficerDatabaseIds = classData.care_officers;
+
+    // Convert student IDs from mother_class_students to database IDs for enrollment
+    const studentEnrollmentIds: number[] = [];
+    if (classData.mother_class_students && classData.mother_class_students.length > 0) {
+      classData.mother_class_students.forEach(studentId => {
+        const student = students.find(s => s.student_id === studentId);
+        if (student) {
+          studentEnrollmentIds.push(parseInt(student.id));
+        }
+      });
+    }
+    
     const updateData: UpdateClassData = {
       id: parseInt(classData.id),
       name: classData.name,
@@ -391,8 +447,20 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       day_of_week: classData.time?.split(' ')[0],
       class_start_time: classData.time?.split(' ')[1]?.split('-')[0],
       class_end_time: classData.time?.split(' ')[1]?.split('-')[1],
-      monitor_id: classData.class_monitor_id ? parseInt(classData.class_monitor_id) : undefined,
+      monitor_id: monitorDatabaseId,
+      deputy_monitors: deputyMonitorDatabaseIds,
+      care_officers: careOfficerDatabaseIds,
+      student_ids: studentEnrollmentIds,
     };
+    
+    console.log('🔧 Final UPDATE class data being sent to database:', {
+      id: updateData.id,
+      monitor_id: monitorDatabaseId,
+      deputy_monitors: deputyMonitorDatabaseIds,
+      care_officers: careOfficerDatabaseIds,
+      student_ids: studentEnrollmentIds,
+      enrollment_count: studentEnrollmentIds.length
+    });
     await updateClassMutation.mutateAsync(updateData);
   };
 
@@ -613,50 +681,28 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   };
 
   const assignCadreRole = async (studentId: string, classId: string, role: '班长' | '副班长' | '关怀员') => {
-    const classToUpdate = classes.find(c => c.id === classId);
-    if (!classToUpdate) return;
-
-    const updateData: UpdateClassData = {
-      id: parseInt(classId),
-      name: classToUpdate.name,
-    };
-
-    if (role === '班长') {
-      updateData.monitor_id = parseInt(studentId);
-    } else if (role === '副班长') {
-      updateData.vice_monitor_id = parseInt(studentId);
-    } else if (role === '关怀员') {
-      updateData.care_officer_id = parseInt(studentId);
-    }
-
-    await updateClassMutation.mutateAsync(updateData);
+    // All roles are now handled through the junction table
+    await addClassCadre({
+      class_id: parseInt(classId),
+      student_id: parseInt(studentId),
+      role: role
+    });
   };
 
   const removeCadreRole = async (studentId: string, classId: string, role: '班长' | '副班长' | '关怀员') => {
-    const classToUpdate = classes.find(c => c.id === classId);
-    if (!classToUpdate) return;
-
-    const updateData: UpdateClassData = {
-      id: parseInt(classId),
-      name: classToUpdate.name,
-    };
-
-    if (role === '班长') {
-      updateData.monitor_id = undefined;
-    } else if (role === '副班长') {
-      updateData.vice_monitor_id = undefined;
-    } else if (role === '关怀员') {
-      updateData.care_officer_id = undefined;
-    }
-
-    await updateClassMutation.mutateAsync(updateData);
+    // All roles are now handled through the junction table
+    await removeClassCadre(
+      parseInt(classId),
+      parseInt(studentId),
+      role
+    );
   };
 
   const getStudentRoles = (studentId: string): CadreRole[] => {
     const roles: CadreRole[] = [];
     
     classes.forEach(classInfo => {
-      if (classInfo.class_monitor_id === studentId) {
+      if (classInfo.monitor_id?.toString() === studentId) {
         roles.push({
           class_id: classInfo.id,
           class_name: classInfo.name,

@@ -10,6 +10,7 @@ import ClassDetailsView from '@/components/Classes/ClassDetailsView';
 import DeleteClassDialog from '@/components/Classes/DeleteClassDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useDatabase } from '@/contexts/DatabaseContext';
+import { useDeleteClass } from '@/hooks/useDatabase';
 import { getStudentById, type ClassInfo } from '@/data/types';
 
 const Classes: React.FC = () => {
@@ -25,10 +26,11 @@ const Classes: React.FC = () => {
     classes, 
     addClass, 
     updateClass, 
-    deleteClass, 
     isLoadingClasses, 
     classesError 
   } = useDatabase();
+  
+  const deleteClassMutation = useDeleteClass();
 
   const getRegionColor = (region: string) => {
     switch (region) {
@@ -94,15 +96,14 @@ const Classes: React.FC = () => {
   };
 
   const handleConfirmDelete = (classId: string) => {
-    const deletedClass = classes.find(c => c.id === classId);
-    
-    deleteClass(classId);
-    setClassToDelete(null);
-    
-    toast({
-      title: "班级删除成功",
-      description: `${deletedClass?.name} 已被永久删除。`,
-      variant: "destructive"
+    deleteClassMutation.mutate(classId, {
+      onSuccess: () => {
+        setClassToDelete(null);
+        setIsDeleteDialogOpen(false);
+      },
+      onError: (error) => {
+        console.error('Failed to delete class:', error);
+      }
     });
   };
 
@@ -198,14 +199,9 @@ const Classes: React.FC = () => {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">{classInfo.name}</CardTitle>
-                <div className="flex gap-2">
-                  <Badge className={getRegionColor(classInfo.region)}>
-                    {classInfo.region}
-                  </Badge>
-                  <Badge variant={classInfo.status === 'active' ? 'default' : 'secondary'}>
-                    {classInfo.status === 'active' ? '活跃' : '暂停'}
-                  </Badge>
-                </div>
+                <Badge className={getRegionColor(classInfo.region)}>
+                  {classInfo.region}
+                </Badge>
               </div>
             </CardHeader>
             <CardContent>
@@ -220,7 +216,7 @@ const Classes: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-gray-500" />
-                  <span>班长: {classInfo.class_monitor}</span>
+                  <span>班长: {classInfo.class_monitor_name || '未分配'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <BarChart className="h-4 w-4 text-gray-500" />
@@ -351,6 +347,7 @@ const Classes: React.FC = () => {
         onOpenChange={setIsDeleteDialogOpen}
         classToDelete={classToDelete}
         onConfirmDelete={handleConfirmDelete}
+        isDeleting={deleteClassMutation.isPending}
       />
     </div>
   );
