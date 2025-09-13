@@ -11,36 +11,24 @@ import {
 } from '@/components/ui/dialog';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface ClassInfo {
-  id: string;
-  name: string;
-  region: '北马' | '中马' | '南马';
-  time: string;
-  student_count: number;
-  class_monitor_id: string;
-  deputy_monitors?: string[];
-  care_officers?: string[];
-  learning_progress: string;
-  attendance_rate: number;
-  status: 'active' | 'inactive';
-}
+import { ClassInfo } from '@/data/types';
 
 interface DeleteClassDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   classToDelete: ClassInfo | null;
   onConfirmDelete: (classId: string) => void;
+  isDeleting?: boolean;
 }
 
 const DeleteClassDialog: React.FC<DeleteClassDialogProps> = ({
   isOpen,
   onOpenChange,
   classToDelete,
-  onConfirmDelete
+  onConfirmDelete,
+  isDeleting = false
 }) => {
   const [confirmationText, setConfirmationText] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // Reset confirmation text when dialog opens/closes or class changes
   useEffect(() => {
@@ -49,18 +37,9 @@ const DeleteClassDialog: React.FC<DeleteClassDialogProps> = ({
     }
   }, [isOpen, classToDelete]);
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!classToDelete || confirmationText !== classToDelete.name) return;
-
-    setIsDeleting(true);
-    try {
-      onConfirmDelete(classToDelete.id);
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Error deleting class:', error);
-    } finally {
-      setIsDeleting(false);
-    }
+    onConfirmDelete(classToDelete.id);
   };
 
   const isConfirmed = confirmationText === classToDelete?.name;

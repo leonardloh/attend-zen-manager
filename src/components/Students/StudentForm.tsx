@@ -15,6 +15,7 @@ interface Student {
   email?: string;
   enrollment_date: string;
   status: '活跃' | '旁听' | '保留';
+  state?: string;
   // Required fields
   postal_code: string;
   date_of_birth: string;
@@ -50,6 +51,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
     emergency_contact_phone: initialData?.emergency_contact_phone || '',
     emergency_contact_relation: initialData?.emergency_contact_relation || '',
     // Optional fields
+    state: initialData?.state || '',
     occupation: initialData?.occupation || '',
     academic_level: initialData?.academic_level || undefined,
     marriage_status: initialData?.marriage_status || undefined
@@ -59,17 +61,21 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
   const academicLevels = ['Bachelor', 'Master', 'PhD', 'Other'];
   const marriageStatuses = ['Single', 'Married', 'Divorced', 'Widowed', 'Other'];
   const emergencyRelations = ['Parent', 'Spouse', 'Sibling', 'Child', 'Friend', 'Other'];
+  const malaysiaStates = [
+    '玻璃市','吉打','槟城','霹雳','雪隆','森美兰','马六甲','柔佛',
+    '彭亨','登嘉楼','吉兰丹','沙巴','砂拉越','纳闽','东马'
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate required fields
     if (!formData.student_id || !formData.chinese_name || !formData.english_name || 
-        !formData.phone || !formData.enrollment_date || 
+        !formData.phone || !formData.enrollment_date || !formData.state ||
         !formData.postal_code || !formData.date_of_birth || 
         !formData.emergency_contact_name || !formData.emergency_contact_phone || 
         !formData.emergency_contact_relation) {
-      alert('请填写所有必填字段 (Please fill in all required fields)');
+      alert('请填写所有必填字段（含州属） (Please fill in all required fields, including state)');
       return;
     }
     
@@ -183,8 +189,24 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
         />
       </div>
 
-      {/* New Required Fields */}
+      {/* New Required/Location Fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="state">所在州属 *</Label>
+          <Select
+            value={formData.state}
+            onValueChange={(value) => setFormData({ ...formData, state: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="选择州属" />
+            </SelectTrigger>
+            <SelectContent>
+              {malaysiaStates.map((st) => (
+                <SelectItem key={st} value={st}>{st}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="postal_code">邮政编码 *</Label>
           <Input
@@ -195,7 +217,9 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
             required
           />
         </div>
-        
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="date_of_birth">出生日期 *</Label>
           <Input
@@ -206,6 +230,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
             required
           />
         </div>
+        <div></div>
       </div>
 
       {/* Emergency Contact Information */}

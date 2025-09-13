@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Building, Edit, Trash2, Calendar, MapPin, User, Phone, Home } from 'lucide-react';
+import { Building, Edit, Trash2, Calendar, MapPin, User, Phone, Home, Building2 } from 'lucide-react';
 import type { SubBranch } from '@/data/types';
 import { getStudentById } from '@/data/types';
 
@@ -12,9 +12,10 @@ interface SubBranchCardProps {
   canEdit: boolean;
   onEdit: (branch: SubBranch) => void;
   onDelete: (branchId: string) => void;
+  classroomCount?: number;
 }
 
-const SubBranchCard: React.FC<SubBranchCardProps> = ({ branch, canEdit, onEdit, onDelete }) => {
+const SubBranchCard: React.FC<SubBranchCardProps> = ({ branch, canEdit, onEdit, onDelete, classroomCount }) => {
   const getStateColor = (state: string) => {
     // Different color scheme for states
     const colors = [
@@ -64,6 +65,14 @@ const SubBranchCard: React.FC<SubBranchCardProps> = ({ branch, canEdit, onEdit, 
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">所在州属:</span>
               <span className="font-medium">{branch.state}</span>
+            </div>
+          )}
+
+          {typeof classroomCount === 'number' && (
+            <div className="flex items-center gap-2 text-sm">
+              <Building2 className="h-4 w-4 text-gray-400" />
+              <span className="text-gray-600">教室数量:</span>
+              <span className="font-medium">{classroomCount}</span>
             </div>
           )}
           

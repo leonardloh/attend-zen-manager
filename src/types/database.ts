@@ -124,3 +124,20 @@ export interface SubBranchWithDetails extends DbSubBranch {
   classes_count?: number;
   students_count?: number;
 }
+
+// Classrooms
+export interface DbClassroom {
+  id: number;
+  created_at: string;
+  name?: string;
+  state?: string;
+  address?: string;
+  person_in_charge?: number; // FK -> students.id
+  sub_branch_id: number;     // FK -> sub_branches.id
+}
+
+export interface ClassroomWithDetails extends DbClassroom {
+  sub_branch_name?: string;
+  student_id_ref?: string; // mapped from students.student_id
+  contact_person?: string;
+}

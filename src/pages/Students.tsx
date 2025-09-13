@@ -6,16 +6,20 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Search, Plus, Edit, Trash2, User } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import StudentForm from '@/components/Students/StudentForm';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useDatabase } from '@/contexts/DatabaseContext';
 import { type Student } from '@/data/types';
+import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext, PaginationLink, PaginationEllipsis } from '@/components/ui/pagination';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const Students: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'全部' | '活跃' | '旁听' | '保留'>('全部');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [stateFilter, setStateFilter] = useState<string>('all');
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -31,8 +35,27 @@ const Students: React.FC = () => {
     addStudent, 
     deleteStudent, 
     isLoadingStudents, 
-    studentsError 
+    studentsError,
+    classes,
   } = useDatabase();
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
+
+  const uniqueStates = Array.from(new Set(students.map(s => s.state).filter(Boolean))) as string[];
+
+  // Map student_id -> class names where they are enrolled (from classes.mother_class_students)
+  const classNameByStudentId = React.useMemo(() => {
+    const m = new Map<string, string>();
+    (classes || []).forEach((c: any) => {
+      (c.mother_class_students || []).forEach((sid: string) => {
+        if (m.has(sid)) m.set(sid, `${m.get(sid)}, ${c.name}`);
+        else m.set(sid, c.name);
+      });
+    });
+    return m;
+  }, [classes]);
 
   const filteredStudents = students.filter(student => {
     // First apply search filter
@@ -41,15 +64,15 @@ const Students: React.FC = () => {
       student.chinese_name.includes(searchTerm) ||
       student.chinese_name.toLowerCase().includes(searchLower) ||
       student.english_name.toLowerCase().includes(searchLower) ||
-      student.class_name.includes(searchTerm) ||
-      student.class_name.toLowerCase().includes(searchLower) ||
+      (classNameByStudentId.get(student.student_id) || '').toLowerCase().includes(searchLower) ||
       student.student_id.toLowerCase().includes(searchLower)
     );
 
     // Then apply status filter
     const matchesStatus = statusFilter === '全部' || student.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    const matchesState = stateFilter === 'all' || student.state === stateFilter;
+    return matchesSearch && matchesStatus && matchesState;
   });
 
   const getStatusColor = (status: string) => {
@@ -113,7 +136,7 @@ const Students: React.FC = () => {
           <span className="ml-2">加载学员数据中...</span>
         </div>
       </div>
-    );
+      );
   }
 
   if (studentsError) {
@@ -128,6 +151,13 @@ const Students: React.FC = () => {
       </div>
     );
   }
+
+  // Pagination helpers
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / pageSize));
+  const start = (page - 1) * pageSize;
+  const pagedStudents = filteredStudents.slice(start, start + pageSize);
+
+  const goTo = (p: number) => setPage(Math.min(Math.max(1, p), totalPages));
 
   return (
     <div className="space-y-6">
@@ -170,7 +200,7 @@ const Students: React.FC = () => {
                 className="pl-10"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center flex-wrap">
               <Button 
                 variant={statusFilter === '全部' ? 'default' : 'outline'} 
                 size="sm"
@@ -199,111 +229,144 @@ const Students: React.FC = () => {
               >
                 保留
               </Button>
+              <Select value={stateFilter} onValueChange={(v) => setStateFilter(v)}>
+                <SelectTrigger className="h-8 w-[160px]">
+                  <SelectValue placeholder="按州属筛选" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部州属</SelectItem>
+                  {uniqueStates.map((st) => (
+                    <SelectItem key={st} value={st}>{st}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Students Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStudents.map((student) => (
-          <Card key={student.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                    <User className="h-6 w-6 text-gray-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{student.chinese_name}</h3>
-                    <p className="text-sm text-gray-600">{student.english_name}</p>
-                    <p className="text-xs text-gray-500">{student.student_id}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2 flex-col sm:flex-row">
-                  <Badge className={getStatusColor(student.status)}>
-                    {student.status}
-                  </Badge>
-                </div>
-              </div>
-              
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">所在班级:</span>
-                  <span className="font-medium">{student.class_name}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">性别:</span>
-                  <span className="font-medium">{student.gender === 'male' ? '男' : '女'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">入学日期:</span>
-                  <span className="font-medium">{student.enrollment_date}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">电话:</span>
-                  <span className="font-medium">{student.phone}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">邮编:</span>
-                  <span className="font-medium">{student.postal_code}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">出生日期:</span>
-                  <span className="font-medium">{student.date_of_birth}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">紧急联系人:</span>
-                  <span className="font-medium">{student.emergency_contact_name}</span>
-                </div>
-                {student.occupation && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">职业:</span>
-                    <span className="font-medium">{student.occupation}</span>
-                  </div>
-                )}
-              </div>
-              
-              {canEditStudents && (
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => openEditDialog(student)}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    编辑
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>确认删除学员</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          您确定要删除学员 <strong>{student.chinese_name}</strong> 吗？此操作不可撤销。
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>取消</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDeleteStudent(student.id)}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          确认删除
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+      {/* Students Table */}
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>学号</TableHead>
+                <TableHead>中文姓名</TableHead>
+                <TableHead>英文姓名</TableHead>
+                <TableHead>性别</TableHead>
+                <TableHead>电话</TableHead>
+                <TableHead>州属</TableHead>
+                <TableHead>入学日期</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead>母班</TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pagedStudents.map((student) => (
+                <TableRow key={student.id}>
+                  <TableCell className="font-mono text-xs">{student.student_id}</TableCell>
+                  <TableCell className="font-medium">{student.chinese_name}</TableCell>
+                  <TableCell className="text-muted-foreground">{student.english_name}</TableCell>
+                  <TableCell>{student.gender === 'male' ? '男' : '女'}</TableCell>
+                  <TableCell>{student.phone}</TableCell>
+                  <TableCell>{student.state || '-'}</TableCell>
+                  <TableCell>{student.enrollment_date}</TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(student.status)}>{student.status}</Badge>
+                  </TableCell>
+                  <TableCell>{classNameByStudentId.get(student.student_id) || '-'}</TableCell>
+                  <TableCell className="text-right">
+                    {canEditStudents && (
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => openEditDialog(student)}>
+                          <Edit className="h-4 w-4 mr-1" /> 编辑
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>确认删除学员</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                您确定要删除学员 <strong>{student.chinese_name}</strong> 吗？此操作不可撤销。
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>取消</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteStudent(student.id)} className="bg-red-600 hover:bg-red-700">
+                                确认删除
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {pagedStudents.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-10">
+                    无匹配的学员
+                  </TableCell>
+                </TableRow>
               )}
-            </CardContent>
-          </Card>
-        ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Pagination Controls */}
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          显示 {filteredStudents.length === 0 ? 0 : start + 1}-{Math.min(start + pageSize, filteredStudents.length)} / 共 {filteredStudents.length}
+        </div>
+        <div className="flex items-center gap-3">
+          <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(parseInt(v)); setPage(1); }}>
+            <SelectTrigger className="h-8 w-[100px]"><SelectValue placeholder="每页" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="6">6</SelectItem>
+              <SelectItem value="9">9</SelectItem>
+              <SelectItem value="12">12</SelectItem>
+              <SelectItem value="18">18</SelectItem>
+            </SelectContent>
+          </Select>
+          {totalPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); goTo(page - 1); }} />
+                </PaginationItem>
+                {(() => {
+                  const links: JSX.Element[] = [];
+                  const add = (p: number, active = false) => links.push(
+                    <PaginationItem key={p}>
+                      <PaginationLink href="#" isActive={active} onClick={(e) => { e.preventDefault(); goTo(p); }}>{p}</PaginationLink>
+                    </PaginationItem>
+                  );
+                  if (totalPages <= 7) {
+                    for (let p = 1; p <= totalPages; p++) add(p, p === page);
+                  } else {
+                    add(1, page === 1);
+                    if (page > 3) links.push(<PaginationEllipsis key="s" />);
+                    for (let p = Math.max(2, page - 1); p <= Math.min(totalPages - 1, page + 1); p++) add(p, p === page);
+                    if (page < totalPages - 2) links.push(<PaginationEllipsis key="e" />);
+                    add(totalPages, page === totalPages);
+                  }
+                  return links;
+                })()}
+                <PaginationItem>
+                  <PaginationNext href="#" onClick={(e) => { e.preventDefault(); goTo(page + 1); }} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </div>
       </div>
 
       {/* Edit Student Dialog */}

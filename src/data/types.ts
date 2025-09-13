@@ -12,6 +12,8 @@ export interface Student {
   email?: string;
   enrollment_date: string;
   status: '活跃' | '旁听' | '保留';
+  // Location
+  state?: string; // Malaysian state / 州属
   // Mother class information
   mother_class_id?: string; // Reference to the class that this student primarily belongs to
   mother_class_name?: string; // Display name of mother class
@@ -27,19 +29,21 @@ export interface Student {
   marriage_status?: 'Single' | 'Married' | 'Divorced' | 'Widowed' | 'Other';
 }
 
-// Class Interface
+// Class Interface - Updated to match database ClassWithDetails
 export interface ClassInfo {
   id: string;
   name: string;
-  sub_branch_id?: string; // Reference to SubBranch
+  sub_branch_id?: string; // Reference to SubBranch (mapped from manage_by_sub_branch_id)
   sub_branch_name?: string; // SubBranch name for display
   time: string;
   student_count: number;
-  // Cadre roles (single references)
-  class_monitor_id: string; // Primary class monitor
-  class_monitor: string; // Display name
-  deputy_monitors?: string[]; // Array of student IDs
-  care_officers?: string[]; // Array of student IDs
+  // Cadre roles - Updated to use junction table structure
+  monitor_id?: number; // Monitor student ID from junction table
+  class_monitor_name?: string; // Monitor name from junction table (replaces class_monitor)
+  deputy_monitors?: number[]; // Array of student IDs who are deputy monitors
+  care_officers?: number[]; // Array of student IDs who are care officers
+  deputy_monitor_names?: string[]; // Array of deputy monitor names for display
+  care_officer_names?: string[]; // Array of care officer names for display
   // Student management
   mother_class_students?: string[]; // Students who have this as their mother class
   regular_students?: string[]; // Other students who attend this class regularly
@@ -432,11 +436,13 @@ export const mockClasses: ClassInfo[] = [
     sub_branch_name: '大山脚分苑',
     time: '周一 09:00-11:00',
     student_count: 8,
-    class_monitor_id: 'S2024001',
-    class_monitor: '王小明',
+    monitor_id: 1,
+    class_monitor_name: '王小明',
     student_ids: ['S2024004', 'S2024005', 'S2024006', 'S2024007', 'S2024008'],
-    deputy_monitors: ['S2024005'],
-    care_officers: ['S2024006', 'S2024007'],
+    deputy_monitors: [5],
+    care_officers: [6, 7],
+    deputy_monitor_names: ['学员5'],
+    care_officer_names: ['学员6', '学员7'],
     learning_progress: '已完成基础语法，正在学习日常对话',
     page_number: '第15页',
     line_number: '第8行',
@@ -450,11 +456,13 @@ export const mockClasses: ClassInfo[] = [
     sub_branch_name: '八打灵再也分苑',
     time: '周三 14:00-16:00',
     student_count: 7,
-    class_monitor_id: 'S2024002',
-    class_monitor: '李小红',
+    monitor_id: 2,
+    class_monitor_name: '李小红',
     student_ids: ['S2024009', 'S2024010', 'S2024011', 'S2024012', 'S2024013', 'S2024014'],
-    deputy_monitors: ['S2024010'],
-    care_officers: ['S2024011'],
+    deputy_monitors: [10],
+    care_officers: [11],
+    deputy_monitor_names: ['学员10'],
+    care_officer_names: ['学员11'],
     learning_progress: '已完成中级语法，正在学习商务对话',
     page_number: '第32页',
     line_number: '第12行',
@@ -468,8 +476,8 @@ export const mockClasses: ClassInfo[] = [
     sub_branch_name: '新山分苑',
     time: '周五 19:00-21:00',
     student_count: 2,
-    class_monitor_id: 'S2024003',
-    class_monitor: '张三',
+    monitor_id: 3,
+    class_monitor_name: '张三',
     student_ids: ['S2024015'],
     deputy_monitors: [],
     care_officers: [],
@@ -486,8 +494,8 @@ export const mockClasses: ClassInfo[] = [
     sub_branch_name: '大山脚分苑',
     time: '周六 10:00-12:00',
     student_count: 1,
-    class_monitor_id: 'S2024006',
-    class_monitor: '赵六',
+    monitor_id: 6,
+    class_monitor_name: '赵六',
     student_ids: [],
     deputy_monitors: [],
     care_officers: [],
@@ -505,8 +513,8 @@ export const mockClasses: ClassInfo[] = [
     sub_branch_name: '大山脚分苑',
     time: '周三 19:30-21:30',
     student_count: 1,
-    class_monitor_id: 'TEST001',
-    class_monitor: '罗净智',
+    monitor_id: 100,
+    class_monitor_name: '罗净智',
     mother_class_students: ['TEST001'], // 罗净智的母班
     learning_progress: '广论第二轮学习',
     page_number: '第156页',
@@ -522,9 +530,12 @@ export const mockClasses: ClassInfo[] = [
     sub_branch_name: '大山脚分苑',
     time: '周五 20:00-22:00',
     student_count: 15,
-    class_monitor_id: 'S2024002', // 其他人当班长
-    class_monitor: '李小红',
-    care_officers: ['TEST001'], // 罗净智当关怀员
+    monitor_id: 2,
+    class_monitor_name: '李小红',
+    deputy_monitors: [],
+    care_officers: [100],
+    deputy_monitor_names: [],
+    care_officer_names: ['罗净智'],
     regular_students: ['S2024004', 'S2024005', 'S2024006'], // 其他学员
     learning_progress: '广论第一轮学习',
     page_number: '第25页',

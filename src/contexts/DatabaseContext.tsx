@@ -19,6 +19,12 @@ import {
   useCreateEnrollment,
   useDeleteEnrollment
 } from '@/hooks/useDatabase';
+import {
+  useClassrooms,
+  useCreateClassroom,
+  useUpdateClassroom,
+  useDeleteClassroom,
+} from '@/hooks/useDatabase';
 import { addClassCadre, removeClassCadre, updateClassCadres } from '@/lib/database/classes';
 import { 
   fetchStudentByStudentId,
@@ -101,12 +107,29 @@ interface DatabaseContextType {
   removeCadreRole: (studentId: string, classId: string, role: '班长' | '副班长' | '关怀员') => Promise<void>;
   getStudentRoles: (studentId: string) => CadreRole[];
   getClassAllStudents: (classId: string) => Student[];
+  
+  // Classrooms
+  classrooms: Classroom[];
+  addClassroom: (data: Omit<Classroom, 'id' | 'sub_branch_name'>) => Promise<boolean>; // returns true if updated existing
+  updateClassroom: (data: Classroom) => Promise<void>;
+  deleteClassroom: (id: string) => Promise<void>;
 }
 
 const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
 
 interface DatabaseProviderProps {
   children: ReactNode;
+}
+
+// Lightweight Classroom interface for app use
+interface Classroom {
+  id: string;
+  name: string;
+  state?: string;
+  address?: string;
+  student_id?: string; // public student id
+  sub_branch_id: string;
+  sub_branch_name?: string;
 }
 
 // Helper function to convert StudentWithDetails to Student interface for backward compatibility
@@ -141,6 +164,7 @@ const convertStudentWithDetailsToStudent = (studentDetails: StudentWithDetails):
     email: studentDetails.email,
     enrollment_date: studentDetails.enrollment_date || studentDetails.date_of_joining || '',
     status: (studentDetails.status as '活跃' | '旁听' | '保留') || '活跃',
+    state: studentDetails.state || '',
     postal_code: studentDetails.postcode || '',
     date_of_birth: studentDetails.birthday_date || '',
     emergency_contact_name: studentDetails.emergency_contact_name || '',
@@ -214,6 +238,12 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   const createEnrollmentMutation = useCreateEnrollment();
   const deleteEnrollmentMutation = useDeleteEnrollment();
 
+  // Classroom hooks
+  const { data: dbClassrooms } = useClassrooms();
+  const createClassroomMutation = useCreateClassroom();
+  const updateClassroomMutation = useUpdateClassroom();
+  const deleteClassroomMutation = useDeleteClassroom();
+
   // Transform database data to frontend format using official mapping function
   const students = useMemo(() => {
     try {
@@ -285,6 +315,20 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     (dbSubBranches || []).map(mapDbSubBranchToFrontend),
     [dbSubBranches]
   );
+
+  // Map classrooms to frontend shape
+  const classrooms: Classroom[] = useMemo(() => {
+    if (!dbClassrooms) return [];
+    return dbClassrooms.map((c: any) => ({
+      id: String(c.id),
+      name: c.name || '',
+      state: c.state,
+      address: c.address,
+      student_id: c.student_id_ref, // mapped from DB lookup
+      sub_branch_id: String(c.sub_branch_id),
+      sub_branch_name: c.sub_branch_name,
+    }));
+  }, [dbClassrooms]);
 
   // Generate cadres from classes and students
   const cadres = useMemo(() => {
@@ -732,9 +776,44 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   };
 
   const getClassAllStudents = (classId: string): Student[] => {
-    // This would require fetching enrollment data - for now return empty
-    // In a full implementation, we'd fetch from class_enrollments table
-    return [];
+    if (!classId) return [];
+
+    const cls = classes.find(c => c.id === classId);
+    if (!cls) return [];
+
+    // Collect database student IDs (as strings) from cadre roles
+    const cadreIds = new Set<string>();
+    if (cls.monitor_id) cadreIds.add(String(cls.monitor_id));
+    (cls.deputy_monitors || []).forEach(id => cadreIds.add(String(id)));
+    (cls.care_officers || []).forEach(id => cadreIds.add(String(id)));
+
+    // Collect students by their public student_id from enrollments (mother_class_students)
+    const enrolledByStudentId = new Set<string>(cls.mother_class_students || []);
+
+    // Build the unified list (cadres ∪ enrolled)
+    const byCadreIds = students.filter(s => cadreIds.has(s.id));
+    const byPublicIds = students.filter(s => enrolledByStudentId.has(s.student_id));
+
+    // Merge unique by database id
+    const seen = new Set<string>();
+    const combined: Student[] = [];
+    [...byCadreIds, ...byPublicIds].forEach(s => {
+      if (!seen.has(s.id)) {
+        seen.add(s.id);
+        combined.push(s);
+      }
+    });
+
+    // Optional: order cadres first, then others by chinese_name
+    const isCadre = (s: Student) => cadreIds.has(s.id);
+    combined.sort((a, b) => {
+      const ac = isCadre(a) ? 0 : 1;
+      const bc = isCadre(b) ? 0 : 1;
+      if (ac !== bc) return ac - bc;
+      return (a.chinese_name || '').localeCompare(b.chinese_name || '');
+    });
+
+    return combined;
   };
 
   const value: DatabaseContextType = {
@@ -756,6 +835,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     cadres,
     mainBranches,
     subBranches,
+    classrooms,
     
     // CRUD operations
     updateStudent,
@@ -780,6 +860,46 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     removeCadreRole,
     getStudentRoles,
     getClassAllStudents,
+    
+    // Classroom CRUD
+    addClassroom: async (data: Omit<Classroom, 'id' | 'sub_branch_name'>) => {
+      const personId = data.student_id ? parseInt(students.find(s => s.student_id === data.student_id)?.id || '', 10) : undefined;
+      // Detect existing by name (global unique)
+      const existing = classrooms.find(c => (c.name || '').toLowerCase() === data.name.toLowerCase());
+      if (existing) {
+        await updateClassroomMutation.mutateAsync({
+          id: parseInt(existing.id, 10),
+          name: data.name,
+          state: data.state,
+          address: data.address,
+          person_in_charge: personId,
+          sub_branch_id: parseInt(data.sub_branch_id, 10),
+        } as any);
+        return true; // updated
+      }
+      await createClassroomMutation.mutateAsync({
+        name: data.name,
+        state: data.state,
+        address: data.address,
+        person_in_charge: personId,
+        sub_branch_id: parseInt(data.sub_branch_id, 10),
+      } as any);
+      return false; // created
+    },
+    updateClassroom: async (data: Classroom) => {
+      const personId = data.student_id ? parseInt(students.find(s => s.student_id === data.student_id)?.id || '', 10) : undefined;
+      await updateClassroomMutation.mutateAsync({
+        id: parseInt(data.id, 10),
+        name: data.name,
+        state: data.state,
+        address: data.address,
+        person_in_charge: personId,
+        sub_branch_id: parseInt(data.sub_branch_id, 10),
+      } as any);
+    },
+    deleteClassroom: async (id: string) => {
+      await deleteClassroomMutation.mutateAsync(parseInt(id, 10));
+    },
   };
 
   return (

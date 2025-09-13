@@ -11,6 +11,7 @@ import { Calendar as CalendarIcon, Clock, Users, Save, Search } from 'lucide-rea
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useDatabase } from '@/contexts/DatabaseContext';
+import { createBulkAttendance, type CreateAttendanceData } from '@/lib/database/attendance';
 
 interface AttendanceStatus {
   studentId: string;
@@ -64,19 +65,41 @@ const Attendance: React.FC = () => {
     setProgressData(progress);
   };
 
-  const endAttendanceSession = () => {
-    // Save all data when ending the session
-    console.log('Saving attendance:', {
-      classId: selectedClass,
-      classDate: selectedDate,
-      attendance: attendanceData.filter(item => item.status !== null),
-      progress: progressData
-    });
-    
-    // Show success message
-    alert('考勤数据和学习进度已保存！');
-    
-    setSessionActive(false);
+  const endAttendanceSession = async () => {
+    if (!selectedClass || !selectedDate) return;
+    const statusToCode: Record<NonNullable<AttendanceStatus['status']>, number> = {
+      present: 1,
+      online: 2,
+      leave: 3,
+      absent: 0,
+    };
+
+    const attendance_date = format(selectedDate, 'yyyy-MM-dd');
+    const lamrin_page = progressData.page_number ? parseInt(progressData.page_number, 10) : undefined;
+    const lamrin_line = progressData.line_number ? parseInt(progressData.line_number, 10) : undefined;
+
+    const records: CreateAttendanceData[] = attendanceData
+      .filter(item => item.status !== null)
+      .map(item => ({
+        class_id: parseInt(selectedClass, 10),
+        student_id: parseInt(item.studentId, 10),
+        attendance_date,
+        attendance_status: statusToCode[item.status!],
+        learning_progress: progressData.learning_progress || undefined,
+        lamrin_page,
+        lamrin_line,
+      }));
+
+    try {
+      if (records.length > 0) {
+        await createBulkAttendance(records);
+      }
+      alert('考勤数据和学习进度已保存！');
+      setSessionActive(false);
+    } catch (err: any) {
+      console.error('Failed to save attendance:', err);
+      alert(`保存失败：${err?.message || '未知错误'}`);
+    }
   };
 
   if (!sessionActive) {

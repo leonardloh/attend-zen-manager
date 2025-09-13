@@ -3,7 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { User, RotateCcw } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext, PaginationLink, PaginationEllipsis } from '@/components/ui/pagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RotateCcw } from 'lucide-react';
+import { useDatabase } from '@/contexts/DatabaseContext';
 import { cn } from '@/lib/utils';
 import AttendanceProgressForm from './AttendanceProgressForm';
 
@@ -48,11 +52,31 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
   // Use passed students or default to mock data
   const students = propStudents || defaultStudents;
 
+  // Access class details to determine roles per student
+  const { classes } = useDatabase();
+  const currentClass = classes.find(c => c.id === (classId || ''));
+
+  const getStudentRoles = (studentDbId: string): string[] => {
+    const roles: string[] = [];
+    if (!currentClass) return roles;
+    if (currentClass.monitor_id && String(currentClass.monitor_id) === studentDbId) roles.push('班长');
+    if ((currentClass.deputy_monitors || []).map(String).includes(studentDbId)) roles.push('副班长');
+    if ((currentClass.care_officers || []).map(String).includes(studentDbId)) roles.push('关怀员');
+    return roles;
+  };
+
   const [attendance, setAttendance] = useState<AttendanceStatus[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Update attendance when students change
   useEffect(() => {
-    setAttendance(students.map(student => ({ studentId: student.id, status: null })));
+    // Preserve existing statuses when the roster is stable; initialize new ones as null
+    setAttendance((prev) => {
+      const statusById = new Map(prev.map(a => [a.studentId, a.status]));
+      return students.map(s => ({ studentId: s.id, status: statusById.get(s.id) ?? null }));
+    });
+    setPage(1); // reset page when roster changes
   }, [students]);
 
   const [progressData, setProgressData] = useState<AttendanceProgressData>({
@@ -62,11 +86,11 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
   });
 
   const statusConfig = {
-    present: { label: '√实体', color: 'bg-green-500 hover:bg-green-600 text-white' },
-    online: { label: '√线上', color: 'bg-blue-500 hover:bg-blue-600 text-white' },
-    leave: { label: 'O', color: 'bg-yellow-500 hover:bg-yellow-600 text-white' },
-    absent: { label: 'X', color: 'bg-red-500 hover:bg-red-600 text-white' },
-  };
+    present: { label: '实体出席', color: 'bg-green-500 hover:bg-green-600 text-white' },
+    online: { label: '线上出席', color: 'bg-blue-500 hover:bg-blue-600 text-white' },
+    leave: { label: '请假', color: 'bg-yellow-500 hover:bg-yellow-600 text-white' },
+    absent: { label: '缺席', color: 'bg-red-500 hover:bg-red-600 text-white' },
+  } as const;
 
   const updateAttendance = (studentId: string, status: AttendanceStatus['status']) => {
     const updatedAttendance = attendance.map(item => 
@@ -125,6 +149,45 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
 
   const statusCounts = getStatusCounts();
 
+  // Pagination helpers
+  const totalPages = Math.max(1, Math.ceil(students.length / pageSize));
+  const start = (page - 1) * pageSize;
+  const pagedStudents = students.slice(start, start + pageSize);
+
+  const goToPage = (p: number) => {
+    const clamped = Math.min(Math.max(1, p), totalPages);
+    setPage(clamped);
+  };
+
+  const renderPageLinks = () => {
+    const items: JSX.Element[] = [];
+    const addLink = (p: number, active = false) => {
+      items.push(
+        <PaginationItem key={p}>
+          <PaginationLink isActive={active} href="#" onClick={(e) => { e.preventDefault(); goToPage(p); }}>
+            {p}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    };
+    if (totalPages <= 7) {
+      for (let p = 1; p <= totalPages; p++) addLink(p, p === page);
+    } else {
+      addLink(1, page === 1);
+      if (page > 3) {
+        items.push(<PaginationEllipsis key="s-ellipsis" />);
+      }
+      const startMid = Math.max(2, page - 1);
+      const endMid = Math.min(totalPages - 1, page + 1);
+      for (let p = startMid; p <= endMid; p++) addLink(p, p === page);
+      if (page < totalPages - 2) {
+        items.push(<PaginationEllipsis key="e-ellipsis" />);
+      }
+      addLink(totalPages, page === totalPages);
+    }
+    return items;
+  };
+
   return (
     <div className="space-y-6">
       {/* Progress Form */}
@@ -176,66 +239,117 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
         </CardContent>
       </Card>
 
-      {/* Student Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {students.map((student) => {
-          const studentAttendance = attendance.find(a => a.studentId === student.id);
-          return (
-            <Card key={student.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex flex-col items-center space-y-3">
-                  {/* Student Avatar */}
-                  <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
-                    <User className="h-8 w-8 text-gray-500" />
-                  </div>
-                  
-                  {/* Student Name */}
-                  <div className="text-center">
-                    <h3 className="font-semibold text-gray-900">{student.chinese_name}</h3>
-                    <p className="text-sm text-gray-600">{student.english_name}</p>
-                  </div>
-                  
-                  {/* Status Buttons */}
-                  <div className="grid grid-cols-2 gap-2 w-full">
-                    {Object.entries(statusConfig).map(([status, config]) => (
-                      <Button
-                        key={status}
-                        onClick={() => updateAttendance(student.id, status as AttendanceStatus['status'])}
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "h-12 text-sm font-medium transition-all",
-                          studentAttendance?.status === status
-                            ? config.color
-                            : "hover:bg-gray-50"
-                        )}
-                      >
-                        {config.label}
-                      </Button>
-                    ))}
-                  </div>
-                  
-                  {/* Current Status Badge */}
-                  {studentAttendance?.status && (
-                    <Badge 
-                      variant="secondary" 
-                      className={cn(
-                        "text-xs",
-                        studentAttendance.status === 'present' && "bg-green-100 text-green-800",
-                        studentAttendance.status === 'online' && "bg-blue-100 text-blue-800",
-                        studentAttendance.status === 'leave' && "bg-yellow-100 text-yellow-800",
-                        studentAttendance.status === 'absent' && "bg-red-100 text-red-800"
+      {/* Student Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>学员与干部 / Class Cadres & Students</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[40%]">中文名</TableHead>
+                <TableHead className="w-[40%]">English Name</TableHead>
+                <TableHead className="w-[20%]">角色</TableHead>
+                <TableHead className="text-center">实体出席</TableHead>
+                <TableHead className="text-center">线上出席</TableHead>
+                <TableHead className="text-center">请假</TableHead>
+                <TableHead className="text-center">缺席</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pagedStudents.map((student) => {
+                const studentAttendance = attendance.find(a => a.studentId === student.id);
+                const roles = getStudentRoles(student.id);
+                return (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-medium">{student.chinese_name}</TableCell>
+                    <TableCell className="text-muted-foreground">{student.english_name}</TableCell>
+                    <TableCell>
+                      {roles.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {roles.map(r => (
+                            <Badge
+                              key={r}
+                              variant="secondary"
+                              className={cn(
+                                'text-xs',
+                                r === '班长' && 'bg-emerald-100 text-emerald-800',
+                                r === '副班长' && 'bg-purple-100 text-purple-800',
+                                r === '关怀员' && 'bg-orange-100 text-orange-800'
+                              )}
+                            >
+                              {r}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <Badge variant="outline" className="text-xs text-gray-600">学员</Badge>
                       )}
-                    >
-                      {statusConfig[studentAttendance.status].label}
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                    </TableCell>
+                    {(['present','online','leave','absent'] as const).map(status => (
+                      <TableCell key={status} className="text-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateAttendance(student.id, status)}
+                          className={cn(
+                            "px-3",
+                            studentAttendance?.status === status ? statusConfig[status].color : "hover:bg-gray-50"
+                          )}
+                        >
+                          {statusConfig[status].label}
+                        </Button>
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })}
+              {students.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                    无学员/干部可显示
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          <div className="mt-4 flex items-center justify-between">
+            <div className="text-sm text-muted-foreground flex items-center gap-3">
+              <span>
+                显示 {students.length === 0 ? 0 : start + 1}-{Math.min(start + pageSize, students.length)} / 共 {students.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <span>每页</span>
+                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(parseInt(v)); setPage(1); }}>
+                  <SelectTrigger className="h-8 w-[90px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {totalPages > 1 && (
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); goToPage(page - 1); }} />
+                  </PaginationItem>
+                  {renderPageLinks()}
+                  <PaginationItem>
+                    <PaginationNext href="#" onClick={(e) => { e.preventDefault(); goToPage(page + 1); }} />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

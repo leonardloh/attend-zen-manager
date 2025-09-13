@@ -34,6 +34,14 @@ import {
   type CreateSubBranchData,
   type UpdateSubBranchData,
   
+  // Classroom operations
+  fetchClassrooms,
+  createClassroom,
+  updateClassroom,
+  deleteClassroom,
+  type CreateClassroomData,
+  type UpdateClassroomData,
+  
   // Enrollment operations
   createEnrollment,
   deleteEnrollmentByStudentAndClass,
@@ -47,6 +55,7 @@ export const QUERY_KEYS = {
   CLASSES: ['classes'],
   MAIN_BRANCHES: ['mainBranches'],
   SUB_BRANCHES: ['subBranches'],
+  CLASSROOMS: ['classrooms'],
   ENROLLMENTS: ['enrollments'],
   ATTENDANCE: ['attendance'],
 } as const;
@@ -313,6 +322,59 @@ export const useDeleteEnrollment = () => {
     },
     onError: (error: Error) => {
       toast.error(`退班失败: ${error.message}`);
+    },
+  });
+};
+
+// Classroom Hooks
+export const useClassrooms = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.CLASSROOMS,
+    queryFn: fetchClassrooms,
+  });
+};
+
+export const useCreateClassroom = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: createClassroom,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CLASSROOMS });
+      toast.success('教室创建成功');
+    },
+    onError: (error: Error) => {
+      toast.error(`创建教室失败: ${error.message}`);
+    },
+  });
+};
+
+export const useUpdateClassroom = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: updateClassroom,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CLASSROOMS });
+      toast.success('教室更新成功');
+    },
+    onError: (error: Error) => {
+      toast.error(`更新教室失败: ${error.message}`);
+    },
+  });
+};
+
+export const useDeleteClassroom = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: deleteClassroom,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CLASSROOMS });
+      toast.success('教室删除成功');
+    },
+    onError: (error: Error) => {
+      toast.error(`删除教室失败: ${error.message}`);
     },
   });
 };
