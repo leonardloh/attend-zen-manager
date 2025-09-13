@@ -4,7 +4,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { mockClasses, type ClassInfo } from '@/data/types';
+import { useDatabase } from '@/contexts/DatabaseContext';
 
 
 
@@ -27,19 +27,29 @@ const ClassSearchInput: React.FC<ClassSearchInputProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const { classes } = useDatabase();
 
-  // Find selected class
-  const selectedClass = mockClasses.find(c => c.name === value);
+  // Normalize DB classes to the shape used here
+  const classOptions = classes.map(c => ({
+    id: c.id,
+    name: c.name,
+    region: c.sub_branch_name || '',
+    time: c.time || '',
+    student_count: c.student_count || 0,
+    status: c.status,
+  }));
+
+  const selectedClass = classOptions.find(c => c.name === value);
 
   // Filter classes based on search term, exclude list, and status
-  const filteredClasses = mockClasses.filter(classInfo => {
+  const filteredClasses = classOptions.filter(classInfo => {
     if (excludeClasses.includes(classInfo.name)) return false;
     if (!includeInactive && classInfo.status === 'inactive') return false;
     
     const searchLower = searchTerm.toLowerCase();
     return (
       classInfo.name.toLowerCase().includes(searchLower) ||
-      classInfo.region.toLowerCase().includes(searchLower) ||
+      (classInfo.region || '').toLowerCase().includes(searchLower) ||
       classInfo.time.toLowerCase().includes(searchLower)
     );
   });

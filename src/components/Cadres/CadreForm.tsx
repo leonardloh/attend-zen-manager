@@ -8,6 +8,7 @@ import ClassSearchInput from '@/components/Classes/ClassSearchInput';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
 import { useDatabase } from '@/contexts/DatabaseContext';
 import { Cadre, CadreRole } from '@/data/types';
+import { fetchEnrollmentsByStudent } from '@/lib/database/attendance';
 
 interface CadreFormProps {
   initialData?: Cadre;
@@ -36,27 +37,70 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
     can_register_students: initialData?.can_register_students ?? true
   });
 
+  // Keep a display map for roles in support classes: className -> roles (e.g., "班长 / 关怀员")
+  const [supportRoleMap, setSupportRoleMap] = useState<Record<string, string>>({});
+
   const roles = ['班长', '副班长', '关怀员'];
   
   // Available class names for the multi-select (extracted from our class data)
   const availableClasses = classes.map(cls => cls.name);
 
-  // Auto-populate student information when student is selected
+  // Auto-populate student information, 母班班名, 护持班名 + roles, when student is selected
   useEffect(() => {
-    if (formData.student_id) {
-      const selectedStudent = students.find(s => s.student_id === formData.student_id);
-      if (selectedStudent) {
-        setFormData(prev => ({
-          ...prev,
-          chinese_name: selectedStudent.chinese_name,
-          english_name: selectedStudent.english_name,
-          gender: selectedStudent.gender,
-          date_of_birth: selectedStudent.date_of_birth,
-          mother_class: prev.mother_class || selectedStudent.class_name || '' // Use student's class as default if no mother class selected
-        }));
+    if (!formData.student_id) return;
+
+    const selectedStudent = students.find(s => s.student_id === formData.student_id);
+    if (!selectedStudent) return;
+
+    // Basic student info
+    setFormData(prev => ({
+      ...prev,
+      chinese_name: selectedStudent.chinese_name,
+      english_name: selectedStudent.english_name,
+      gender: selectedStudent.gender,
+      date_of_birth: selectedStudent.date_of_birth,
+    }));
+
+    // 母班班名: fetch from database enrollments (latest)
+    (async () => {
+      try {
+        const enrollments = await fetchEnrollmentsByStudent(parseInt(selectedStudent.id, 10));
+        if (enrollments && enrollments.length > 0) {
+          const latest = enrollments[0]; // fetchEnrollmentsByStudent sorts desc by created_at
+          const motherCls = classes.find(c => c.id === String(latest.class_id));
+          if (motherCls && !formData.mother_class) {
+            setFormData(prev => ({ ...prev, mother_class: motherCls.name }));
+          }
+        }
+      } catch (e) {
+        // ignore errors for prefill
+        console.warn('Prefill mother_class failed', e);
       }
+    })();
+
+    // 护持班名: classes where this student is 班长/副班长/关怀员
+    const dbId = selectedStudent.id; // string id
+    const supportClasses: string[] = [];
+    const roleMap: Record<string, string> = {};
+
+    classes.forEach(c => {
+      const roles: string[] = [];
+      if (c.monitor_id && String(c.monitor_id) === dbId) roles.push('班长');
+      if ((c.deputy_monitors || []).map(String).includes(dbId)) roles.push('副班长');
+      if ((c.care_officers || []).map(String).includes(dbId)) roles.push('关怀员');
+      if (roles.length > 0) {
+        supportClasses.push(c.name);
+        roleMap[c.name] = roles.join(' / ');
+      }
+    });
+
+    if (supportClasses.length > 0) {
+      setFormData(prev => ({ ...prev, support_classes: Array.from(new Set([...(prev.support_classes || []), ...supportClasses])) }));
+      setSupportRoleMap(roleMap);
+    } else {
+      setSupportRoleMap({});
     }
-  }, [formData.student_id, students]);
+  }, [formData.student_id, students, classes]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,6 +220,17 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
         onChange={(classes) => setFormData({ ...formData, support_classes: classes })}
         availableClasses={availableClasses}
       />
+      {formData.support_classes.length > 0 && (
+        <div className="text-sm text-gray-600">
+          <span className="font-medium">护持角色:</span>{' '}
+          {formData.support_classes.map((name, idx) => (
+            <span key={name} className="mr-2">
+              {name}{supportRoleMap[name] ? `（${supportRoleMap[name]}）` : ''}
+              {idx < formData.support_classes.length - 1 ? '，' : ''}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Permissions Section */}
       <div className="space-y-4 p-4 border rounded-lg bg-gray-50">

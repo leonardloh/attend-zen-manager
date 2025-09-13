@@ -367,7 +367,8 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       
       // Add deputy monitors and care officers similarly
       [...(classInfo.deputy_monitors || []), ...(classInfo.care_officers || [])].forEach(studentId => {
-        const student = students.find(s => s.id === studentId);
+        // Ensure we compare as strings because student IDs in context are strings
+        const student = students.find(s => s.id === String(studentId));
         const role = classInfo.deputy_monitors?.includes(studentId) ? '副班长' : '关怀员';
         
         if (student) {
