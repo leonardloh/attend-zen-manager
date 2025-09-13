@@ -3,16 +3,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Shield, Edit, Trash2 } from 'lucide-react';
+import { Shield, Trash2 } from 'lucide-react';
 import { Cadre, CadreRole } from '@/data/types';
 
 interface CadreCardProps {
   cadre: Cadre;
-  onEdit: (cadre: Cadre) => void;
   onDelete: (cadreId: string) => void;
 }
 
-const CadreCard: React.FC<CadreCardProps> = ({ cadre, onEdit, onDelete }) => {
+const CadreCard: React.FC<CadreCardProps> = ({ cadre, onDelete }) => {
   const getRoleColor = (role: string) => {
     switch (role) {
       case '班长': return 'bg-red-100 text-red-800';
@@ -108,17 +107,8 @@ const CadreCard: React.FC<CadreCardProps> = ({ cadre, onEdit, onDelete }) => {
           </div>
         </div>
 
-        
+
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex-1"
-            onClick={() => onEdit(cadre)}
-          >
-            <Edit className="h-4 w-4 mr-1" />
-            编辑
-          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button 

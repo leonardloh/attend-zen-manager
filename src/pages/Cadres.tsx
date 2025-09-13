@@ -8,7 +8,7 @@ import { useDatabase } from '@/contexts/DatabaseContext';
 import { type Cadre } from '@/data/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext, PaginationLink, PaginationEllipsis } from '@/components/ui/pagination';
@@ -17,7 +17,6 @@ import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, Pagi
 const Cadres: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingCadre, setEditingCadre] = useState<Cadre | null>(null);
   const { toast } = useToast();
 
   // Use DatabaseContext for cadres data
@@ -51,14 +50,6 @@ const Cadres: React.FC = () => {
     });
   };
 
-  const handleEditCadre = (updatedCadre: Cadre) => {
-    updateCadre(updatedCadre);
-    setEditingCadre(null);
-    toast({
-      title: "成功",
-      description: "干部信息已更新"
-    });
-  };
 
   const handleDeleteCadre = (cadreId: string) => {
     const deletedCadre = cadres.find(cadre => cadre.id === cadreId);
@@ -80,10 +71,7 @@ const Cadres: React.FC = () => {
         <CadreDialog
           isAddDialogOpen={isAddDialogOpen}
           onAddDialogChange={setIsAddDialogOpen}
-          editingCadre={editingCadre}
-          onEditingCadreChange={setEditingCadre}
           onAddCadre={handleAddCadre}
-          onEditCadre={handleEditCadre}
         />
       </div>
 
@@ -124,9 +112,6 @@ const Cadres: React.FC = () => {
                     <TableCell>{cadre.email || '-'}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setEditingCadre(cadre)}>
-                          <Edit className="h-4 w-4 mr-1" /> 编辑
-                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
