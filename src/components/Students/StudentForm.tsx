@@ -18,7 +18,7 @@ interface Student {
   state?: string;
   // Required fields
   postal_code: string;
-  date_of_birth: string;
+  year_of_birth: number;
   emergency_contact_name: string;
   emergency_contact_phone: string;
   emergency_contact_relation: string;
@@ -30,7 +30,7 @@ interface Student {
 
 interface StudentFormProps {
   initialData?: Student;
-  onSubmit: (student: Student | Omit<Student, 'id'>) => void;
+  onSubmit: (student: Student | Omit<Student, 'id'>) => Promise<boolean | void>;
   onCancel: () => void;
 }
 
@@ -46,7 +46,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
     status: initialData?.status || '活跃' as const,
     // Required fields
     postal_code: initialData?.postal_code || '',
-    date_of_birth: initialData?.date_of_birth || '',
+    year_of_birth: initialData?.year_of_birth || new Date().getFullYear() - 25,
     emergency_contact_name: initialData?.emergency_contact_name || '',
     emergency_contact_phone: initialData?.emergency_contact_phone || '',
     emergency_contact_relation: initialData?.emergency_contact_relation || '',
@@ -66,13 +66,13 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
     '彭亨','登嘉楼','吉兰丹','沙巴','砂拉越','纳闽','东马'
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate required fields
     if (!formData.student_id || !formData.chinese_name || !formData.english_name || 
         !formData.phone || !formData.enrollment_date || !formData.state ||
-        !formData.postal_code || !formData.date_of_birth || 
+        !formData.postal_code || !formData.year_of_birth || 
         !formData.emergency_contact_name || !formData.emergency_contact_phone || 
         !formData.emergency_contact_relation) {
       alert('请填写所有必填字段（含州属） (Please fill in all required fields, including state)');
@@ -80,9 +80,9 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
     }
     
     if (initialData) {
-      onSubmit({ ...formData, id: initialData.id });
+      await onSubmit({ ...formData, id: initialData.id });
     } else {
-      onSubmit(formData);
+      await onSubmit(formData);
     }
   };
 
@@ -221,12 +221,15 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="date_of_birth">出生日期 *</Label>
+          <Label htmlFor="year_of_birth">出生年份 *</Label>
           <Input
-            id="date_of_birth"
-            type="date"
-            value={formData.date_of_birth}
-            onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+            id="year_of_birth"
+            type="number"
+            min="1900"
+            max={new Date().getFullYear()}
+            value={formData.year_of_birth}
+            onChange={(e) => setFormData({ ...formData, year_of_birth: parseInt(e.target.value) || new Date().getFullYear() - 25 })}
+            placeholder="例如: 1995"
             required
           />
         </div>

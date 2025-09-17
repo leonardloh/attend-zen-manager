@@ -1,4 +1,5 @@
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { 
   useStudents, 
   useClasses, 
@@ -44,6 +45,7 @@ import {
   type ClassWithDetails,
   mapDbClassToFrontend
 } from '@/lib/database/classes';
+import { type UpdateClassroomData } from '@/lib/database/classrooms';
 import {
   type CreateStudentData,
   type UpdateStudentData
@@ -80,7 +82,7 @@ interface DatabaseContextType {
   
   // CRUD operations (maintaining existing API)
   updateStudent: (student: Student) => Promise<void>;
-  addStudent: (student: Omit<Student, 'id'>) => Promise<void>;
+  addStudent: (student: Omit<Student, 'id'>) => Promise<boolean>;
   deleteStudent: (studentId: string) => Promise<void>;
   
   updateClass: (classData: ClassInfo) => Promise<void>;
@@ -96,7 +98,7 @@ interface DatabaseContextType {
   deleteMainBranch: (branchId: string) => Promise<void>;
   
   updateSubBranch: (branch: SubBranch) => Promise<void>;
-  addSubBranch: (branch: Omit<SubBranch, 'id'>) => Promise<void>;
+  addSubBranch: (branch: Omit<SubBranch, 'id'>) => Promise<string | undefined>;
   deleteSubBranch: (branchId: string) => Promise<void>;
   removeSubBranchFromMainBranch: (branchId: string) => Promise<void>;
   
@@ -147,7 +149,7 @@ const convertStudentWithDetailsToStudent = (studentDetails: StudentWithDetails):
       enrollment_date: '',
       status: '活跃',
       postal_code: '',
-      date_of_birth: '',
+      year_of_birth: new Date().getFullYear() - 25,
       emergency_contact_name: '',
       emergency_contact_phone: '',
       emergency_contact_relation: '',
@@ -166,7 +168,7 @@ const convertStudentWithDetailsToStudent = (studentDetails: StudentWithDetails):
     status: (studentDetails.status as '活跃' | '旁听' | '保留') || '活跃',
     state: studentDetails.state || '',
     postal_code: studentDetails.postcode || '',
-    date_of_birth: studentDetails.birthday_date || '',
+    year_of_birth: studentDetails.year_of_birth || new Date().getFullYear() - 25,
     emergency_contact_name: studentDetails.emergency_contact_name || '',
     emergency_contact_phone: studentDetails.emergency_contact_number || '',
     emergency_contact_relation: studentDetails.emergency_contact_relationship || '',
@@ -404,8 +406,34 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
 
   // Student methods
   const addStudent = async (studentData: Omit<Student, 'id'>) => {
-    const dbStudentData = mapFrontendStudentToDb(studentData);
-    await createStudentMutation.mutateAsync(dbStudentData);
+    const normalizedEnglishName = (studentData.english_name || '').trim().toLowerCase();
+    const normalizedPostalCode = (studentData.postal_code || '').trim();
+    const targetYearOfBirth = Number(studentData.year_of_birth);
+
+    const duplicateStudent = students.find(existing => {
+      const existingEnglishName = (existing.english_name || '').trim().toLowerCase();
+      const existingPostalCode = (existing.postal_code || '').trim();
+      const existingYearOfBirth = Number(existing.year_of_birth);
+
+      return existingEnglishName === normalizedEnglishName &&
+        existingPostalCode === normalizedPostalCode &&
+        existingYearOfBirth === targetYearOfBirth;
+    });
+
+    if (duplicateStudent) {
+      const studentId = duplicateStudent.student_id || '未知学号';
+      toast.error(`检测到相同英文姓名、邮政编码和出生年份的学员（学号：${studentId}），无法重复添加。`);
+      return false;
+    }
+
+    try {
+      const dbStudentData = mapFrontendStudentToDb(studentData);
+      await createStudentMutation.mutateAsync(dbStudentData);
+      return true;
+    } catch (error) {
+      console.error('Failed to add student:', error);
+      return false;
+    }
   };
 
   const updateStudent = async (student: Student) => {
@@ -634,7 +662,8 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       address: branchData.address,
       person_in_charge: personInCharge,
     };
-    await createSubBranchMutation.mutateAsync(dbBranchData);
+    const created = await createSubBranchMutation.mutateAsync(dbBranchData);
+    return created?.id ? created.id.toString() : undefined;
   };
 
   const updateSubBranch = async (branch: SubBranch) => {
@@ -889,14 +918,23 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     },
     updateClassroom: async (data: Classroom) => {
       const personId = data.student_id ? parseInt(students.find(s => s.student_id === data.student_id)?.id || '', 10) : undefined;
-      await updateClassroomMutation.mutateAsync({
+      const numericSubBranchId = data.sub_branch_id ? parseInt(data.sub_branch_id, 10) : undefined;
+
+      const payload: UpdateClassroomData & { sub_branch_id?: number | null } = {
         id: parseInt(data.id, 10),
         name: data.name,
         state: data.state,
         address: data.address,
         person_in_charge: personId,
-        sub_branch_id: parseInt(data.sub_branch_id, 10),
-      } as any);
+      };
+
+      if (Number.isFinite(numericSubBranchId)) {
+        payload.sub_branch_id = numericSubBranchId as number;
+      } else if (!data.sub_branch_id) {
+        payload.sub_branch_id = null;
+      }
+
+      await updateClassroomMutation.mutateAsync(payload as UpdateClassroomData);
     },
     deleteClassroom: async (id: string) => {
       await deleteClassroomMutation.mutateAsync(parseInt(id, 10));

@@ -84,25 +84,33 @@ const Students: React.FC = () => {
     }
   };
 
-  const handleAddStudent = (studentData: Omit<Student, 'id'>) => {
-    addStudent(studentData);
+  const handleAddStudent = async (studentData: Omit<Student, 'id'>) => {
+    const created = await addStudent(studentData);
+    if (!created) {
+      return false;
+    }
+
     setIsAddDialogOpen(false);
-    
+
     toast({
-      title: "学生添加成功",
+      title: '学生添加成功',
       description: `${studentData.chinese_name} 已成功添加到系统中。`
     });
+
+    return true;
   };
 
-  const handleEditStudent = (studentData: Student) => {
-    updateStudent(studentData);
+  const handleEditStudent = async (studentData: Student) => {
+    await updateStudent(studentData);
     setIsEditDialogOpen(false);
     setEditingStudent(null);
     
     toast({
-      title: "学生信息更新成功",
+      title: '学生信息更新成功',
       description: `${studentData.chinese_name} 的信息已成功更新。`
     });
+
+    return true;
   };
 
   const handleDeleteStudent = (studentId: string) => {
