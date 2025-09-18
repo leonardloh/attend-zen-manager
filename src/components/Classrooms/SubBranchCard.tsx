@@ -56,7 +56,7 @@ const SubBranchCard: React.FC<SubBranchCardProps> = ({ branch, canEdit, onEdit, 
           {branch.main_branch_name && (
             <div className="flex items-center gap-2 text-sm">
               <Home className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-600">所属总院:</span>
+              <span className="text-gray-600">所属州属分院:</span>
               <span className="font-medium">{branch.main_branch_name}</span>
             </div>
           )}
@@ -154,15 +154,15 @@ const SubBranchCard: React.FC<SubBranchCardProps> = ({ branch, canEdit, onEdit, 
                 <AlertDialogHeader>
                   <AlertDialogTitle>确认移除分院关联</AlertDialogTitle>
                   <AlertDialogDescription>
-                    您确定要将分院 <strong>{branch.name}</strong> 从该总院中移除吗？
+                    您确定要将分院 <strong>{branch.name}</strong> 从该州属分院中移除吗？
                     <br /><br />
                     <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
                       <div className="text-blue-800 font-medium mb-2">ℹ️ 重要说明：</div>
                       <ul className="text-blue-700 text-sm space-y-1">
-                        <li>• 此操作只会解除分院与该总院的隶属关系</li>
+                        <li>• 此操作只会解除分院与该州属分院的隶属关系</li>
                         <li>• <strong>{branch.name}</strong> 仍将保留在"分院管理"中</li>
                         <li>• 分院的所有基本信息不会被删除</li>
-                        <li>• 可以重新关联到其他总院</li>
+                        <li>• 可以重新关联到其他州属分院</li>
                       </ul>
                     </div>
                     <br />

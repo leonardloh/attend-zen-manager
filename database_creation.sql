@@ -39,12 +39,17 @@ CREATE TABLE public.classes (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp without time zone,
   name text,
+  category text,
+  level text,
   manage_by_sub_branch_id bigint,
+  manage_by_classroom_id bigint,
   day_of_week text,
+  class_start_date date,
   class_start_time time without time zone,
   class_end_time time without time zone,
   CONSTRAINT classes_pkey PRIMARY KEY (id),
-  CONSTRAINT classes_new_manage_by_sub_branch_id_fkey FOREIGN KEY (manage_by_sub_branch_id) REFERENCES public.sub_branches(id)
+  CONSTRAINT classes_new_manage_by_sub_branch_id_fkey FOREIGN KEY (manage_by_sub_branch_id) REFERENCES public.sub_branches(id),
+  CONSTRAINT classes_manage_by_classroom_id_fkey FOREIGN KEY (manage_by_classroom_id) REFERENCES public.classrooms(id)
 );
 CREATE TABLE public.classrooms (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -80,7 +85,7 @@ CREATE TABLE public.students (
   status text,
   email text,
   postcode text,
-  birthday_date date,
+  year_of_birth integer,
   emergency_contact_name text,
   emergency_contact_number text,
   emergency_contact_relationship text,
@@ -88,6 +93,11 @@ CREATE TABLE public.students (
   education_level text,
   maritial_status text,
   CONSTRAINT students_pkey PRIMARY KEY (id, student_id)
+);
+CREATE UNIQUE INDEX students_unique_identity_idx ON public.students (
+  lower(trim(coalesce(english_name, ''))),
+  trim(coalesce(postcode, '')),
+  coalesce(year_of_birth, -1)
 );
 CREATE TABLE public.sub_branches (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,

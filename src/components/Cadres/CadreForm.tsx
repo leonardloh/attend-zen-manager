@@ -29,7 +29,7 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
     chinese_name: initialData?.chinese_name || '',
     english_name: initialData?.english_name || '',
     gender: initialData?.gender || 'male' as const,
-    date_of_birth: initialData?.date_of_birth || '',
+    year_of_birth: initialData?.year_of_birth || new Date().getFullYear() - 25,
     role: initialRole.role as '班长' | '副班长' | '关怀员',
     mother_class: initialRole.class_name || '',
     support_classes: initialData?.support_classes || [],
@@ -58,7 +58,7 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
       chinese_name: selectedStudent.chinese_name,
       english_name: selectedStudent.english_name,
       gender: selectedStudent.gender,
-      date_of_birth: selectedStudent.date_of_birth,
+      year_of_birth: selectedStudent.year_of_birth,
     }));
 
     // 母班班名: fetch from database enrollments (latest)
@@ -176,7 +176,7 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
               </div>
               <div>
                 <span className="text-gray-600">出生日期:</span>
-                <span className="ml-2 font-medium">{formData.date_of_birth}</span>
+                <span className="ml-2 font-medium">{formData.year_of_birth}</span>
               </div>
             </div>
           </div>

@@ -16,7 +16,7 @@ export interface CreateAttendanceData {
   class_id: number;
   student_id: number;
   attendance_date: string;
-  attendance_status: number; // 1 = present, 0 = absent
+  attendance_status: number; // 1 = present, 2 = online, 3 = leave, 0 = absent, 4 = holiday
   learning_progress?: string;
   lamrin_page?: number;
   lamrin_line?: number;
@@ -276,14 +276,23 @@ export const getAttendanceStats = async (classId?: number, studentId?: number) =
     throw new Error(`Failed to fetch attendance stats: ${error.message}`);
   }
 
-  const total = data.length;
   const present = data.filter(record => record.attendance_status === 1).length;
-  const attendanceRate = total > 0 ? (present / total) * 100 : 0;
+  const online = data.filter(record => record.attendance_status === 2).length;
+  const leave = data.filter(record => record.attendance_status === 3).length;
+  const absent = data.filter(record => record.attendance_status === 0).length;
+  const holiday = data.filter(record => record.attendance_status === 4).length;
+
+  const total = data.length;
+  const effectiveTotal = total - holiday;
+  const attendanceRate = effectiveTotal > 0 ? ((present + online) / effectiveTotal) * 100 : 0;
 
   return {
     total,
     present,
-    absent: total - present,
+    absent,
+    online,
+    leave,
+    holiday,
     attendanceRate: Math.round(attendanceRate * 100) / 100
   };
 };

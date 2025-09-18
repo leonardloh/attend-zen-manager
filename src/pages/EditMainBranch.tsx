@@ -10,12 +10,14 @@ import type { MainBranch, SubBranch } from '@/data/types';
 const EditMainBranch: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { 
-    mainBranches, 
-    subBranches, 
-    updateMainBranch, 
-    updateSubBranch, 
-    removeSubBranchFromMainBranch 
+  const {
+    mainBranches,
+    subBranches,
+    updateMainBranch,
+    updateSubBranch,
+    removeSubBranchFromMainBranch,
+    classrooms,
+    updateClassroom,
   } = useDatabase();
   const { toast } = useToast();
   const [editingMainBranch, setEditingMainBranch] = useState<MainBranch | null>(null);
@@ -31,8 +33,8 @@ const EditMainBranch: React.FC = () => {
       } else {
         // Branch not found, redirect back
         toast({
-          title: "总院未找到",
-          description: "请求的总院不存在或已被删除。",
+        title: "州属分院未找到",
+        description: "请求的州属分院不存在或已被删除。",
           variant: "destructive"
         });
         navigate('/classrooms');
@@ -40,8 +42,8 @@ const EditMainBranch: React.FC = () => {
     } else if (mainBranches.length > 0) {
       // Invalid ID format
       toast({
-        title: "无效的总院ID",
-        description: "请求的总院ID格式不正确。",
+      title: "无效的州属分院ID",
+      description: "请求的州属分院ID格式不正确。",
         variant: "destructive"
       });
       navigate('/classrooms');
@@ -52,14 +54,14 @@ const EditMainBranch: React.FC = () => {
     try {
       await updateMainBranch(branchData);
       toast({
-        title: "总院更新成功",
+        title: "州属分院更新成功",
         description: `${branchData.name} 的信息已成功更新。`
       });
       navigate('/classrooms');
     } catch (error) {
       toast({
         title: "更新失败",
-        description: "更新总院信息时发生错误，请重试。",
+        description: "更新州属分院信息时发生错误，请重试。",
         variant: "destructive"
       });
     }
@@ -106,12 +108,55 @@ const EditMainBranch: React.FC = () => {
     }
   };
 
-  const handleEditSubBranch = (branchData: SubBranch) => {
-    updateSubBranch(branchData);
-    toast({
-      title: "分院更新成功",
-      description: `${branchData.name} 的信息已成功更新。`
-    });
+  const handleEditSubBranch = async (branchData: SubBranch & { manage_classrooms?: string[] }) => {
+    try {
+      const currentClassroomIds = classrooms
+        .filter((cls) => cls.sub_branch_id === branchData.id)
+        .map((cls) => cls.id);
+
+      const desiredIds = new Set(branchData.manage_classrooms || currentClassroomIds);
+      const toAssign = (branchData.manage_classrooms || []).filter((id) => !currentClassroomIds.includes(id));
+      const toUnassign = currentClassroomIds.filter((id) => !desiredIds.has(id));
+
+      await updateSubBranch(branchData);
+
+      if (toAssign.length > 0) {
+        const targets = classrooms.filter((cls) => toAssign.includes(cls.id));
+        await Promise.all(
+          targets.map((cls) =>
+            updateClassroom({
+              ...cls,
+              sub_branch_id: branchData.id,
+              sub_branch_name: branchData.name,
+            })
+          )
+        );
+      }
+
+      if (toUnassign.length > 0) {
+        const targets = classrooms.filter((cls) => toUnassign.includes(cls.id));
+        await Promise.all(
+          targets.map((cls) =>
+            updateClassroom({
+              ...cls,
+              sub_branch_id: '',
+              sub_branch_name: '',
+            })
+          )
+        );
+      }
+
+      toast({
+        title: '州属分院更新成功',
+        description: `${branchData.name} 的信息已成功更新。`,
+      });
+    } catch (error: any) {
+      toast({
+        title: '分院更新失败',
+        description: error?.message || '未知错误',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleRemoveSubBranchAssociation = (branchId: string) => {
@@ -119,7 +164,7 @@ const EditMainBranch: React.FC = () => {
     removeSubBranchFromMainBranch(branchId);
     toast({
       title: "分院关联已移除",
-      description: `${branchToRemove?.name} 已从该总院中移除，但仍保留在分院管理中。`,
+      description: `${branchToRemove?.name} 已从该州属分院中移除，但仍保留在分院管理中。`,
     });
   };
 
@@ -146,10 +191,10 @@ const EditMainBranch: React.FC = () => {
             className="px-2"
             onClick={() => navigate('/classrooms')}
           >
-            总院管理
+            州属分院管理
           </Button>
           <span>/</span>
-          <span>编辑总院信息</span>
+          <span>编辑州属分院信息</span>
         </div>
         
         <div className="flex items-center gap-4">
@@ -162,7 +207,7 @@ const EditMainBranch: React.FC = () => {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">编辑总院信息</h1>
+            <h1 className="text-2xl font-bold text-gray-900">编辑州属分院信息</h1>
             <p className="text-gray-600 mt-1">修改 {editingMainBranch.name} 的详细信息</p>
           </div>
         </div>

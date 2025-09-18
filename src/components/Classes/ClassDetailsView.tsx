@@ -2,7 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, Users, MapPin, TrendingUp, BarChart, Calendar, BookOpen, Hash } from 'lucide-react';
+import { Clock, Users, MapPin, TrendingUp, BarChart, BookOpen, Hash, Tag, Layers, User, Calendar } from 'lucide-react';
 import { ClassInfo } from '@/data/types';
 
 interface ClassDetailsViewProps {
@@ -11,17 +11,25 @@ interface ClassDetailsViewProps {
 }
 
 const ClassDetailsView: React.FC<ClassDetailsViewProps> = ({ classInfo, onClose }) => {
-  const getRegionColor = (subBranchName: string) => {
-    // Simple color coding based on sub-branch name
-    if (subBranchName.includes('槟城') || subBranchName.includes('大山脚')) {
-      return 'bg-blue-100 text-blue-800';
-    } else if (subBranchName.includes('八打灵') || subBranchName.includes('吉隆坡')) {
-      return 'bg-green-100 text-green-800';
-    } else if (subBranchName.includes('新山') || subBranchName.includes('柔佛')) {
-      return 'bg-purple-100 text-purple-800';
-    } else {
-      return 'bg-gray-100 text-gray-800';
+  const getManagerBadge = () => {
+    if (classInfo.sub_branch_name) {
+      return {
+        label: classInfo.sub_branch_name,
+        color: 'bg-blue-100 text-blue-800',
+      };
     }
+
+    if (classInfo.classroom_name) {
+      return {
+        label: classInfo.classroom_name,
+        color: 'bg-purple-100 text-purple-800',
+      };
+    }
+
+    return {
+      label: '未指定',
+      color: 'bg-gray-100 text-gray-800',
+    };
   };
 
   const getAttendanceColor = (rate: number) => {
@@ -50,8 +58,8 @@ const ClassDetailsView: React.FC<ClassDetailsViewProps> = ({ classInfo, onClose 
           <p className="text-gray-600">班级ID: {classInfo.id}</p>
         </div>
         <div className="flex gap-2">
-          <Badge className={getRegionColor(classInfo.sub_branch_name || '')}>
-            {classInfo.sub_branch_name || '未知分苑'}
+          <Badge className={getManagerBadge().color}>
+            {getManagerBadge().label}
           </Badge>
           <Badge variant={classInfo.status === 'active' ? 'default' : 'secondary'}>
             {classInfo.status === 'active' ? '活跃' : '暂停'}
@@ -69,6 +77,22 @@ const ClassDetailsView: React.FC<ClassDetailsViewProps> = ({ classInfo, onClose 
               <p className="text-gray-600">{classInfo.time}</p>
             </div>
           </div>
+
+          <div className="flex items-center gap-3">
+            <Calendar className="h-5 w-5 text-gray-500" />
+            <div>
+              <p className="font-medium">开课日期</p>
+              <p className="text-gray-600">{classInfo.class_start_date || '未设置'}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <Tag className="h-5 w-5 text-gray-500" />
+            <div>
+              <p className="font-medium">班级类别</p>
+              <p className="text-gray-600">{classInfo.category || '未设置'}</p>
+            </div>
+          </div>
           
           <div className="flex items-center gap-3">
             <Users className="h-5 w-5 text-gray-500" />
@@ -81,13 +105,33 @@ const ClassDetailsView: React.FC<ClassDetailsViewProps> = ({ classInfo, onClose 
 
         <div className="space-y-4">
           <div className="flex items-center gap-3">
+            <Layers className="h-5 w-5 text-gray-500" />
+            <div>
+              <p className="font-medium">班级级别</p>
+              <p className="text-gray-600">{classInfo.level || '未设置'}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
             <MapPin className="h-5 w-5 text-gray-500" />
+            <div>
+              <p className="font-medium">班级负责人</p>
+              <p className="text-gray-600">
+                {classInfo.sub_branch_name ? `分院：${classInfo.sub_branch_name}` : ''}
+                {classInfo.classroom_name ? `教室：${classInfo.classroom_name}` : ''}
+                {!classInfo.sub_branch_name && !classInfo.classroom_name ? '未指定' : ''}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <User className="h-5 w-5 text-gray-500" />
             <div>
               <p className="font-medium">班长</p>
               <p className="text-gray-600">{classInfo.class_monitor_name || '未分配'}</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <BarChart className="h-5 w-5 text-gray-500" />
             <div>

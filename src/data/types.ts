@@ -19,7 +19,7 @@ export interface Student {
   mother_class_name?: string; // Display name of mother class
   // Required fields
   postal_code: string;
-  date_of_birth: string;
+  year_of_birth: number;
   emergency_contact_name: string;
   emergency_contact_phone: string;
   emergency_contact_relation: string;
@@ -33,8 +33,13 @@ export interface Student {
 export interface ClassInfo {
   id: string;
   name: string;
+  category?: string;
+  level?: string;
   sub_branch_id?: string; // Reference to SubBranch (mapped from manage_by_sub_branch_id)
   sub_branch_name?: string; // SubBranch name for display
+  classroom_id?: string; // Reference to Classroom (mapped from manage_by_classroom_id)
+  classroom_name?: string; // Classroom name for display
+  class_start_date?: string;
   time: string;
   student_count: number;
   // Cadre roles - Updated to use junction table structure
@@ -109,6 +114,7 @@ export interface SubBranch {
   status: 'active' | 'inactive';
   classes_count: number;
   students_count: number;
+  manage_classrooms?: string[];
 }
 
 // =============================================================================
@@ -130,7 +136,7 @@ export const mockStudents: Student[] = [
     mother_class_id: '1', // 初级班A
     mother_class_name: '初级班A',
     postal_code: '100001',
-    date_of_birth: '1995-05-15',
+    year_of_birth: 1995,
     emergency_contact_name: '王大明',
     emergency_contact_phone: '13900139001',
     emergency_contact_relation: 'Parent',
@@ -151,7 +157,7 @@ export const mockStudents: Student[] = [
     mother_class_id: '2', // 中级班B
     mother_class_name: '中级班B',
     postal_code: '100002',
-    date_of_birth: '1992-08-22',
+    year_of_birth: 1992,
     emergency_contact_name: '李大红',
     emergency_contact_phone: '13900139002',
     emergency_contact_relation: 'Spouse',
@@ -172,7 +178,7 @@ export const mockStudents: Student[] = [
     mother_class_id: '3', // 高级班C
     mother_class_name: '高级班C',
     postal_code: '100003',
-    date_of_birth: '1988-12-10',
+    year_of_birth: 1988,
     emergency_contact_name: '张大三',
     emergency_contact_phone: '13900139003',
     emergency_contact_relation: 'Parent',
@@ -191,7 +197,7 @@ export const mockStudents: Student[] = [
     enrollment_date: '2024-03-01',
     status: '保留',
     postal_code: '100004',
-    date_of_birth: '1990-03-25',
+    year_of_birth: 1990,
     emergency_contact_name: '李大四',
     emergency_contact_phone: '13900139004',
     emergency_contact_relation: 'Sibling'
@@ -207,7 +213,7 @@ export const mockStudents: Student[] = [
     enrollment_date: '2024-01-10',
     status: '活跃',
     postal_code: '100005',
-    date_of_birth: '1993-07-18',
+    year_of_birth: 1993,
     emergency_contact_name: '王大五',
     emergency_contact_phone: '13900139005',
     emergency_contact_relation: 'Parent',
@@ -226,7 +232,7 @@ export const mockStudents: Student[] = [
     enrollment_date: '2024-02-15',
     status: '活跃',
     postal_code: '100006',
-    date_of_birth: '1991-11-05',
+    year_of_birth: 1991,
     emergency_contact_name: '赵大六',
     emergency_contact_phone: '13900139006',
     emergency_contact_relation: 'Spouse',
@@ -245,7 +251,7 @@ export const mockStudents: Student[] = [
     enrollment_date: '2024-01-25',
     status: '活跃',
     postal_code: '100007',
-    date_of_birth: '1994-04-12',
+    year_of_birth: 1994,
     emergency_contact_name: '钱大七',
     emergency_contact_phone: '13900139007',
     emergency_contact_relation: 'Parent',
@@ -264,7 +270,7 @@ export const mockStudents: Student[] = [
     enrollment_date: '2024-03-10',
     status: '旁听',
     postal_code: '100008',
-    date_of_birth: '1989-09-28',
+    year_of_birth: 1989,
     emergency_contact_name: '孙大八',
     emergency_contact_phone: '13900139008',
     emergency_contact_relation: 'Sibling',
@@ -283,7 +289,7 @@ export const mockStudents: Student[] = [
     enrollment_date: '2024-02-20',
     status: '活跃',
     postal_code: '100009',
-    date_of_birth: '1992-06-14',
+    year_of_birth: 1992,
     emergency_contact_name: '周大九',
     emergency_contact_phone: '13900139009',
     emergency_contact_relation: 'Parent',
@@ -302,7 +308,7 @@ export const mockStudents: Student[] = [
     enrollment_date: '2024-01-30',
     status: '活跃',
     postal_code: '100010',
-    date_of_birth: '1990-12-03',
+    year_of_birth: 1990,
     emergency_contact_name: '吴大十',
     emergency_contact_phone: '13900139010',
     emergency_contact_relation: 'Spouse',
@@ -321,7 +327,7 @@ export const mockStudents: Student[] = [
     enrollment_date: '2024-02-05',
     status: '活跃',
     postal_code: '100011',
-    date_of_birth: '1987-08-19',
+    year_of_birth: 1987,
     emergency_contact_name: '郑大十一',
     emergency_contact_phone: '13900139011',
     emergency_contact_relation: 'Parent',
@@ -340,7 +346,7 @@ export const mockStudents: Student[] = [
     enrollment_date: '2024-01-18',
     status: '旁听',
     postal_code: '100012',
-    date_of_birth: '1993-03-07',
+    year_of_birth: 1993,
     emergency_contact_name: '王大十二',
     emergency_contact_phone: '13900139012',
     emergency_contact_relation: 'Sibling',
@@ -359,7 +365,7 @@ export const mockStudents: Student[] = [
     enrollment_date: '2024-02-12',
     status: '活跃',
     postal_code: '100013',
-    date_of_birth: '1991-10-25',
+    year_of_birth: 1991,
     emergency_contact_name: '李大十三',
     emergency_contact_phone: '13900139013',
     emergency_contact_relation: 'Parent',
@@ -378,7 +384,7 @@ export const mockStudents: Student[] = [
     enrollment_date: '2024-03-05',
     status: '活跃',
     postal_code: '100014',
-    date_of_birth: '1988-01-16',
+    year_of_birth: 1988,
     emergency_contact_name: '张大十四',
     emergency_contact_phone: '13900139014',
     emergency_contact_relation: 'Spouse',
@@ -397,7 +403,7 @@ export const mockStudents: Student[] = [
     enrollment_date: '2024-01-08',
     status: '活跃',
     postal_code: '100015',
-    date_of_birth: '1985-05-30',
+    year_of_birth: 1985,
     emergency_contact_name: '刘大十五',
     emergency_contact_phone: '13900139015',
     emergency_contact_relation: 'Parent',
@@ -419,7 +425,7 @@ export const mockStudents: Student[] = [
     mother_class_id: 'pgy18003', // PGY18003班 (需要在classes中创建)
     mother_class_name: 'PGY18003',
     postal_code: '11400',
-    date_of_birth: '1993-07-09',
+    year_of_birth: 1993,
     emergency_contact_name: 'Ong Poh Siew',
     emergency_contact_phone: '0195995846',
     emergency_contact_relation: 'Parent',
@@ -679,7 +685,7 @@ export const mockCadres: Cadre[] = [
 export const mockMainBranches: MainBranch[] = [
   {
     id: '1',
-    name: '中马总院',
+    name: '中马州属分院',
     region: '中马',
     address: '吉隆坡市中心某某路123号',
     student_id: 'S2024001', // 陈主任 -> 王小明
@@ -691,7 +697,7 @@ export const mockMainBranches: MainBranch[] = [
   },
   {
     id: '2',
-    name: '北马总院',
+    name: '北马州属分院',
     region: '北马',
     address: '槟城州乔治市某某街456号',
     student_id: 'S2024002', // 林主任 -> 李小红
@@ -703,7 +709,7 @@ export const mockMainBranches: MainBranch[] = [
   },
   {
     id: '3',
-    name: '南马总院',
+    name: '南马州属分院',
     region: '南马',
     address: '柔佛州新山市某某大道789号',
     student_id: 'S2024003', // 黄主任 -> 张三

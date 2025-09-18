@@ -33,7 +33,7 @@ const MainBranchCard: React.FC<MainBranchCardProps> = ({ branch, canEdit, onEdit
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">{branch.name}</h3>
-              <p className="text-sm text-gray-600">总院</p>
+              <p className="text-sm text-gray-600">州属分院</p>
             </div>
           </div>
         </div>
@@ -104,16 +104,16 @@ const MainBranchCard: React.FC<MainBranchCardProps> = ({ branch, canEdit, onEdit
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>确认删除总院</AlertDialogTitle>
+                  <AlertDialogTitle>确认删除州属分院</AlertDialogTitle>
                   <AlertDialogDescription>
-                    您确定要删除总院 <strong>{branch.name}</strong> 吗？
+                    您确定要删除州属分院 <strong>{branch.name}</strong> 吗？
                     <br /><br />
                     删除后将清除以下信息：
                     <ul className="mt-2 text-sm list-disc list-inside space-y-1">
-                      <li>总院基本信息（名称：{branch.name}）</li>
+                      <li>州属分院基本信息（名称：{branch.name}）</li>
                       <li>管理分院：{subBranchCount} 个分院</li>
                       {branch.contact_person && <li>联系人信息</li>}
-                      <li>该总院下的所有分院信息</li>
+                      <li>该州属分院下的所有分院信息</li>
                     </ul>
                     <br />
                     <strong>此操作不可撤销。</strong>

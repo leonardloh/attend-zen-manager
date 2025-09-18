@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,8 @@ import { RotateCcw } from 'lucide-react';
 import { useDatabase } from '@/contexts/DatabaseContext';
 import { cn } from '@/lib/utils';
 import AttendanceProgressForm from './AttendanceProgressForm';
+import AttendanceHistoryCard from './AttendanceHistoryCard';
+import { WeeklyAttendancePoint } from './types';
 
 interface Student {
   id: string;
@@ -18,9 +20,11 @@ interface Student {
   gender: 'male' | 'female';
 }
 
+type AttendanceStatusValue = 'present' | 'online' | 'leave' | 'absent' | 'holiday';
+
 interface AttendanceStatus {
   studentId: string;
-  status: 'present' | 'online' | 'leave' | 'absent' | null;
+  status: AttendanceStatusValue | null;
 }
 
 interface AttendanceProgressData {
@@ -34,9 +38,24 @@ interface AttendanceGridProps {
   classDate?: Date;
   onDataChange?: (attendanceData: AttendanceStatus[], progressData: AttendanceProgressData) => void;
   students?: Student[]; // Allow passing students from parent
+  isHoliday?: boolean;
+  attendanceHistory?: WeeklyAttendancePoint[];
+  isHistoryLoading?: boolean;
+  historyError?: string | null;
+  onReloadHistory?: () => void;
 }
 
-const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onDataChange, students: propStudents }) => {
+const AttendanceGrid: React.FC<AttendanceGridProps> = ({
+  classId,
+  classDate,
+  onDataChange,
+  students: propStudents,
+  isHoliday = false,
+  attendanceHistory = [],
+  isHistoryLoading = false,
+  historyError = null,
+  onReloadHistory,
+}) => {
   // Default mock students data - in a real app, this would be fetched based on classId
   const defaultStudents: Student[] = [
     { id: '1', chinese_name: '王小明', english_name: 'Wang Xiaoming', gender: 'male' },
@@ -66,6 +85,7 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
   };
 
   const [attendance, setAttendance] = useState<AttendanceStatus[]>([]);
+  const previousAttendanceRef = useRef<AttendanceStatus[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -74,10 +94,34 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
     // Preserve existing statuses when the roster is stable; initialize new ones as null
     setAttendance((prev) => {
       const statusById = new Map(prev.map(a => [a.studentId, a.status]));
-      return students.map(s => ({ studentId: s.id, status: statusById.get(s.id) ?? null }));
+      const updated = students.map(s => ({ studentId: s.id, status: statusById.get(s.id) ?? null }));
+      previousAttendanceRef.current = updated;
+      return updated;
     });
     setPage(1); // reset page when roster changes
   }, [students]);
+
+  // Handle holiday toggles
+  useEffect(() => {
+    if (isHoliday) {
+      const alreadyHoliday = attendance.every(item => item.status === 'holiday');
+      if (!alreadyHoliday) {
+        previousAttendanceRef.current = attendance;
+        const holidayAttendance = attendance.map(item => ({ ...item, status: 'holiday' as AttendanceStatusValue }));
+        setAttendance(holidayAttendance);
+        onDataChange?.(holidayAttendance, progressData);
+      }
+    } else {
+      const previous = previousAttendanceRef.current.length === students.length
+        ? previousAttendanceRef.current
+        : students.map(s => ({ studentId: s.id, status: null as AttendanceStatusValue | null }));
+      const restored = previous.map(item => ({ ...item, status: item.status === 'holiday' ? null : item.status }));
+      setAttendance(restored);
+      onDataChange?.(restored, progressData);
+      previousAttendanceRef.current = restored;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHoliday]);
 
   const [progressData, setProgressData] = useState<AttendanceProgressData>({
     learning_progress: '',
@@ -107,6 +151,7 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
   };
 
   const markAllPresent = () => {
+    if (isHoliday) return;
     const updatedAttendance = attendance.map(item => ({ ...item, status: 'present' as const }));
     setAttendance(updatedAttendance);
     
@@ -117,6 +162,7 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
   };
 
   const clearAll = () => {
+    if (isHoliday) return;
     const updatedAttendance = attendance.map(item => ({ ...item, status: null }));
     setAttendance(updatedAttendance);
     
@@ -136,7 +182,7 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
   };
 
   const getStatusCounts = () => {
-    const counts = { present: 0, online: 0, leave: 0, absent: 0, unmarked: 0 };
+    const counts = { present: 0, online: 0, leave: 0, absent: 0, holiday: 0, unmarked: 0 };
     attendance.forEach(item => {
       if (item.status) {
         counts[item.status]++;
@@ -190,6 +236,21 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
 
   return (
     <div className="space-y-6">
+      {isHoliday && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="py-4 text-sm text-orange-800">
+            本次考勤已标记为 <strong>放假</strong>，所有学员将记录为放假状态。若需恢复考勤，请取消放假后重新标记。
+          </CardContent>
+        </Card>
+      )}
+
+      <AttendanceHistoryCard
+        data={attendanceHistory}
+        loading={isHistoryLoading}
+        error={historyError}
+        onRetry={onReloadHistory}
+      />
+
       {/* Progress Form */}
       <AttendanceProgressForm
         classId={classId || ''}
@@ -203,10 +264,10 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
           <CardTitle className="flex items-center justify-between">
             <span>考勤统计 / Attendance Summary</span>
             <div className="flex gap-2">
-              <Button onClick={markAllPresent} variant="outline" size="sm">
+              <Button onClick={markAllPresent} variant="outline" size="sm" disabled={isHoliday}>
                 全部出席
               </Button>
-              <Button onClick={clearAll} variant="outline" size="sm">
+              <Button onClick={clearAll} variant="outline" size="sm" disabled={isHoliday}>
                 <RotateCcw className="h-4 w-4 mr-1" />
                 清空
               </Button>
@@ -214,7 +275,7 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{statusCounts.present}</div>
               <div className="text-sm text-gray-600">实体出席</div>
@@ -230,6 +291,10 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">{statusCounts.absent}</div>
               <div className="text-sm text-gray-600">缺席</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">{statusCounts.holiday}</div>
+              <div className="text-sm text-gray-600">放假</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-600">{statusCounts.unmarked}</div>
@@ -248,13 +313,14 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40%]">中文名</TableHead>
-                <TableHead className="w-[40%]">English Name</TableHead>
-                <TableHead className="w-[20%]">角色</TableHead>
+                <TableHead className="w-[35%]">中文名</TableHead>
+                <TableHead className="w-[35%]">English Name</TableHead>
+                <TableHead className="w-[15%]">角色</TableHead>
                 <TableHead className="text-center">实体出席</TableHead>
                 <TableHead className="text-center">线上出席</TableHead>
                 <TableHead className="text-center">请假</TableHead>
                 <TableHead className="text-center">缺席</TableHead>
+                {isHoliday && <TableHead className="text-center">放假</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -293,6 +359,7 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
                           size="sm"
                           variant="outline"
                           onClick={() => updateAttendance(student.id, status)}
+                          disabled={isHoliday}
                           className={cn(
                             "px-3",
                             studentAttendance?.status === status ? statusConfig[status].color : "hover:bg-gray-50"
@@ -302,12 +369,17 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({ classId, classDate, onD
                         </Button>
                       </TableCell>
                     ))}
+                    {isHoliday && (
+                      <TableCell className="text-center">
+                        <Badge className="bg-orange-500 text-white">放假</Badge>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}
               {students.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                  <TableCell colSpan={isHoliday ? 8 : 7} className="text-center text-muted-foreground py-10">
                     无学员/干部可显示
                   </TableCell>
                 </TableRow>

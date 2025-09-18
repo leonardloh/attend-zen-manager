@@ -213,15 +213,15 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900 border-b pb-2">总院基本信息</h3>
+        <h3 className="text-lg font-medium text-gray-900 border-b pb-2">州属分院基本信息</h3>
         
         <div className="space-y-2">
-          <Label htmlFor="name">总院名称 *</Label>
+          <Label htmlFor="name">州属分院名称 *</Label>
           <Input
             id="name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="例如: 北马总院"
+            placeholder="例如: 北马州属分院"
             required
           />
         </div>
@@ -283,7 +283,7 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
               placeholder="搜索分院名称..."
               subBranches={subBranches}
             />
-            <p className="text-xs text-gray-500">选择现有分院会自动关联到此总院</p>
+            <p className="text-xs text-gray-500">选择现有分院会自动关联到此州属分院</p>
           </div>
 
           {/* Sub-branches List */}
@@ -291,7 +291,7 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
             {managedSubBranches.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Building className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p>该总院下暂无分院</p>
+                <p>该州属分院下暂无分院</p>
                 <p className="text-sm">使用上方搜索栏添加分院</p>
               </div>
             ) : (
@@ -348,7 +348,7 @@ const MainBranchForm: React.FC<MainBranchFormProps> = ({
 
       <div className="flex gap-3 pt-4">
         <Button type="submit" className="flex-1">
-          {initialData ? '更新总院' : '添加总院'}
+          {initialData ? '更新州属分院' : '添加州属分院'}
         </Button>
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
           取消

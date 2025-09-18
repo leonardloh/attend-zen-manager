@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,8 @@ import StudentSearchInput from '@/components/Students/StudentSearchInput';
 import { useToast } from '@/hooks/use-toast';
 import type { SubBranch } from '@/data/types';
 import { useDatabase } from '@/contexts/DatabaseContext';
+import SubBranchNameSearchInput from '@/components/Classrooms/SubBranchNameSearchInput';
+import { Badge } from '@/components/ui/badge';
 
 export interface ClassroomFormData {
   name: string;
@@ -15,6 +17,7 @@ export interface ClassroomFormData {
   address?: string;
   student_id?: string; // public student_id string
   sub_branch_id: string; // sub branch id (string)
+  sub_branch_name?: string;
 }
 
 interface ClassroomFormProps {
@@ -30,15 +33,55 @@ const ClassroomForm: React.FC<ClassroomFormProps> = ({ initialData, onSubmit, on
     state: initialData?.state || '',
     address: initialData?.address || '',
     student_id: initialData?.student_id || '',
-    sub_branch_id: initialData?.sub_branch_id || ''
+    sub_branch_id: initialData?.sub_branch_id || '',
+    sub_branch_name: initialData?.sub_branch_name || ''
   });
+  const [selectedSubBranchName, setSelectedSubBranchName] = useState<string>(initialData?.sub_branch_name || '');
 
   const { students } = useDatabase();
   const { toast } = useToast();
 
+  const selectedSubBranch = useMemo(() => {
+    if (!formData.sub_branch_id) {
+      return subBranches.find((sb) => sb.name === selectedSubBranchName);
+    }
+    return subBranches.find((sb) => sb.id === formData.sub_branch_id) ||
+      subBranches.find((sb) => sb.name === selectedSubBranchName);
+  }, [formData.sub_branch_id, selectedSubBranchName, subBranches]);
+
+  useEffect(() => {
+    if (initialData?.sub_branch_id && subBranches.length > 0) {
+      const existing = subBranches.find((sb) => sb.id === initialData.sub_branch_id);
+      if (existing) {
+        setSelectedSubBranchName(existing.name);
+        setFormData((prev) => ({ ...prev, sub_branch_name: existing.name }));
+      }
+    }
+  }, [initialData?.sub_branch_id, subBranches]);
+
   useEffect(() => {
     // no-op; reserved for future auto-fill
   }, [formData.student_id, students]);
+
+  const handleSubBranchSelect = (branchName: string, branchData?: SubBranch) => {
+    if (branchData) {
+      setFormData((prev) => ({
+        ...prev,
+        sub_branch_id: branchData.id,
+        sub_branch_name: branchData.name,
+        state: prev.state || branchData.state,
+      }));
+      setSelectedSubBranchName(branchData.name);
+    } else {
+      setSelectedSubBranchName(branchName);
+      const matched = subBranches.find((sb) => sb.name === branchName);
+      setFormData((prev) => ({
+        ...prev,
+        sub_branch_id: matched ? matched.id : '',
+        sub_branch_name: branchName || matched?.name,
+      }));
+    }
+  };
 
   const states = [
     '玻璃市', '吉打', '槟城', '霹雳', '雪隆', '森美兰', '马六甲', '柔佛',
@@ -72,24 +115,40 @@ const ClassroomForm: React.FC<ClassroomFormProps> = ({ initialData, onSubmit, on
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="subBranch">所属分院 *</Label>
-            <Select
-              value={formData.sub_branch_id}
-              onValueChange={(value) => setFormData({ ...formData, sub_branch_id: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="选择所属分院" />
-              </SelectTrigger>
-              <SelectContent>
-                {subBranches
-                  .filter(sb => sb.id && String(sb.id).length > 0)
-                  .map(sb => (
-                    <SelectItem key={sb.id} value={sb.id}>
-                      {sb.name} {sb.main_branch_name ? `（${sb.main_branch_name}）` : ''}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <Label>所属分院 *</Label>
+            <SubBranchNameSearchInput
+              value={selectedSubBranchName}
+              onChange={handleSubBranchSelect}
+              placeholder="搜索分院名称..."
+              subBranches={subBranches}
+            />
+            {selectedSubBranch && (
+              <div className="mt-2 text-sm text-green-600 bg-green-50 p-3 rounded border border-green-100">
+                <div className="font-medium">已选择: {selectedSubBranch.name}</div>
+                <div className="mt-1 flex flex-wrap gap-2 text-xs text-green-700">
+                  {selectedSubBranch.state && (
+                    <Badge variant="outline" className="border-green-200 text-green-700">
+                      州属: {selectedSubBranch.state}
+                    </Badge>
+                  )}
+                  {selectedSubBranch.main_branch_name && (
+                    <Badge variant="outline" className="border-green-200 text-green-700">
+                      州属分院: {selectedSubBranch.main_branch_name}
+                    </Badge>
+                  )}
+                </div>
+                {(selectedSubBranch.contact_person || selectedSubBranch.contact_phone) && (
+                  <div className="mt-2 text-xs text-green-700 space-y-1">
+                    {selectedSubBranch.contact_person && (
+                      <div>联系人: {selectedSubBranch.contact_person}</div>
+                    )}
+                    {selectedSubBranch.contact_phone && (
+                      <div>电话: {selectedSubBranch.contact_phone}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

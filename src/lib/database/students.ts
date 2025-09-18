@@ -11,7 +11,7 @@ export interface CreateStudentData {
   email?: string;
   state?: string;
   postcode?: string;
-  birthday_date?: string;
+  year_of_birth?: number;
   emergency_contact_name?: string;
   emergency_contact_number?: string;
   emergency_contact_relationship?: string;
@@ -42,7 +42,7 @@ export const mapFrontendStudentToDb = (student: Partial<StudentWithDetails> & { 
   email: student.email,
   state: student.state,
   postcode: student.postal_code || student.postcode,
-  birthday_date: student.date_of_birth || student.birthday_date,
+  year_of_birth: student.year_of_birth,
   emergency_contact_name: student.emergency_contact_name,
   emergency_contact_number: student.phone || student.emergency_contact_number,
   emergency_contact_relationship: student.emergency_contact_relation || student.emergency_contact_relationship,
@@ -106,6 +106,9 @@ export const createStudent = async (studentData: CreateStudentData): Promise<Stu
     .single();
 
   if (error) {
+    if (error.code === '23505') {
+      throw new Error('已存在相同英文姓名、邮政编码和出生年份的学员');
+    }
     throw new Error(`Failed to create student: ${error.message}`);
   }
 

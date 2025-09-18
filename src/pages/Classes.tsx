@@ -51,14 +51,24 @@ const Classes: React.FC = () => {
     return 'text-red-600';
   };
 
-  const handleAddClass = (classData: Omit<ClassInfo, 'id' | 'status'>) => {
-    addClass(classData);
-    setIsDialogOpen(false);
-    
-    toast({
-      title: "班级创建成功",
-      description: `${classData.name} 已成功创建。`
-    });
+  const handleAddClass = async (classData: Omit<ClassInfo, 'id' | 'status'>) => {
+    try {
+      await addClass(classData);
+      setIsDialogOpen(false);
+
+      toast({
+        title: '班级创建成功',
+        description: `${classData.name} 已成功创建。`,
+      });
+    } catch (error) {
+      console.error('Failed to create class:', error);
+      toast({
+        title: '班级创建失败',
+        description: error instanceof Error ? error.message : '请填写完整的班级信息后再试一次。',
+        variant: 'destructive',
+      });
+      throw error;
+    }
   };
 
   const handleViewClass = (classInfo: ClassInfo) => {
@@ -71,7 +81,7 @@ const Classes: React.FC = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateClass = (updatedData: Omit<ClassInfo, 'id' | 'status'>) => {
+  const handleUpdateClass = async (updatedData: Omit<ClassInfo, 'id' | 'status'>) => {
     if (!selectedClass) return;
     
     const updatedClass: ClassInfo = {
@@ -79,15 +89,24 @@ const Classes: React.FC = () => {
       id: selectedClass.id,
       status: selectedClass.status
     };
-    
-    updateClass(updatedClass);
-    setIsEditDialogOpen(false);
-    setSelectedClass(null);
-    
-    toast({
-      title: "班级更新成功",
-      description: `${updatedData.name} 的信息已更新。`
-    });
+    try {
+      await updateClass(updatedClass);
+      setIsEditDialogOpen(false);
+      setSelectedClass(null);
+
+      toast({
+        title: '班级更新成功',
+        description: `${updatedData.name} 的信息已更新。`,
+      });
+    } catch (error) {
+      console.error('Failed to update class:', error);
+      toast({
+        title: '班级更新失败',
+        description: error instanceof Error ? error.message : '请填写完整的班级信息后再试一次。',
+        variant: 'destructive',
+      });
+      throw error;
+    }
   };
 
   const handleDeleteClass = (classInfo: ClassInfo) => {
@@ -209,6 +228,10 @@ const Classes: React.FC = () => {
                 <div className="flex items-center gap-2 text-sm">
                   <Clock className="h-4 w-4 text-gray-500" />
                   <span>{classInfo.time}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <span>开课日期: {classInfo.class_start_date ? classInfo.class_start_date : '未设置'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Users className="h-4 w-4 text-gray-500" />

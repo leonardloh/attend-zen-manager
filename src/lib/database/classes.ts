@@ -3,8 +3,12 @@ import { DbClass, DbClassCadre, ClassWithDetails } from '@/types/database';
 
 export interface CreateClassData {
   name: string;
+  category?: string;
+  level?: string;
   manage_by_sub_branch_id?: number;
+  manage_by_classroom_id?: number;
   day_of_week?: string;
+  class_start_date?: string;
   class_start_time?: string;
   class_end_time?: string;
   monitor_id?: number;
@@ -41,6 +45,17 @@ export const mapDbClassToFrontend = async (dbClass: DbClass): Promise<ClassWithD
       .eq('id', dbClass.manage_by_sub_branch_id)
       .single();
     sub_branch_name = subBranch?.name || '';
+  }
+
+  // Get classroom name
+  let classroom_name = '';
+  if (dbClass.manage_by_classroom_id) {
+    const { data: classroom } = await supabase
+      .from('classrooms')
+      .select('name')
+      .eq('id', dbClass.manage_by_classroom_id)
+      .single();
+    classroom_name = classroom?.name || '';
   }
 
   // Get cadres from junction table
@@ -105,6 +120,9 @@ export const mapDbClassToFrontend = async (dbClass: DbClass): Promise<ClassWithD
   return {
     ...dbClass,
     sub_branch_name,
+    classroom_name,
+    sub_branch_id: dbClass.manage_by_sub_branch_id ? dbClass.manage_by_sub_branch_id.toString() : undefined,
+    classroom_id: dbClass.manage_by_classroom_id ? dbClass.manage_by_classroom_id.toString() : undefined,
     student_count: studentCount || 0,
     monitor_id,
     class_monitor_name,

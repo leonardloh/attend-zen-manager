@@ -7,7 +7,7 @@ interface Cadre {
   chinese_name: string;
   english_name: string;
   gender: 'male' | 'female';
-  date_of_birth: string;
+  year_of_birth: number;
   role: '班长' | '副班长' | '关怀员';
   mother_class: string;
   support_classes: string[];

@@ -458,6 +458,11 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     const deputyMonitorDatabaseIds = classData.deputy_monitors || [];
     const careOfficerDatabaseIds = classData.care_officers || [];
 
+    const normalizedStartDate = classData.class_start_date?.trim();
+    if (!normalizedStartDate) {
+      throw new Error('班级必须设置开课日期');
+    }
+
     // Convert student IDs from mother_class_students to database IDs for enrollment
     const studentEnrollmentIds: number[] = [];
     if (classData.mother_class_students && classData.mother_class_students.length > 0) {
@@ -471,8 +476,12 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     
     const dbClassData: CreateClassData = {
       name: classData.name,
+      category: classData.category,
+      level: classData.level,
       manage_by_sub_branch_id: classData.sub_branch_id ? parseInt(classData.sub_branch_id) : undefined,
+      manage_by_classroom_id: classData.classroom_id ? parseInt(classData.classroom_id) : undefined,
       day_of_week: classData.time?.split(' ')[0],
+      class_start_date: normalizedStartDate,
       class_start_time: classData.time?.split(' ')[1]?.split('-')[0],
       class_end_time: classData.time?.split(' ')[1]?.split('-')[1],
       monitor_id: monitorDatabaseId,
@@ -502,6 +511,11 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     const deputyMonitorDatabaseIds = classData.deputy_monitors;
     const careOfficerDatabaseIds = classData.care_officers;
 
+    const normalizedStartDate = classData.class_start_date?.trim();
+    if (!normalizedStartDate) {
+      throw new Error('班级必须设置开课日期');
+    }
+
     // Convert student IDs from mother_class_students to database IDs for enrollment
     const studentEnrollmentIds: number[] = [];
     if (classData.mother_class_students && classData.mother_class_students.length > 0) {
@@ -516,8 +530,12 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     const updateData: UpdateClassData = {
       id: parseInt(classData.id),
       name: classData.name,
+      category: classData.category,
+      level: classData.level,
       manage_by_sub_branch_id: classData.sub_branch_id ? parseInt(classData.sub_branch_id) : undefined,
+      manage_by_classroom_id: classData.classroom_id ? parseInt(classData.classroom_id) : undefined,
       day_of_week: classData.time?.split(' ')[0],
+      class_start_date: normalizedStartDate,
       class_start_time: classData.time?.split(' ')[1]?.split('-')[0],
       class_end_time: classData.time?.split(' ')[1]?.split('-')[1],
       monitor_id: monitorDatabaseId,

@@ -151,7 +151,7 @@ const Classrooms: React.FC = () => {
     addMainBranch(branchData);
     setIsAddDialogOpen(false);
     toast({
-      title: "总院添加成功",
+      title: "州属分院添加成功",
       description: `${branchData.name} 已成功添加到系统中。`
     });
   };
@@ -161,22 +161,56 @@ const Classrooms: React.FC = () => {
     const deletedBranch = mainBranches.find(branch => branch.id === branchId);
     deleteMainBranch(branchId);
     toast({
-      title: "总院删除成功",
+      title: "州属分院删除成功",
       description: `${deletedBranch?.name} 已从系统中删除。`,
       variant: "destructive"
     });
   };
 
-  const handleAddSubBranch = (branchData: Omit<SubBranch, 'id'>) => {
-    addSubBranch(branchData);
-    setIsAddDialogOpen(false);
-    toast({
-      title: "分院添加成功",
-      description: `${branchData.name} 已成功添加到系统中。`
-    });
+  const handleAddSubBranch = async (branchData: Omit<SubBranch, 'id'> & { manage_classrooms?: string[] }) => {
+    try {
+      const { manage_classrooms, ...payload } = branchData;
+      const newSubBranchId = await addSubBranch(payload);
+      setIsAddDialogOpen(false);
+      toast({
+        title: '分院添加成功',
+        description: `${branchData.name} 已成功添加到系统中。`,
+      });
+
+      if (newSubBranchId && branchData.main_branch_id) {
+        const managingBranch = mainBranches.find((mb) => mb.id === branchData.main_branch_id);
+        if (managingBranch) {
+          const managedIds = new Set(managingBranch.manage_sub_branches || []);
+          managedIds.add(newSubBranchId);
+          await updateMainBranch({
+            ...managingBranch,
+            manage_sub_branches: Array.from(managedIds),
+          });
+        }
+      }
+
+      if (manage_classrooms?.length && newSubBranchId) {
+        const toAssign = classrooms.filter((cls) => manage_classrooms.includes(cls.id));
+        await Promise.all(
+          toAssign.map((cls) =>
+            updateClassroom({
+              ...cls,
+              sub_branch_id: newSubBranchId,
+              sub_branch_name: branchData.name,
+            })
+          )
+        );
+      }
+    } catch (error: any) {
+      toast({
+        title: '分院添加失败',
+        description: error?.message || '未知错误',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleAssociateSubBranch = (branchData: Omit<SubBranch, 'id'>) => {
+  const handleAssociateSubBranch = async (branchData: Omit<SubBranch, 'id'>) => {
     // Check if a sub-branch with the same name already exists
     const existingBranch = subBranches.find(branch => branch.name === branchData.name);
     
@@ -190,7 +224,7 @@ const Classrooms: React.FC = () => {
         region_name: branchData.region_name
       };
       
-      updateSubBranch(updatedBranch);
+      await updateSubBranch(updatedBranch);
       
       // Also update the main branch to include this sub-branch in manage_sub_branches
       if (branchData.main_branch_id) {
@@ -203,7 +237,7 @@ const Classrooms: React.FC = () => {
               manage_sub_branches: [...currentManaged, existingBranch.id]
             };
             console.log('🔗 Adding sub-branch to main branch manage_sub_branches:', existingBranch.id);
-            updateMainBranch(updatedMainBranch);
+            await updateMainBranch(updatedMainBranch);
           }
         }
       }
@@ -214,18 +248,92 @@ const Classrooms: React.FC = () => {
       });
     } else {
       // Create new sub-branch if it doesn't exist
-      handleAddSubBranch(branchData);
+      await handleAddSubBranch(branchData);
     }
   };
 
-  const handleEditSubBranch = (branchData: SubBranch) => {
-    updateSubBranch(branchData);
-    setEditingSubBranch(null);
-    setIsEditSubBranchDialogOpen(false);
-    toast({
-      title: "分院更新成功",
-      description: `${branchData.name} 的信息已成功更新。`
-    });
+  const handleEditSubBranch = async (branchData: SubBranch & { manage_classrooms?: string[] }) => {
+    try {
+      const { manage_classrooms, ...payload } = branchData;
+
+      const currentClassroomIds = classrooms
+        .filter((cls) => cls.sub_branch_id === branchData.id)
+        .map((cls) => cls.id);
+
+      const desiredIds = new Set(manage_classrooms || currentClassroomIds);
+      const toAssign = (manage_classrooms || []).filter((id) => !currentClassroomIds.includes(id));
+      const toUnassign = currentClassroomIds.filter((id) => !desiredIds.has(id));
+
+      const previousSubBranch = subBranches.find((sb) => sb.id === branchData.id);
+      const previousMainBranchId = previousSubBranch?.main_branch_id;
+      const nextMainBranchId = branchData.main_branch_id;
+
+      await updateSubBranch(payload);
+
+      if (previousMainBranchId !== nextMainBranchId) {
+        if (previousMainBranchId) {
+          const previousMainBranch = mainBranches.find((mb) => mb.id === previousMainBranchId);
+          if (previousMainBranch) {
+            const updated = (previousMainBranch.manage_sub_branches || []).filter((id) => id !== branchData.id);
+            await updateMainBranch({
+              ...previousMainBranch,
+              manage_sub_branches: updated,
+            });
+          }
+        }
+
+        if (nextMainBranchId) {
+          const nextMainBranch = mainBranches.find((mb) => mb.id === nextMainBranchId);
+          if (nextMainBranch) {
+            const managedIds = new Set(nextMainBranch.manage_sub_branches || []);
+            managedIds.add(branchData.id);
+            await updateMainBranch({
+              ...nextMainBranch,
+              manage_sub_branches: Array.from(managedIds),
+            });
+          }
+        }
+      }
+
+      if (toAssign.length > 0) {
+        const assignTargets = classrooms.filter((cls) => toAssign.includes(cls.id));
+        await Promise.all(
+          assignTargets.map((cls) =>
+            updateClassroom({
+              ...cls,
+              sub_branch_id: branchData.id,
+              sub_branch_name: branchData.name,
+            })
+          )
+        );
+      }
+
+      if (toUnassign.length > 0) {
+        const unassignTargets = classrooms.filter((cls) => toUnassign.includes(cls.id));
+        await Promise.all(
+          unassignTargets.map((cls) =>
+            updateClassroom({
+              ...cls,
+              sub_branch_id: '',
+              sub_branch_name: '',
+            })
+          )
+        );
+      }
+
+      setEditingSubBranch(null);
+      setIsEditSubBranchDialogOpen(false);
+      toast({
+        title: '分院更新成功',
+        description: `${branchData.name} 的信息已成功更新。`,
+      });
+    } catch (error: any) {
+      toast({
+        title: '分院更新失败',
+        description: error?.message || '未知错误',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleDeleteSubBranch = (branchId: string) => {
@@ -284,7 +392,7 @@ const Classrooms: React.FC = () => {
     
     toast({
       title: "分院关联已移除",
-      description: `${branchToRemove?.name} 已从该总院中移除，但仍保留在分院管理中。`,
+      description: `${branchToRemove?.name} 已从该州属分院中移除，但仍保留在分院管理中。`,
     });
     console.log('Association removal completed, toast shown');
   };
@@ -311,10 +419,11 @@ const Classrooms: React.FC = () => {
         return <SubBranchForm 
           onSubmit={handleAddSubBranch} 
           onCancel={() => setIsAddDialogOpen(false)} 
-          mainBranches={[]} 
-          hideMainBranchSelection={true}
+          mainBranches={mainBranches} 
+          hideMainBranchSelection={false}
           useSimpleNameInput={true}
           allSubBranches={subBranches}
+          classrooms={classrooms}
         />;
       case 'classrooms':
         return (
@@ -332,7 +441,7 @@ const Classrooms: React.FC = () => {
   const getDialogTitle = () => {
     switch (activeTab) {
       case 'main-branches':
-        return '添加新总院';
+        return '添加新州属分院';
       case 'sub-branches':
         return '添加新分院';
       case 'classrooms':
@@ -373,7 +482,7 @@ const Classrooms: React.FC = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="搜索地区、总院或分院..."
+              placeholder="搜索地区、州属分院或分院..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -385,7 +494,7 @@ const Classrooms: React.FC = () => {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="main-branches">总院管理</TabsTrigger>
+          <TabsTrigger value="main-branches">州属分院管理</TabsTrigger>
           <TabsTrigger value="sub-branches">分院管理</TabsTrigger>
           <TabsTrigger value="classrooms">教室管理</TabsTrigger>
         </TabsList>
@@ -413,9 +522,9 @@ const Classrooms: React.FC = () => {
             <div className="text-sm text-muted-foreground">共 {subBranches.length} 个分院</div>
             <div className="flex items-center gap-2">
               <Select value={sbMainFilter} onValueChange={(v) => { setSbMainFilter(v); setSbPage(1); }}>
-                <SelectTrigger className="h-8 w-[200px]"><SelectValue placeholder="按总院筛选" /></SelectTrigger>
+                <SelectTrigger className="h-8 w-[200px]"><SelectValue placeholder="按州属分院筛选" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部总院</SelectItem>
+                  <SelectItem value="all">全部州属分院</SelectItem>
                   {mainBranches
                     .filter(mb => mb.id && String(mb.id).length > 0)
                     .map(mb => (
@@ -437,7 +546,7 @@ const Classrooms: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="name">按名称</SelectItem>
                   <SelectItem value="state">按州属</SelectItem>
-                  <SelectItem value="main_branch_name">按总院</SelectItem>
+                  <SelectItem value="main_branch_name">按州属分院</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={sbSortDir} onValueChange={(v) => { setSbSortDir(v as any); setSbPage(1); }}>
@@ -674,7 +783,7 @@ const Classrooms: React.FC = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-green-600">{mainBranches.length}</div>
-            <div className="text-sm text-gray-600">总院数量</div>
+            <div className="text-sm text-gray-600">州属分院数量</div>
           </CardContent>
         </Card>
         <Card>
@@ -706,9 +815,11 @@ const Classrooms: React.FC = () => {
                 setEditingSubBranch(null);
                 setIsEditSubBranchDialogOpen(false);
               }}
-              mainBranches={[]} 
-              hideMainBranchSelection={true}
+              mainBranches={mainBranches} 
+              hideMainBranchSelection={false}
               useSimpleNameInput={true}
+              allSubBranches={subBranches}
+              classrooms={classrooms}
             />
           )}
         </DialogContent>

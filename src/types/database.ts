@@ -12,7 +12,7 @@ export interface DbStudent {
   email?: string;
   state?: string;
   postcode?: string;
-  birthday_date?: string;
+  year_of_birth?: number;
   emergency_contact_name?: string;
   emergency_contact_number?: string;
   emergency_contact_relationship?: string;
@@ -44,8 +44,12 @@ export interface DbClass {
   created_at: string;
   updated_at?: string;
   name?: string;
+  category?: string;
+  level?: string;
   manage_by_sub_branch_id?: number;
+  manage_by_classroom_id?: number;
   day_of_week?: string;
+  class_start_date?: string;
   class_start_time?: string;
   class_end_time?: string;
 }
@@ -87,6 +91,9 @@ export interface StudentWithDetails extends DbStudent {
 
 export interface ClassWithDetails extends DbClass {
   sub_branch_name?: string;
+  sub_branch_id?: string;
+  classroom_name?: string;
+  classroom_id?: string;
   student_count: number;
   monitor_id?: number; // Monitor student ID from junction table
   class_monitor_name?: string; // Monitor name from junction table

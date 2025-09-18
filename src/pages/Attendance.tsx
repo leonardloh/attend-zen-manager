@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,14 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AttendanceGrid from '@/components/Attendance/AttendanceGrid';
 import { Calendar as CalendarIcon, Clock, Users, Save, Search } from 'lucide-react';
-import { format } from 'date-fns';
+import { addWeeks, endOfWeek, format, parseISO, startOfWeek, startOfYear } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useDatabase } from '@/contexts/DatabaseContext';
-import { createBulkAttendance, type CreateAttendanceData } from '@/lib/database/attendance';
+import { createBulkAttendance, fetchAttendanceByClass, type AttendanceRecord, type CreateAttendanceData } from '@/lib/database/attendance';
+import { WeeklyAttendancePoint } from '@/components/Attendance/types';
+
+type AttendanceStatusValue = 'present' | 'online' | 'leave' | 'absent' | 'holiday';
 
 interface AttendanceStatus {
   studentId: string;
-  status: 'present' | 'online' | 'leave' | 'absent' | null;
+  status: AttendanceStatusValue | null;
 }
 
 interface AttendanceProgressData {
@@ -35,6 +38,10 @@ const Attendance: React.FC = () => {
     page_number: '',
     line_number: '',
   });
+  const [isHoliday, setIsHoliday] = useState(false);
+  const [historyRecords, setHistoryRecords] = useState<AttendanceRecord[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   // Use DatabaseContext for reactive classes data
   const { classes, getClassAllStudents } = useDatabase();
@@ -44,8 +51,96 @@ const Attendance: React.FC = () => {
     cls.time.includes(searchTerm)
   );
 
+  const selectedClassInfo = useMemo(
+    () => classes.find((cls) => cls.id === selectedClass),
+    [classes, selectedClass]
+  );
+
   // Get students for the selected class using DatabaseContext
   const selectedClassStudents = selectedClass ? getClassAllStudents(selectedClass) : [];
+
+  const loadAttendanceHistory = useCallback(async () => {
+    if (!selectedClass) return;
+    setIsHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const data = await fetchAttendanceByClass(parseInt(selectedClass, 10));
+      setHistoryRecords(data);
+    } catch (err) {
+      console.error('Failed to load attendance history:', err);
+      setHistoryRecords([]);
+      const errorMessage = err instanceof Error ? err.message : '未知错误';
+      setHistoryError(errorMessage);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  }, [selectedClass]);
+
+  useEffect(() => {
+    if (!sessionActive || !selectedClass) return;
+    loadAttendanceHistory();
+  }, [sessionActive, selectedClass, loadAttendanceHistory]);
+
+  const weeklyAttendanceHistory = useMemo<WeeklyAttendancePoint[]>(() => {
+    if (!selectedClass) {
+      return [];
+    }
+
+    const historyMap = new Map<string, { weekStart: Date; attendanceCount: number; totalRecords: number }>();
+
+    const targetDate = selectedDate ?? new Date();
+    const currentWeekStart = startOfWeek(targetDate, { weekStartsOn: 1 });
+    const classStartDateString = selectedClassInfo?.class_start_date;
+
+    let classStartWeek: Date | null = null;
+    if (classStartDateString) {
+      const parsed = parseISO(classStartDateString);
+      if (!Number.isNaN(parsed.getTime())) {
+        classStartWeek = startOfWeek(parsed, { weekStartsOn: 1 });
+      }
+    }
+
+    const yearStart = startOfWeek(startOfYear(targetDate), { weekStartsOn: 1 });
+    const lowerBound = classStartWeek ?? yearStart;
+
+    const rangeStart = lowerBound;
+    const rangeEnd = currentWeekStart.getTime() >= lowerBound.getTime() ? currentWeekStart : lowerBound;
+
+    historyRecords.forEach((record) => {
+      if (!record.attendance_date) return;
+      const recordDate = parseISO(record.attendance_date);
+      if (Number.isNaN(recordDate.getTime())) return;
+      const weekStart = startOfWeek(recordDate, { weekStartsOn: 1 });
+      if (weekStart.getTime() < lowerBound.getTime() || weekStart.getTime() > rangeEnd.getTime()) {
+        return;
+      }
+      const key = format(weekStart, 'yyyy-MM-dd');
+      const existing = historyMap.get(key) ?? { weekStart, attendanceCount: 0, totalRecords: 0 };
+      if (record.attendance_status === 1 || record.attendance_status === 2) {
+        existing.attendanceCount += 1;
+      }
+      existing.totalRecords += 1;
+      historyMap.set(key, existing);
+    });
+
+    const result: WeeklyAttendancePoint[] = [];
+    let cursor = new Date(rangeStart);
+    const effectiveEnd = rangeEnd.getTime();
+    while (cursor.getTime() <= effectiveEnd) {
+      const key = format(cursor, 'yyyy-MM-dd');
+      const entry = historyMap.get(key);
+      const weekEnd = endOfWeek(cursor, { weekStartsOn: 1 });
+      result.push({
+        weekKey: key,
+        weekLabel: `${format(cursor, 'MM/dd')} ~ ${format(weekEnd, 'MM/dd')}`,
+        attendanceCount: entry?.attendanceCount ?? 0,
+        isMissing: !entry,
+      });
+      cursor = addWeeks(cursor, 1);
+    }
+
+    return result;
+  }, [historyRecords, selectedClass, selectedDate, selectedClassInfo]);
 
   const startAttendanceSession = () => {
     if (selectedClass && selectedDate) {
@@ -57,6 +152,9 @@ const Attendance: React.FC = () => {
         page_number: '',
         line_number: '',
       });
+      setIsHoliday(false);
+      setHistoryRecords([]);
+      setHistoryError(null);
     }
   };
 
@@ -67,18 +165,24 @@ const Attendance: React.FC = () => {
 
   const endAttendanceSession = async () => {
     if (!selectedClass || !selectedDate) return;
-    const statusToCode: Record<NonNullable<AttendanceStatus['status']>, number> = {
+    const statusToCode: Record<AttendanceStatusValue, number> = {
       present: 1,
       online: 2,
       leave: 3,
       absent: 0,
+      holiday: 4,
     };
 
     const attendance_date = format(selectedDate, 'yyyy-MM-dd');
     const lamrin_page = progressData.page_number ? parseInt(progressData.page_number, 10) : undefined;
     const lamrin_line = progressData.line_number ? parseInt(progressData.line_number, 10) : undefined;
 
-    const records: CreateAttendanceData[] = attendanceData
+    const roster = selectedClassStudents.map(student => student.id);
+    const effectiveAttendance = isHoliday
+      ? roster.map(studentId => ({ studentId, status: 'holiday' as AttendanceStatusValue }))
+      : attendanceData;
+
+    const records: CreateAttendanceData[] = effectiveAttendance
       .filter(item => item.status !== null)
       .map(item => ({
         class_id: parseInt(selectedClass, 10),
@@ -96,9 +200,13 @@ const Attendance: React.FC = () => {
       }
       alert('考勤数据和学习进度已保存！');
       setSessionActive(false);
-    } catch (err: any) {
+      setIsHoliday(false);
+      setHistoryRecords([]);
+      setHistoryError(null);
+    } catch (err) {
       console.error('Failed to save attendance:', err);
-      alert(`保存失败：${err?.message || '未知错误'}`);
+      const message = err instanceof Error ? err.message : '未知错误';
+      alert(`保存失败：${message}`);
     }
   };
 
@@ -222,8 +330,6 @@ const Attendance: React.FC = () => {
     );
   }
 
-  const selectedClassInfo = classes.find(c => c.id === selectedClass);
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -236,8 +342,14 @@ const Attendance: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2 mt-4 sm:mt-0">
-          <Button variant="outline" onClick={() => setSessionActive(false)}>
+          <Button variant="outline" onClick={() => { setSessionActive(false); setIsHoliday(false); }}>
             返回
+          </Button>
+          <Button
+            variant={isHoliday ? 'destructive' : 'outline'}
+            onClick={() => setIsHoliday(prev => !prev)}
+          >
+            {isHoliday ? '取消放假' : '放假'}
           </Button>
           <Button onClick={endAttendanceSession} className="bg-green-600 hover:bg-green-700">
             <Save className="h-4 w-4 mr-2" />
@@ -251,6 +363,11 @@ const Attendance: React.FC = () => {
         classDate={selectedDate} 
         onDataChange={handleDataChange}
         students={selectedClassStudents}
+        isHoliday={isHoliday}
+        attendanceHistory={weeklyAttendanceHistory}
+        isHistoryLoading={isHistoryLoading}
+        historyError={historyError}
+        onReloadHistory={loadAttendanceHistory}
       />
     </div>
   );

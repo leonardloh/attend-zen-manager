@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { X, Plus } from 'lucide-react';
 import StudentSearchInput from '@/components/Students/StudentSearchInput';
 import StudentMultiSelect from '@/components/Students/StudentMultiSelect';
-import SubBranchSearchInput from '@/components/Classes/SubBranchSearchInput';
+import ClassManagerSearchInput, { type ManagerType } from '@/components/Classes/ClassManagerSearchInput';
 import { ClassInfo } from '@/data/types';
 import { useDatabase } from '@/contexts/DatabaseContext';
 import {
@@ -27,13 +27,35 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+const categoryOptions = ['双语', '中文', '青年', '长者', '一般'] as const;
+const levelOptions = ['第一轮', '增上', '止', '观'] as const;
+
+const managerTypeOptions = ['sub_branch', 'classroom'] as const;
+
+const isCategoryOption = (value?: string): value is (typeof categoryOptions)[number] => {
+  return !!value && (categoryOptions as readonly string[]).includes(value);
+};
+
+const isLevelOption = (value?: string): value is (typeof levelOptions)[number] => {
+  return !!value && (levelOptions as readonly string[]).includes(value);
+};
+
 const classFormSchema = z.object({
   name: z.string().min(1, '班级名称不能为空'),
-  sub_branch_id: z.string().min(1, '请选择所属分院'),
+  category: z.enum(categoryOptions).optional(),
+  level: z.enum(levelOptions).optional(),
+  manager_type: z.enum(managerTypeOptions, {
+    required_error: '请选择所属分院或者教室'
+  }),
+  manager_id: z.string().min(1, '请选择所属分院或者教室'),
+  sub_branch_id: z.string().optional(),
   sub_branch_name: z.string().optional(),
+  classroom_id: z.string().optional(),
+  classroom_name: z.string().optional(),
   weekday: z.enum(['周一', '周二', '周三', '周四', '周五', '周六', '周日'], {
     required_error: '请选择星期',
   }),
+  start_date: z.string().min(1, '开课日期不能为空'),
   start_time: z.string().min(1, '开始时间不能为空'),
   end_time: z.string().min(1, '结束时间不能为空'),
   class_monitor_id: z.string().min(1, '班长学号不能为空'),
@@ -47,9 +69,34 @@ const classFormSchema = z.object({
 }, {
   message: '结束时间必须晚于开始时间',
   path: ['end_time'],
+}).superRefine((data, ctx) => {
+  if (data.manager_type === 'sub_branch' && !data.sub_branch_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: '请选择所属分院',
+      path: ['manager_id']
+    });
+  }
+  if (data.manager_type === 'classroom' && !data.classroom_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: '请选择所属教室',
+      path: ['manager_id']
+    });
+  }
 });
 
 type ClassFormData = z.infer<typeof classFormSchema>;
+
+type SubmitPayload = Omit<ClassInfo, 'id' | 'status'> & {
+  student_count: number;
+  attendance_rate: number;
+  monitor_id?: number;
+  deputy_monitors?: number[];
+  care_officers?: number[];
+  mother_class_students?: string[];
+  regular_students?: string[];
+};
 
 // ClassInfo interface is now imported from @/data/types
 
@@ -92,7 +139,7 @@ const getStudentDatabaseIdFromStudentId = (studentId: string, students: any[]): 
 
 interface ClassFormProps {
   initialData?: ClassInfo;
-  onSubmit: (data: ClassFormData & { student_count: number; attendance_rate: number }) => void;
+  onSubmit: (data: SubmitPayload) => void;
   onCancel: () => void;
 }
 
@@ -137,9 +184,16 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
       // Default values for new class creation
       return {
         name: '',
+        category: undefined,
+        level: undefined,
+        manager_type: 'sub_branch' as ManagerType,
+        manager_id: '',
         sub_branch_id: '',
         sub_branch_name: '',
+        classroom_id: '',
+        classroom_name: '',
         weekday: undefined,
+        start_date: '',
         start_time: '',
         end_time: '',
         class_monitor_id: '',
@@ -159,12 +213,24 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
       parsedEndTime: end_time
     });
     
+    const managerType: ManagerType = initialData.classroom_id ? 'classroom' : 'sub_branch';
+    const managerId = managerType === 'classroom'
+      ? initialData.classroom_id || ''
+      : initialData.sub_branch_id || '';
+
     // Values for editing existing class
     return {
       name: initialData.name || '',
-      sub_branch_id: initialData.sub_branch_id || '',
-      sub_branch_name: initialData.sub_branch_name || '',
+      category: isCategoryOption(initialData.category) ? initialData.category : undefined,
+      level: isLevelOption(initialData.level) ? initialData.level : undefined,
+      manager_type: managerType,
+      manager_id: managerId,
+      sub_branch_id: managerType === 'sub_branch' ? (initialData.sub_branch_id || '') : '',
+      sub_branch_name: managerType === 'sub_branch' ? (initialData.sub_branch_name || '') : '',
+      classroom_id: managerType === 'classroom' ? (initialData.classroom_id || '') : '',
+      classroom_name: managerType === 'classroom' ? (initialData.classroom_name || '') : '',
       weekday: weekday || undefined,
+      start_date: initialData.class_start_date ? initialData.class_start_date.substring(0, 10) : '',
       start_time: start_time || '',
       end_time: end_time || '',
       class_monitor_id: getStudentIdFromDatabaseId(initialData.monitor_id, students),
@@ -192,7 +258,7 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
     }
   }, [initialData, students]);
 
-  const handleSubmit = (data: ClassFormData) => {
+  const handleSubmit = async (data: ClassFormData) => {
     // Calculate student count from selected students
     const student_count = data.student_ids?.length || 0;
     const attendance_rate = initialData?.attendance_rate || Math.floor(Math.random() * 25) + 75;
@@ -212,11 +278,23 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
     });
     
     // Combine data with proper field names and converted IDs
+    const subBranchId = data.manager_type === 'sub_branch' ? data.manager_id : '';
+    const classroomId = data.manager_type === 'classroom' ? data.manager_id : '';
+
+    const trimmedStartDate = data.start_date.trim();
+
     const combinedTimeData = {
       ...data,
       time: `${data.weekday} ${data.start_time}-${data.end_time}`,
+      class_start_date: trimmedStartDate,
       student_count,
       attendance_rate,
+      category: data.category,
+      level: data.level,
+      sub_branch_id: subBranchId || undefined,
+      sub_branch_name: data.manager_type === 'sub_branch' ? (data.sub_branch_name || undefined) : undefined,
+      classroom_id: classroomId || undefined,
+      classroom_name: data.manager_type === 'classroom' ? (data.classroom_name || undefined) : undefined,
       // Use new field names with converted database IDs
       monitor_id: monitorDatabaseId,
       deputy_monitors: deputyMonitorDatabaseIds,
@@ -225,9 +303,15 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
       mother_class_students: data.student_ids || [],
       regular_students: [], // Default empty for now
     };
-    
-    onSubmit(combinedTimeData);
-    form.reset();
+
+    const { manager_id, manager_type, start_date, ...payload } = combinedTimeData;
+
+    try {
+      await onSubmit(payload as SubmitPayload);
+      form.reset();
+    } catch (error) {
+      console.error('Failed to submit class form:', error);
+    }
   };
 
   // Helper function to add/remove cadre roles
@@ -259,25 +343,100 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
           )}
         />
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>班级类别</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="请选择班级类别" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {categoryOptions.map(option => (
+                      <SelectItem key={option} value={option}>{option}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="level"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>班级级别</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="请选择班级级别" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {levelOptions.map(option => (
+                      <SelectItem key={option} value={option}>{option}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <FormField
           control={form.control}
-          name="sub_branch_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>所属分院</FormLabel>
-              <FormControl>
-                <SubBranchSearchInput
-                  value={field.value}
-                  onChange={(subBranchId, subBranchName) => {
-                    field.onChange(subBranchId);
-                    form.setValue('sub_branch_name', subBranchName);
+          name="manager_id"
+          render={({ field }) => {
+            const currentType = form.watch('manager_type');
+            const selectedName = currentType === 'sub_branch'
+              ? form.watch('sub_branch_name')
+              : form.watch('classroom_name');
+
+            return (
+              <FormItem>
+                <FormLabel>所属分院或者教室</FormLabel>
+                <ClassManagerSearchInput
+                  selectedType={currentType}
+                  selectedId={field.value}
+                  selectedName={selectedName}
+                  onSelect={(selection) => {
+                    form.setValue('manager_type', selection.type, { shouldDirty: true, shouldValidate: true });
+                    field.onChange(selection.id);
+
+                    if (selection.type === 'sub_branch') {
+                      form.setValue('sub_branch_id', selection.id, { shouldDirty: true });
+                      form.setValue('sub_branch_name', selection.name, { shouldDirty: true });
+                      form.setValue('classroom_id', '', { shouldDirty: true });
+                      form.setValue('classroom_name', '', { shouldDirty: true });
+                    } else {
+                      form.setValue('classroom_id', selection.id, { shouldDirty: true });
+                      form.setValue('classroom_name', selection.name, { shouldDirty: true });
+                      form.setValue('sub_branch_id', '', { shouldDirty: true });
+                      form.setValue('sub_branch_name', '', { shouldDirty: true });
+                    }
                   }}
-                  placeholder="搜索并选择所属分院..."
+                  onClear={() => {
+                    field.onChange('');
+                    form.setValue('manager_type', 'sub_branch' as ManagerType, { shouldDirty: true, shouldValidate: true });
+                    form.setValue('sub_branch_id', '', { shouldDirty: true });
+                    form.setValue('sub_branch_name', '', { shouldDirty: true });
+                    form.setValue('classroom_id', '', { shouldDirty: true });
+                    form.setValue('classroom_name', '', { shouldDirty: true });
+                  }}
+                  placeholder="搜索并选择所属分院或者教室..."
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
 
         <FormField
@@ -302,6 +461,20 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, onSubmit, onCancel }
                   <SelectItem value="周日">周日</SelectItem>
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="start_date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>开课日期</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

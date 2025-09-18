@@ -91,7 +91,7 @@ const RegionCard: React.FC<RegionCardProps> = ({ region, canEdit, onEdit, onDele
                     删除后将清除以下信息：
                     <ul className="mt-2 text-sm list-disc list-inside space-y-1">
                       <li>地区基本信息（名称：{region.name}，代码：{region.code}）</li>
-                      <li>该地区下的所有总院信息</li>
+                      <li>该地区下的所有州属分院信息</li>
                       <li>该地区下的所有分院信息</li>
                     </ul>
                     <br />
