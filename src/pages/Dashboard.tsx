@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useHybridAuth } from '@/hooks/useHybridAuth';
 import DashboardCard from '@/components/Dashboard/DashboardCard';
 import { DatabaseTest } from '@/components/DatabaseTest';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDatabase } from '@/contexts/DatabaseContext';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useHybridAuth();
   const navigate = useNavigate();
   
   // Get data from database context
@@ -394,6 +394,9 @@ const Dashboard: React.FC = () => {
   const renderDashboard = () => {
     switch (user?.role) {
       case 'super_admin':
+      case 'state_admin':
+      case 'branch_admin':
+      case 'class_admin':
         return renderAdminDashboard();
       case 'cadre':
         return renderCadreDashboard();

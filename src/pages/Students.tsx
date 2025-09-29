@@ -9,7 +9,7 @@ import { Search, Plus, Edit, Trash2, User } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import StudentForm from '@/components/Students/StudentForm';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useHybridAuth } from '@/hooks/useHybridAuth';
 import { useDatabase } from '@/contexts/DatabaseContext';
 import { type Student } from '@/data/types';
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext, PaginationLink, PaginationEllipsis } from '@/components/ui/pagination';
@@ -23,7 +23,7 @@ const Students: React.FC = () => {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useHybridAuth();
   
   // Check if user can edit students (super_admin or cadre)
   const canEditStudents = user?.role === 'super_admin' || user?.role === 'cadre';

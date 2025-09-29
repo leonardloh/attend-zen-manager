@@ -1,15 +1,15 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { User, LogOut, Menu } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { LogOut, Menu } from 'lucide-react';
+import { useHybridAuth } from '@/hooks/useHybridAuth';
 
 interface HeaderProps {
   onMenuToggle: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
-  const { user, logout } = useAuth();
+  const { user, logout } = useHybridAuth();
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-50">
@@ -34,6 +34,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
             <p className="text-sm font-medium text-gray-900">
               {user?.chinese_name || user?.english_name}
             </p>
+            {user?.email && (
+              <p className="text-xs text-gray-500">{user.email}</p>
+            )}
             <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
           </div>
           <Button variant="ghost" size="sm" onClick={logout}>

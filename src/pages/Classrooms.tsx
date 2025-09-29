@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useHybridAuth } from '@/hooks/useHybridAuth';
 import MainBranchForm from '@/components/Classrooms/MainBranchForm';
 import SubBranchForm from '@/components/Classrooms/SubBranchForm';
 import ClassroomForm, { ClassroomFormData } from '@/components/Classrooms/ClassroomForm';
@@ -44,7 +44,7 @@ const Classrooms: React.FC = () => {
   const [isEditSubBranchDialogOpen, setIsEditSubBranchDialogOpen] = useState(false);
   
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useHybridAuth();
 
   // Mock data
   const [regions, setRegions] = useState<Region[]>([

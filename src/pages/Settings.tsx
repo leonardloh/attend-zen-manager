@@ -1,10 +1,12 @@
 
 import React from 'react';
 import PasswordChangeForm from '@/components/Settings/PasswordChangeForm';
-import { useAuth } from '@/hooks/useAuth';
+import InviteUserForm from '@/components/Settings/InviteUserForm';
+import UserRoleManagerCard from '@/components/Settings/UserRoleManagerCard';
+import { useHybridAuth } from '@/hooks/useHybridAuth';
 
 const Settings: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useHybridAuth();
 
   return (
     <div className="space-y-6">
@@ -26,6 +28,16 @@ const Settings: React.FC = () => {
           </div>
           <PasswordChangeForm />
         </div>
+
+        {(user?.role === 'super_admin' || user?.role === 'state_admin' || user?.role === 'branch_admin') && (
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">用户管理</h2>
+            <div className="space-y-6">
+              <InviteUserForm />
+              <UserRoleManagerCard />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

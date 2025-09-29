@@ -6,7 +6,7 @@ interface User {
   student_id: string;
   chinese_name: string;
   english_name: string;
-  role: 'super_admin' | 'cadre' | 'student';
+  role: 'super_admin' | 'state_admin' | 'branch_admin' | 'class_admin' | 'cadre' | 'student';
   phone?: string;
 }
 
@@ -67,14 +67,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  const login = async (studentId: string, password: string): Promise<boolean> => {
-    // Mock authentication - now using student_id instead of email
-    const foundUser = mockUsers.find(u => u.student_id === studentId);
+  const login = async (emailOrStudentId: string, password: string): Promise<boolean> => {
+    // Dev account bypass for debugging
+    if (emailOrStudentId === 'admin001' && password === 'password') {
+      const devUser = {
+        id: 'dev-admin',
+        student_id: 'admin001',
+        chinese_name: '开发管理员',
+        english_name: 'Dev Admin',
+        role: 'super_admin',
+        phone: '13800138000',
+        email: 'admin@dev.local'
+      };
+      setUser(devUser);
+      localStorage.setItem('user', JSON.stringify(devUser));
+      return true;
+    }
+
+    // Mock authentication - support both email and student_id
+    const foundUser = mockUsers.find(u => 
+      u.student_id === emailOrStudentId || 
+      u.email === emailOrStudentId
+    );
+    
     if (foundUser && password === 'password') {
       setUser(foundUser);
       localStorage.setItem('user', JSON.stringify(foundUser));
       return true;
     }
+    
     return false;
   };
 

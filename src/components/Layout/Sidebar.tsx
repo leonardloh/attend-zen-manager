@@ -13,7 +13,7 @@ import {
   UserCheck,
   Building2
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useHybridAuth } from '@/hooks/useHybridAuth';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const { user } = useAuth();
+  const { user } = useHybridAuth();
 
   const adminNavItems = [
     { icon: Home, label: '主页', sublabel: 'Dashboard', path: '/dashboard' },
@@ -49,6 +49,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const getNavItems = () => {
     switch (user?.role) {
       case 'super_admin':
+      case 'state_admin':
+      case 'branch_admin':
+      case 'class_admin':
         return adminNavItems;
       case 'cadre':
         return cadreNavItems;

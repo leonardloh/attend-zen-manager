@@ -91,8 +91,6 @@ export const mapDbMainBranchToFrontend = async (dbBranch: DbMainBranch): Promise
     sub_branches_count: subBranchesCount,
     classes_count: classesCount,
     students_count: studentsCount,
-    region: undefined, // Not in DB schema yet
-    address: '', // Not in current schema
   };
 };
 

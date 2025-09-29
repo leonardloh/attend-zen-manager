@@ -49,6 +49,10 @@ import {
   type CreateEnrollmentData
 } from '@/lib/database';
 
+interface QueryOptions {
+  enabled?: boolean;
+}
+
 // Query Keys
 export const QUERY_KEYS = {
   STUDENTS: ['students'],
@@ -61,10 +65,11 @@ export const QUERY_KEYS = {
 } as const;
 
 // Student Hooks
-export const useStudents = () => {
+export const useStudents = (options: QueryOptions = {}) => {
   return useQuery({
     queryKey: QUERY_KEYS.STUDENTS,
     queryFn: fetchStudents,
+    enabled: options.enabled ?? true,
   });
 };
 
@@ -122,10 +127,11 @@ export const useDeleteStudent = () => {
 };
 
 // Class Hooks
-export const useClasses = () => {
+export const useClasses = (options: QueryOptions = {}) => {
   return useQuery({
     queryKey: QUERY_KEYS.CLASSES,
     queryFn: fetchClasses,
+    enabled: options.enabled ?? true,
   });
 };
 
@@ -184,10 +190,11 @@ export const useDeleteClass = () => {
 };
 
 // Main Branch Hooks
-export const useMainBranches = () => {
+export const useMainBranches = (options: QueryOptions = {}) => {
   return useQuery({
     queryKey: QUERY_KEYS.MAIN_BRANCHES,
     queryFn: fetchMainBranches,
+    enabled: options.enabled ?? true,
   });
 };
 
@@ -238,10 +245,11 @@ export const useDeleteMainBranch = () => {
 };
 
 // Sub Branch Hooks
-export const useSubBranches = () => {
+export const useSubBranches = (options: QueryOptions = {}) => {
   return useQuery({
     queryKey: QUERY_KEYS.SUB_BRANCHES,
     queryFn: fetchSubBranches,
+    enabled: options.enabled ?? true,
   });
 };
 
@@ -327,10 +335,11 @@ export const useDeleteEnrollment = () => {
 };
 
 // Classroom Hooks
-export const useClassrooms = () => {
+export const useClassrooms = (options: QueryOptions = {}) => {
   return useQuery({
     queryKey: QUERY_KEYS.CLASSROOMS,
     queryFn: fetchClassrooms,
+    enabled: options.enabled ?? true,
   });
 };
 

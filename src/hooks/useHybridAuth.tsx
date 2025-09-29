@@ -7,7 +7,7 @@ interface User {
   student_id: string;
   chinese_name: string;
   english_name: string;
-  role: 'super_admin' | 'cadre' | 'student';
+  role: 'super_admin' | 'state_admin' | 'branch_admin' | 'class_admin' | 'cadre' | 'student';
   phone?: string;
   email?: string;
 }
@@ -24,8 +24,12 @@ interface HybridAuthContextType {
 
 const HybridAuthContext = createContext<HybridAuthContextType | undefined>(undefined);
 
+const defaultAuthMode = (import.meta.env.VITE_DEFAULT_AUTH_MODE as 'mock' | 'supabase' | undefined) === 'mock'
+  ? 'mock'
+  : 'supabase';
+
 export const HybridAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [authMode, setAuthMode] = useState<'mock' | 'supabase'>('mock'); // Start with mock for backward compatibility
+  const [authMode, setAuthMode] = useState<'mock' | 'supabase'>(defaultAuthMode);
   
   const supabaseAuth = useSupabaseAuth();
   const mockAuth = useMockAuth();
@@ -35,8 +39,8 @@ export const HybridAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const switchAuthMode = (mode: 'mock' | 'supabase') => {
     setAuthMode(mode);
-    // Logout from current mode when switching
-    currentAuth.logout();
+    // Logout from current mode when switching; ignore completion timing
+    void currentAuth.logout();
   };
 
   const login = async (studentId: string, password: string): Promise<boolean> => {

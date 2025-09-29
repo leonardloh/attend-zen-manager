@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useHybridAuth } from '@/hooks/useHybridAuth';
+import { supabase } from '@/lib/supabase';
 
 const PasswordChangeForm: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -13,7 +14,7 @@ const PasswordChangeForm: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, authMode } = useHybridAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,27 +40,63 @@ const PasswordChangeForm: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Mock password change - in a real app, this would call an API
-      // For now, we'll just simulate a successful password change
-      if (currentPassword === 'password') {
+      if (authMode === 'supabase') {
+        if (!user?.email) {
+          throw new Error('无法获取当前用户邮箱，无法修改密码');
+        }
+
+        // Re-authenticate to verify the current password
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: currentPassword,
+        });
+
+        if (signInError) {
+          toast({
+            title: '密码修改失败',
+            description: '当前密码不正确，请重试',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: newPassword,
+        });
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+
         toast({
           title: '密码修改成功',
           description: '您的密码已成功更新',
         });
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
       } else {
+        // Legacy mock flow for local testing
+        if (currentPassword !== 'password') {
+          toast({
+            title: '密码修改失败',
+            description: '当前密码不正确，请重试',
+            variant: 'destructive',
+          });
+          return;
+        }
+
         toast({
-          title: '密码修改失败',
-          description: '当前密码不正确，请重试',
-          variant: 'destructive',
+          title: '密码修改成功',
+          description: '您的密码已成功更新 (模拟环境)',
         });
       }
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (error) {
+      const message = error instanceof Error ? error.message : '密码修改失败，请稍后重试';
       toast({
         title: '系统错误',
-        description: '密码修改失败，请稍后重试',
+        description: message,
         variant: 'destructive',
       });
     } finally {

@@ -26,6 +26,7 @@ import {
   useUpdateClassroom,
   useDeleteClassroom,
 } from '@/hooks/useDatabase';
+import { useHybridAuth } from '@/hooks/useHybridAuth';
 import { addClassCadre, removeClassCadre, updateClassCadres } from '@/lib/database/classes';
 import { 
   fetchStudentByStudentId,
@@ -183,7 +184,7 @@ const convertStudentWithDetailsToStudent = (studentDetails: StudentWithDetails):
 const mapDbMainBranchToMainBranch = (dbBranch: any): MainBranch => ({
   id: dbBranch.id.toString(),
   name: dbBranch.name || '',
-  region: dbBranch.region || '中马',
+  region: dbBranch.region as MainBranch['region'] | undefined,
   address: dbBranch.address || '',
   student_id: dbBranch.student_id || '', // Use mapped student_id
   contact_person: dbBranch.contact_person || '',
@@ -214,11 +215,14 @@ const mapDbSubBranchToFrontend = (dbBranch: any): SubBranch => ({
 });
 
 export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) => {
+  const { user: authUser, isLoading: authLoading } = useHybridAuth();
+  const queriesEnabled = !authLoading && !!authUser;
+
   // Database hooks
-  const { data: dbStudents, isLoading: isLoadingStudents, error: studentsError } = useStudents();
-  const { data: dbClasses, isLoading: isLoadingClasses, error: classesError } = useClasses();
-  const { data: dbMainBranches, isLoading: isLoadingMainBranches, error: mainBranchesError } = useMainBranches();
-  const { data: dbSubBranches, isLoading: isLoadingSubBranches, error: subBranchesError } = useSubBranches();
+  const { data: dbStudents, isLoading: isLoadingStudents, error: studentsError } = useStudents({ enabled: queriesEnabled });
+  const { data: dbClasses, isLoading: isLoadingClasses, error: classesError } = useClasses({ enabled: queriesEnabled });
+  const { data: dbMainBranches, isLoading: isLoadingMainBranches, error: mainBranchesError } = useMainBranches({ enabled: queriesEnabled });
+  const { data: dbSubBranches, isLoading: isLoadingSubBranches, error: subBranchesError } = useSubBranches({ enabled: queriesEnabled });
   
   // Mutation hooks
   const createStudentMutation = useCreateStudent();
@@ -241,7 +245,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   const deleteEnrollmentMutation = useDeleteEnrollment();
 
   // Classroom hooks
-  const { data: dbClassrooms } = useClassrooms();
+  const { data: dbClassrooms } = useClassrooms({ enabled: queriesEnabled });
   const createClassroomMutation = useCreateClassroom();
   const updateClassroomMutation = useUpdateClassroom();
   const deleteClassroomMutation = useDeleteClassroom();

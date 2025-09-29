@@ -4,9 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { AuthProvider } from '@/hooks/useAuth';
 import { SupabaseAuthProvider } from '@/hooks/useSupabaseAuth';
-import { HybridAuthProvider } from '@/hooks/useHybridAuth';
+import { HybridAuthProvider, useHybridAuth } from '@/hooks/useHybridAuth';
 import { DatabaseProvider } from '@/contexts/DatabaseContext';
 import LoginForm from '@/components/Auth/LoginForm';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -20,11 +20,12 @@ import Classrooms from '@/pages/Classrooms';
 import EditMainBranch from '@/pages/EditMainBranch';
 import NotFound from "./pages/NotFound";
 import Settings from '@/pages/Settings';
+import SetPassword from '@/pages/SetPassword';
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading } = useHybridAuth();
   
   if (isLoading) {
     return (
@@ -42,7 +43,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 const AppRoutes: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useHybridAuth();
 
   return (
     <Routes>
@@ -138,6 +139,8 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
+      <Route path="/login" element={<LoginForm />} />
+      <Route path="/set-password" element={<SetPassword />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
