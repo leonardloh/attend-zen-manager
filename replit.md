@@ -24,6 +24,9 @@ The application requires the following Supabase environment variables to functio
 - `VITE_DEFAULT_AUTH_MODE` - Set to 'mock' or 'supabase' (default: 'supabase')
 - `ADMIN_USERS_PORT` - Port for standalone admin users server (default: 8787)
 
+### Environment File Location
+**IMPORTANT**: Environment variables must be placed in `client/.env` or `client/.env.local` (not in the root directory). Vite loads environment variables relative to where its config file is located.
+
 ## Directory Structure
 ```
 /
