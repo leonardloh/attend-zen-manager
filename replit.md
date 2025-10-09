@@ -79,7 +79,45 @@ The admin users endpoint (`/api/admin-users`) requires:
 - Admin users handler integrated as Express route
 - Build and deployment configured for Replit environment
 
+## Authentication Flow
+
+### Google SSO Integration
+The system now supports Google Sign-In using Supabase OAuth:
+
+1. **Login Page** (`client/src/components/Auth/LoginForm.tsx`)
+   - Users can sign in with Google OAuth or traditional email/password
+   - Google sign-in button with OAuth redirect
+
+2. **OAuth Callback** (`client/src/pages/AuthCallback.tsx`)
+   - Handles Google OAuth redirect after authentication
+   - Checks if user has completed their profile (has student_id in metadata)
+   - Redirects new users to profile completion, existing users to dashboard
+
+3. **Profile Completion** (`client/src/pages/CompleteProfile.tsx`)
+   - New Google users must fill in student details
+   - Creates student record in database
+   - Updates user metadata with student_id
+   - Default role: 'student'
+
+4. **Role Assignment**
+   - New users default to 'student' role
+   - Admins can later assign roles: super_admin, state_admin, branch_admin, class_admin
+   - Role management available through invitation system
+
+### User Creation
+- **Google SSO**: Primary method for new user registration
+- **Invitation System**: Admins can invite users who then sign up via Google
+- **Direct Creation**: Removed from Settings (UserRoleManagerCard)
+
 ## Recent Changes
+- **2025-10-09**: Google SSO Implementation
+  - Added Google OAuth sign-in to login page
+  - Implemented auth callback handler for OAuth redirects
+  - Created profile completion page for new users
+  - Set default role to 'student' for new signups
+  - Removed direct user creation from Settings
+  - Updated authentication flow to detect and handle new Google users
+
 - **2025-10-09**: Successfully migrated from Lovable to Replit
   - Set up client/server directory structure
   - Configured Express backend with Vite middleware
