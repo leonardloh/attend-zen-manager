@@ -24,12 +24,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Helper function to determine user role based on student data
-const getUserRole = (studentData: any): User['role'] => {
-  // For now, we'll use simple logic - you can enhance this based on your needs
-  if (studentData.student_id === 'admin001') return 'super_admin';
-  // Check if user is a cadre based on class assignments (to be implemented)
-  // For now, default to student
+// Helper function to determine user role based on student data and metadata
+const getUserRole = (studentData: any, metadataRole?: User['role']): User['role'] => {
+  if (metadataRole) return metadataRole;
+  if (studentData?.student_id === 'admin001') return 'super_admin';
   return 'student';
 };
 
@@ -57,7 +55,7 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         setSupabaseUser(session?.user ?? null);
         
         if (session?.user) {
@@ -90,7 +88,7 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
 
         if (studentData) {
-          const derivedRole = metadataRole ?? getUserRole(studentData);
+          const derivedRole = getUserRole(studentData, metadataRole);
 
           setUser({
             id: studentData.id.toString(),
@@ -102,19 +100,19 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
             email: supabaseUser.email,
           });
         } else {
-          const fallbackRole: User['role'] = metadataRole ?? 'super_admin';
+          const fallbackRole: User['role'] = getUserRole(null, metadataRole);
           setUser({
             id: supabaseUser.id,
             student_id: studentId,
-            chinese_name: supabaseUser.user_metadata?.chinese_name || '管理员',
-            english_name: supabaseUser.user_metadata?.english_name || 'Admin',
+            chinese_name: supabaseUser.user_metadata?.chinese_name || '学员',
+            english_name: supabaseUser.user_metadata?.english_name || 'Student',
             role: fallbackRole,
             email: supabaseUser.email,
           });
         }
       } else {
-        // No student_id in metadata - fall back to metadata role or default super admin
-        const fallbackRole: User['role'] = metadataRole ?? 'super_admin';
+        // No student_id in metadata - new user from Google SSO, default to student role
+        const fallbackRole: User['role'] = getUserRole(null, metadataRole);
         setUser({
           id: supabaseUser.id,
           student_id: supabaseUser.email?.split('@')[0] || 'unknown',

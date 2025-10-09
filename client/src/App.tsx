@@ -21,6 +21,8 @@ import EditMainBranch from '@/pages/EditMainBranch';
 import NotFound from "./pages/NotFound";
 import Settings from '@/pages/Settings';
 import SetPassword from '@/pages/SetPassword';
+import AuthCallback from '@/pages/AuthCallback';
+import CompleteProfile from '@/pages/CompleteProfile';
 
 const queryClient = new QueryClient();
 
@@ -43,8 +45,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 const AppRoutes: React.FC = () => {
-  const { user } = useHybridAuth();
-
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -141,6 +141,8 @@ const AppRoutes: React.FC = () => {
       />
       <Route path="/login" element={<LoginForm />} />
       <Route path="/set-password" element={<SetPassword />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/complete-profile" element={<CompleteProfile />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
