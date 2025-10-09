@@ -1,8 +1,12 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import { type Server } from "http";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export function log(message: string) {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -26,20 +30,22 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
-  app.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
-
-    try {
+  app.use((req, res, next) => {
+    if (!req.path.startsWith('/api')) {
+      const url = req.originalUrl;
       const clientRoot = path.resolve(__dirname, "../client");
-      const template = await vite.transformIndexHtml(
+      
+      vite.transformIndexHtml(
         url,
         fs.readFileSync(path.resolve(clientRoot, "index.html"), "utf-8")
-      );
-
-      res.status(200).set({ "Content-Type": "text/html" }).end(template);
-    } catch (e) {
-      vite.ssrFixStacktrace(e as Error);
-      next(e);
+      ).then(template => {
+        res.status(200).set({ "Content-Type": "text/html" }).end(template);
+      }).catch(e => {
+        vite.ssrFixStacktrace(e as Error);
+        next(e);
+      });
+    } else {
+      next();
     }
   });
 }
@@ -55,7 +61,7 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
-  app.use("*", (_req, res) => {
+  app.use((_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --tsconfig server/tsconfig.json server/index.ts",
+    "dev": "NODE_ENV=development tsx watch --tsconfig server/tsconfig.json --ignore client server/index.ts",
     "build": "vite build -c client/vite.config.ts",
     "start": "NODE_ENV=production tsx server/index.ts",
     "lint": "eslint .",
@@ -63,6 +63,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.20.6",
     "vaul": "^0.9.3",
+    "wouter": "^3.7.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
