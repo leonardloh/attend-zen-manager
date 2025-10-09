@@ -77,3 +77,4 @@ The admin users endpoint (`/api/admin-users`) requires:
   - Fixed Express routing for wildcard routes
   - Added tsx watch mode for backend hot reload
   - Cleaned up obsolete src/ directory
+  - Configured Vite allowed hosts for Replit deployment domain
