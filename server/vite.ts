@@ -27,6 +27,7 @@ export async function setupVite(app: Express, server: Server) {
     },
     appType: "custom",
     root: path.resolve(__dirname, "../client"),
+    configFile: path.resolve(__dirname, "../client/vite.config.ts"),
   });
 
   app.use(vite.middlewares);

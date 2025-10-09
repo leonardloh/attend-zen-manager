@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development tsx watch --tsconfig server/tsconfig.json --ignore client server/index.ts",
-    "build": "vite build -c client/vite.config.ts",
+    "build": "npm run build:css && vite build -c client/vite.config.ts",
+    "build:css": "tailwindcss -i ./client/src/index.css -o ./client/src/output.css --minify",
     "start": "NODE_ENV=production tsx server/index.ts",
     "lint": "eslint .",
     "preview": "vite preview"

@@ -13,6 +13,9 @@ dist-ssr
 *.local
 .env
 
+# Generated CSS
+client/src/output.css
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

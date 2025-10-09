@@ -44,10 +44,17 @@ The application requires the following Supabase environment variables to functio
 
 ## Development
 ```bash
-npm run dev    # Start development server with hot reload
-npm run build  # Build for production
-npm run start  # Start production server
+npm run dev        # Start development server with hot reload
+npm run build:css  # Recompile Tailwind CSS (run after adding new Tailwind classes)
+npm run build      # Build for production (includes CSS compilation)
+npm run start      # Start production server
 ```
+
+### CSS/Styling Notes
+Due to PostCSS integration issues with the Vite middleware setup, the project uses pre-compiled Tailwind CSS:
+- Source: `client/src/index.css` (contains Tailwind directives)
+- Compiled: `client/src/output.css` (generated from source, imported by main.tsx)
+- **Important**: After adding new Tailwind classes to components, run `npm run build:css` to recompile the CSS
 
 ## Deployment
 The project is configured for Replit autoscale deployment:
