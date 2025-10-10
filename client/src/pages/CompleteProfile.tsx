@@ -25,6 +25,7 @@ const CompleteProfile = () => {
     state: '',
     postcode: '',
     year_of_birth: new Date().getFullYear() - 25,
+    personal_contact_number: '',
     emergency_contact_name: '',
     emergency_contact_number: '',
     emergency_contact_relationship: '',
@@ -95,6 +96,7 @@ const CompleteProfile = () => {
           state: formData.state,
           postcode: formData.postcode,
           year_of_birth: formData.year_of_birth,
+          personal_contact_number: formData.personal_contact_number,
           emergency_contact_name: formData.emergency_contact_name,
           emergency_contact_number: formData.emergency_contact_number,
           emergency_contact_relationship: formData.emergency_contact_relationship,
@@ -269,6 +271,17 @@ const CompleteProfile = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="personal_contact_number">个人联系电话 / Personal Contact Number</Label>
+                <PhoneInput
+                  defaultCountry="MY"
+                  value={formData.personal_contact_number}
+                  onChange={(value: string) => handleChange('personal_contact_number', value || '')}
+                  placeholder="Enter phone number"
+                  data-testid="input-personal-contact-number"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="profession">职业 / Profession</Label>
                 <Input
                   id="profession"
@@ -333,7 +346,7 @@ const CompleteProfile = () => {
                 <PhoneInput
                   defaultCountry="MY"
                   value={formData.emergency_contact_number}
-                  onChange={(value) => handleChange('emergency_contact_number', value || '')}
+                  onChange={(value: string) => handleChange('emergency_contact_number', value || '')}
                   placeholder="Enter phone number"
                   data-testid="input-emergency-contact-number"
                 />
