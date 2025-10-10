@@ -20,6 +20,7 @@ import Classrooms from '@/pages/Classrooms';
 import EditMainBranch from '@/pages/EditMainBranch';
 import NotFound from "./pages/NotFound";
 import Settings from '@/pages/Settings';
+import UserManagement from '@/pages/UserManagement';
 import SetPassword from '@/pages/SetPassword';
 import AuthCallback from '@/pages/AuthCallback';
 import CompleteProfile from '@/pages/CompleteProfile';
@@ -117,6 +118,14 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <EditMainBranch />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user-management"
+        element={
+          <ProtectedRoute>
+            <UserManagement />
           </ProtectedRoute>
         }
       />
