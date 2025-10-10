@@ -30,46 +30,50 @@ TO authenticated
 USING (is_admin())
 WITH CHECK (is_admin());
 
--- classes (if exists)
+-- class_enrollments
+ALTER POLICY "super admins full access" ON "public"."class_enrollments"
+TO authenticated
+USING (is_admin())
+WITH CHECK (is_admin());
+
+-- classes
 ALTER POLICY "super admins full access" ON "public"."classes"
 TO authenticated
 USING (is_admin())
 WITH CHECK (is_admin());
 
--- students (if exists)
-ALTER POLICY "super admins full access" ON "public"."students"
-TO authenticated
-USING (is_admin())
-WITH CHECK (is_admin());
-
--- main_branches (if exists)
-ALTER POLICY "super admins full access" ON "public"."main_branches"
-TO authenticated
-USING (is_admin())
-WITH CHECK (is_admin());
-
--- sub_branches (if exists)
-ALTER POLICY "super admins full access" ON "public"."sub_branches"
-TO authenticated
-USING (is_admin())
-WITH CHECK (is_admin());
-
--- classrooms (if exists)
+-- classrooms
 ALTER POLICY "super admins full access" ON "public"."classrooms"
 TO authenticated
 USING (is_admin())
 WITH CHECK (is_admin());
 
--- enrollments (if exists)
-ALTER POLICY "super admins full access" ON "public"."enrollments"
+-- main_branches
+ALTER POLICY "super admins full access" ON "public"."main_branches"
 TO authenticated
 USING (is_admin())
 WITH CHECK (is_admin());
 
--- attendance_records (if exists)
-ALTER POLICY "super admins full access" ON "public"."attendance_records"
+-- profiles
+ALTER POLICY "super admins full access" ON "public"."profiles"
 TO authenticated
 USING (is_admin())
 WITH CHECK (is_admin());
 
--- Add more tables as needed following the same pattern
+-- students
+ALTER POLICY "super admins full access" ON "public"."students"
+TO authenticated
+USING (is_admin())
+WITH CHECK (is_admin());
+
+-- sub_branches
+ALTER POLICY "super admins full access" ON "public"."sub_branches"
+TO authenticated
+USING (is_admin())
+WITH CHECK (is_admin());
+
+-- user_roles
+ALTER POLICY "super admins full access" ON "public"."user_roles"
+TO authenticated
+USING (is_admin())
+WITH CHECK (is_admin());
