@@ -354,13 +354,22 @@ const CompleteProfile = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="emergency_contact_relationship">紧急联系人关系 / Emergency Contact Relationship</Label>
-                <Input
-                  id="emergency_contact_relationship"
+                <Select
                   value={formData.emergency_contact_relationship}
-                  onChange={(e) => handleChange('emergency_contact_relationship', e.target.value)}
-                  placeholder="例如: 父亲"
-                  data-testid="input-emergency-contact-relationship"
-                />
+                  onValueChange={(value) => handleChange('emergency_contact_relationship', value)}
+                >
+                  <SelectTrigger id="emergency_contact_relationship" data-testid="select-emergency-contact-relationship">
+                    <SelectValue placeholder="选择关系" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Parent">父母 / Parent</SelectItem>
+                    <SelectItem value="Spouse">配偶 / Spouse</SelectItem>
+                    <SelectItem value="Sibling">兄弟姐妹 / Sibling</SelectItem>
+                    <SelectItem value="Child">子女 / Child</SelectItem>
+                    <SelectItem value="Friend">朋友 / Friend</SelectItem>
+                    <SelectItem value="Other">其他 / Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
