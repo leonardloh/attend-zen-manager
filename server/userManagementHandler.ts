@@ -165,10 +165,14 @@ export const createUserManagementHandler = ({
         return buildResponse(404, { error: 'user_not_found' }, cors);
       }
 
-      // Update user role in user_metadata
+      // Update user role in both user_metadata and app_metadata
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
         user_metadata: {
           ...currentUser.user.user_metadata,
+          role: role
+        },
+        app_metadata: {
+          ...currentUser.user.app_metadata,
           role: role
         }
       });

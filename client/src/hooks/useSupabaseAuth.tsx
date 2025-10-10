@@ -75,7 +75,8 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setIsLoading(true);
       
       // Try to get student_id from user metadata
-      const metadataRole = supabaseUser.app_metadata?.role as User['role'] | undefined;
+      // Check both app_metadata and user_metadata for role (fallback to user_metadata for compatibility)
+      const metadataRole = (supabaseUser.app_metadata?.role || supabaseUser.user_metadata?.role) as User['role'] | undefined;
       const studentId = supabaseUser.user_metadata?.student_id;
       
       if (studentId) {
