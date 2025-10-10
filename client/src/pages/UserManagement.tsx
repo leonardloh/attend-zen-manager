@@ -49,38 +49,43 @@ const UserManagement = () => {
 
     setIsSearching(true);
     try {
-      // Use admin API to list users and filter by email
-      const { data: { users }, error } = await supabase.auth.admin.listUsers();
-
-      if (error) {
-        console.error('Search error:', error);
-        toast({
-          title: '搜索失败',
-          description: error.message || 'Failed to search for user',
-          variant: 'destructive',
-        });
-        return;
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Not authenticated');
       }
 
-      // Find user by email
-      const foundUserData = users.find(u => u.email?.toLowerCase() === searchEmail.trim().toLowerCase());
+      // Call backend API to search for user
+      const response = await fetch(`/api/user-management?email=${encodeURIComponent(searchEmail.trim())}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      if (!foundUserData) {
-        toast({
-          title: '未找到用户',
-          description: 'No user found with this email address',
-          variant: 'destructive',
-        });
-        setFoundUser(null);
-        setSelectedRole('');
-        return;
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          toast({
+            title: '未找到用户',
+            description: 'No user found with this email address',
+            variant: 'destructive',
+          });
+          setFoundUser(null);
+          setSelectedRole('');
+          return;
+        }
+
+        throw new Error(data.error || 'Failed to search for user');
       }
 
       const userData: UserData = {
-        id: foundUserData.id,
-        email: foundUserData.email || '',
-        role: foundUserData.user_metadata?.role || 'student',
-        user_metadata: foundUserData.user_metadata
+        id: data.id,
+        email: data.email,
+        role: data.role || 'student',
+        user_metadata: data.user_metadata
       };
 
       setFoundUser(userData);
@@ -114,25 +119,29 @@ const UserManagement = () => {
 
     setIsUpdating(true);
     try {
-      // Update user metadata with new role using admin API
-      const { error } = await supabase.auth.admin.updateUserById(
-        foundUser.id,
-        {
-          user_metadata: {
-            ...foundUser.user_metadata,
-            role: selectedRole
-          }
-        }
-      );
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Not authenticated');
+      }
 
-      if (error) {
-        console.error('Update error:', error);
-        toast({
-          title: '更新失败',
-          description: error.message || 'Failed to update user role',
-          variant: 'destructive',
-        });
-        return;
+      // Call backend API to update user role
+      const response = await fetch('/api/user-management', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: foundUser.id,
+          role: selectedRole
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update user role');
       }
 
       toast({

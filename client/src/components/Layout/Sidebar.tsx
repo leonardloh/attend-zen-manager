@@ -52,9 +52,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     switch (user?.role) {
       case 'super_admin':
       case 'state_admin':
+        // super_admin and state_admin get full admin nav items including User Management
+        return adminNavItems;
       case 'branch_admin':
       case 'class_admin':
-        return adminNavItems;
+        // Other admins don't see User Management
+        return adminNavItems.filter(item => item.path !== '/user-management');
       case 'cadre':
         return cadreNavItems;
       case 'student':
