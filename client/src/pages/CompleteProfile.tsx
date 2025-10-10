@@ -229,13 +229,31 @@ const CompleteProfile = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="state">州属 / State</Label>
-                <Input
-                  id="state"
+                <Select
                   value={formData.state}
-                  onChange={(e) => handleChange('state', e.target.value)}
-                  placeholder="例如: Selangor"
-                  data-testid="input-state"
-                />
+                  onValueChange={(value) => handleChange('state', value)}
+                >
+                  <SelectTrigger id="state" data-testid="select-state">
+                    <SelectValue placeholder="选择州属" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="玻璃市">玻璃市</SelectItem>
+                    <SelectItem value="吉打">吉打</SelectItem>
+                    <SelectItem value="槟城">槟城</SelectItem>
+                    <SelectItem value="霹雳">霹雳</SelectItem>
+                    <SelectItem value="雪隆">雪隆</SelectItem>
+                    <SelectItem value="森美兰">森美兰</SelectItem>
+                    <SelectItem value="马六甲">马六甲</SelectItem>
+                    <SelectItem value="柔佛">柔佛</SelectItem>
+                    <SelectItem value="彭亨">彭亨</SelectItem>
+                    <SelectItem value="登嘉楼">登嘉楼</SelectItem>
+                    <SelectItem value="吉兰丹">吉兰丹</SelectItem>
+                    <SelectItem value="沙巴">沙巴</SelectItem>
+                    <SelectItem value="砂拉越">砂拉越</SelectItem>
+                    <SelectItem value="纳闽">纳闽</SelectItem>
+                    <SelectItem value="东马">东马</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
