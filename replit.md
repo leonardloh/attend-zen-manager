@@ -110,6 +110,17 @@ The system now supports Google Sign-In using Supabase OAuth:
 - **Direct Creation**: Removed from Settings (UserRoleManagerCard)
 
 ## Recent Changes
+- **2025-10-10**: Secure User Management Implementation
+  - Created secure backend API handler (server/userManagementHandler.ts) for user management
+  - Moved all admin operations from client-side to server-side with service role key protection
+  - Backend validates Bearer tokens and restricts access to super_admin and state_admin only
+  - GET /api/user-management?email=<email> - Search users by email (server-side)
+  - PUT /api/user-management - Update user roles (server-side with validation)
+  - Updated UserManagement.tsx to call secure backend API endpoints
+  - Fixed Sidebar navigation to only show User Management to super_admin and state_admin
+  - Removed direct Supabase admin API usage from client-side code
+  - Security: Service role key never exposed to frontend
+
 - **2025-10-10**: Enhanced Profile Form
   - Added Malaysian states dropdown to CompleteProfile form (玻璃市, 吉打, 槟城, etc.)
   - Implemented PhoneInput component with country code selection (defaulting to Malaysia)
