@@ -58,11 +58,14 @@ const CompleteProfile = () => {
     setIsLoading(true);
 
     try {
+      console.log('Step 1: Getting session...');
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         throw new Error('未登录');
       }
+      console.log('Step 1: Session obtained', session.user.email);
 
+      console.log('Step 2: Checking for existing student...');
       const { data: existingStudent, error: checkError } = await supabase
         .from('students')
         .select('student_id')
@@ -70,10 +73,12 @@ const CompleteProfile = () => {
         .maybeSingle();
 
       if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Check error:', checkError);
         throw checkError;
       }
 
       if (existingStudent) {
+        console.log('Student ID already exists');
         toast({
           title: '学员编号已存在',
           description: '请使用不同的学员编号',
@@ -82,7 +87,9 @@ const CompleteProfile = () => {
         setIsLoading(false);
         return;
       }
+      console.log('Step 2: No existing student found');
 
+      console.log('Step 3: Inserting student record...');
       const { error: insertError } = await supabase
         .from('students')
         .insert({
@@ -106,9 +113,12 @@ const CompleteProfile = () => {
         });
 
       if (insertError) {
+        console.error('Insert error:', insertError);
         throw insertError;
       }
+      console.log('Step 3: Student record inserted successfully');
 
+      console.log('Step 4: Updating user metadata...');
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
           student_id: formData.student_id,
@@ -118,14 +128,17 @@ const CompleteProfile = () => {
       });
 
       if (updateError) {
+        console.error('Update error:', updateError);
         throw updateError;
       }
+      console.log('Step 4: User metadata updated successfully');
 
       toast({
         title: '资料完成',
         description: '您的学员资料已创建成功',
       });
 
+      console.log('Step 5: Navigating to dashboard...');
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Profile completion error:', error);
@@ -135,6 +148,7 @@ const CompleteProfile = () => {
         variant: 'destructive',
       });
     } finally {
+      console.log('Finally: Setting isLoading to false');
       setIsLoading(false);
     }
   };
