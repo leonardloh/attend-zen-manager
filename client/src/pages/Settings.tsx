@@ -1,7 +1,6 @@
 
 import React from 'react';
 import PasswordChangeForm from '@/components/Settings/PasswordChangeForm';
-import InviteUserForm from '@/components/Settings/InviteUserForm';
 import { useHybridAuth } from '@/hooks/useHybridAuth';
 
 const Settings: React.FC = () => {
@@ -27,13 +26,6 @@ const Settings: React.FC = () => {
           </div>
           <PasswordChangeForm />
         </div>
-
-        {(user?.role === 'super_admin' || user?.role === 'state_admin' || user?.role === 'branch_admin') && (
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">用户管理</h2>
-            <InviteUserForm />
-          </div>
-        )}
       </div>
     </div>
   );

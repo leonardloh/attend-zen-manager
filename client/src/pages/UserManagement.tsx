@@ -49,10 +49,8 @@ const UserManagement = () => {
 
     setIsSearching(true);
     try {
-      // Get user by email from auth.users table
-      const { data, error } = await supabase.rpc('get_user_by_email', {
-        search_email: searchEmail.trim().toLowerCase()
-      });
+      // Use admin API to list users and filter by email
+      const { data: { users }, error } = await supabase.auth.admin.listUsers();
 
       if (error) {
         console.error('Search error:', error);
@@ -64,7 +62,10 @@ const UserManagement = () => {
         return;
       }
 
-      if (!data || data.length === 0) {
+      // Find user by email
+      const foundUserData = users.find(u => u.email?.toLowerCase() === searchEmail.trim().toLowerCase());
+
+      if (!foundUserData) {
         toast({
           title: '未找到用户',
           description: 'No user found with this email address',
@@ -75,7 +76,13 @@ const UserManagement = () => {
         return;
       }
 
-      const userData = data[0];
+      const userData: UserData = {
+        id: foundUserData.id,
+        email: foundUserData.email || '',
+        role: foundUserData.user_metadata?.role || 'student',
+        user_metadata: foundUserData.user_metadata
+      };
+
       setFoundUser(userData);
       setSelectedRole(userData.role || 'student');
       
@@ -107,11 +114,16 @@ const UserManagement = () => {
 
     setIsUpdating(true);
     try {
-      // Update user metadata with new role
-      const { error } = await supabase.rpc('update_user_role', {
-        user_id: foundUser.id,
-        new_role: selectedRole
-      });
+      // Update user metadata with new role using admin API
+      const { error } = await supabase.auth.admin.updateUserById(
+        foundUser.id,
+        {
+          user_metadata: {
+            ...foundUser.user_metadata,
+            role: selectedRole
+          }
+        }
+      );
 
       if (error) {
         console.error('Update error:', error);
