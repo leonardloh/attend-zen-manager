@@ -63,10 +63,13 @@ const LoginForm: React.FC = () => {
 
   const handleGoogleSignIn = async () => {
     try {
+      const replitDomain = import.meta.env.VITE_REPLIT_DOMAINS;
+      const origin = replitDomain ? `https://${replitDomain}` : window.location.origin;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${origin}/auth/callback`,
         },
       });
 
