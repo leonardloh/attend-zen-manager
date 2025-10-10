@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
@@ -329,11 +330,11 @@ const CompleteProfile = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="emergency_contact_number">紧急联系电话 / Emergency Contact Number</Label>
-                <Input
-                  id="emergency_contact_number"
+                <PhoneInput
+                  defaultCountry="MY"
                   value={formData.emergency_contact_number}
-                  onChange={(e) => handleChange('emergency_contact_number', e.target.value)}
-                  placeholder="例如: +60123456789"
+                  onChange={(value) => handleChange('emergency_contact_number', value || '')}
+                  placeholder="Enter phone number"
                   data-testid="input-emergency-contact-number"
                 />
               </div>

@@ -110,6 +110,13 @@ The system now supports Google Sign-In using Supabase OAuth:
 - **Direct Creation**: Removed from Settings (UserRoleManagerCard)
 
 ## Recent Changes
+- **2025-10-10**: Enhanced Profile Form
+  - Added Malaysian states dropdown to CompleteProfile form (玻璃市, 吉打, 槟城, etc.)
+  - Implemented PhoneInput component with country code selection (defaulting to Malaysia)
+  - Fixed OAuth redirect URL to use Replit domain instead of localhost
+  - Added VITE_REPLIT_DOMAINS environment variable for proper OAuth callbacks
+  - Updated emergency contact number field to use PhoneInput with international formatting
+
 - **2025-10-09**: Google SSO Implementation
   - Added Google OAuth sign-in to login page
   - Implemented auth callback handler for OAuth redirects
