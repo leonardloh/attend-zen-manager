@@ -247,7 +247,10 @@ CREATE POLICY "Other users read-only access"
 ON "public"."main_branches"
 FOR SELECT
 TO authenticated
-USING (true);
+USING (
+  -- Exclude admin roles - they use their own restrictive policies
+  get_user_role() NOT IN ('super_admin', 'state_admin', 'branch_admin', 'classroom_admin', 'class_admin')
+);
 
 -- ==================================================
 -- SUB BRANCHES POLICIES
@@ -278,7 +281,10 @@ CREATE POLICY "Other users read-only access"
 ON "public"."sub_branches"
 FOR SELECT
 TO authenticated
-USING (true);
+USING (
+  -- Exclude admin roles - they use their own restrictive policies
+  get_user_role() NOT IN ('super_admin', 'state_admin', 'branch_admin', 'classroom_admin', 'class_admin')
+);
 
 -- ==================================================
 -- CLASSROOMS POLICIES
@@ -316,7 +322,10 @@ CREATE POLICY "Other users read-only access"
 ON "public"."classrooms"
 FOR SELECT
 TO authenticated
-USING (true);
+USING (
+  -- Exclude admin roles - they use their own restrictive policies
+  get_user_role() NOT IN ('super_admin', 'state_admin', 'branch_admin', 'classroom_admin', 'class_admin')
+);
 
 -- ==================================================
 -- CLASSES POLICIES
