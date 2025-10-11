@@ -110,6 +110,15 @@ The system now supports Google Sign-In using Supabase OAuth:
 - **Direct Creation**: Removed from Settings (UserRoleManagerCard)
 
 ## Recent Changes
+- **2025-10-11**: RLS Policy Fix - State Admin Visibility
+  - **Fixed critical bug**: State admins were seeing ALL main branches instead of only their assigned one
+  - **Root cause**: Conflicting RLS policies - permissive "Other users read-only access" policy (USING true) was overriding restrictive state_admin policy
+  - **Solution**: Excluded admin roles (super_admin, state_admin, branch_admin, classroom_admin, class_admin) from "Other users" policies
+  - **Impact**: State admins now correctly see only their assigned main_branch and related data
+  - **Files updated**: comprehensive_rls_policies.sql (fixed policies for main_branches, sub_branches, classrooms)
+  - **Deployment**: Run enable_rls_with_fixed_policies.sql then comprehensive_rls_policies.sql in Supabase SQL Editor
+  - **Testing**: Verified with lohleonard93@gmail.com (state_admin for 北马总院) - should only see 北马总院, not all branches
+
 - **2025-10-11**: Performance Optimization
   - **Fixed slow login page load**: Moved DatabaseProvider to only wrap protected routes
   - Previously, all database queries (students, classes, branches, etc.) ran on every page load
