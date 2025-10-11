@@ -8,6 +8,11 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Search, UserCog, Loader2 } from 'lucide-react';
 import { useHybridAuth } from '@/hooks/useHybridAuth';
+import MainBranchSearchInput from '@/components/Branches/MainBranchSearchInput';
+import SubBranchSearchInput from '@/components/Classes/SubBranchSearchInput';
+import ClassroomNameSearchInput from '@/components/Classrooms/ClassroomNameSearchInput';
+import ClassSearchInput from '@/components/Classes/ClassSearchInput';
+import { useDatabase } from '@/contexts/DatabaseContext';
 
 interface UserData {
   id: string;
@@ -23,17 +28,26 @@ interface UserData {
 const UserManagement = () => {
   const { user } = useHybridAuth();
   const { toast } = useToast();
+  const { classrooms } = useDatabase();
   const [searchEmail, setSearchEmail] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [foundUser, setFoundUser] = useState<UserData | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('');
+  
+  // Scope selection states
+  const [selectedMainBranch, setSelectedMainBranch] = useState<string>('');
+  const [selectedSubBranch, setSelectedSubBranch] = useState<string>('');
+  const [selectedClassroom, setSelectedClassroom] = useState<string>('');
+  const [selectedClassroomId, setSelectedClassroomId] = useState<string>('');
+  const [selectedClass, setSelectedClass] = useState<string>('');
 
   const roleOptions = [
     { value: 'student', label: 'Student / 学员' },
     { value: 'class_admin', label: 'Class Admin / 班级管理员' },
-    { value: 'branch_admin', label: 'Branch Admin / 分行管理员' },
-    { value: 'state_admin', label: 'State Admin / 州管理员' },
+    { value: 'classroom_admin', label: 'Classroom Admin / 教室管理员' },
+    { value: 'branch_admin', label: 'Branch Admin / 分院管理员' },
+    { value: 'state_admin', label: 'State Admin / 州属分院管理员' },
     { value: 'super_admin', label: 'Super Admin / 超级管理员' },
   ];
 
@@ -117,12 +131,67 @@ const UserManagement = () => {
       return;
     }
 
+    // Validate scope is selected for admin roles (except super_admin and student)
+    if (selectedRole === 'state_admin' && !selectedMainBranch) {
+      toast({
+        title: '请选择州属分院',
+        description: 'Please select a main branch for state admin',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (selectedRole === 'branch_admin' && !selectedSubBranch) {
+      toast({
+        title: '请选择分院',
+        description: 'Please select a sub branch for branch admin',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (selectedRole === 'classroom_admin' && !selectedClassroomId) {
+      toast({
+        title: '请选择教室',
+        description: 'Please select a classroom for classroom admin',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (selectedRole === 'class_admin' && !selectedClass) {
+      toast({
+        title: '请选择班级',
+        description: 'Please select a class for class admin',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsUpdating(true);
     try {
       // Get auth token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         throw new Error('Not authenticated');
+      }
+
+      // Prepare scope data based on role
+      let scopeType: string | undefined;
+      let scopeId: string | number | undefined;
+      
+      if (selectedRole === 'state_admin') {
+        scopeType = 'main_branch';
+        scopeId = selectedMainBranch;
+      } else if (selectedRole === 'branch_admin') {
+        scopeType = 'sub_branch';
+        scopeId = selectedSubBranch;
+      } else if (selectedRole === 'classroom_admin') {
+        scopeType = 'classroom';
+        scopeId = selectedClassroomId;
+      } else if (selectedRole === 'class_admin') {
+        scopeType = 'class';
+        scopeId = selectedClass;
       }
 
       // Call backend API to update user role
@@ -134,7 +203,9 @@ const UserManagement = () => {
         },
         body: JSON.stringify({
           userId: foundUser.id,
-          role: selectedRole
+          role: selectedRole,
+          scopeType,
+          scopeId
         }),
       });
 
@@ -148,6 +219,13 @@ const UserManagement = () => {
         title: '角色已更新',
         description: `User role has been updated to ${selectedRole}`,
       });
+
+      // Clear scope selections
+      setSelectedMainBranch('');
+      setSelectedSubBranch('');
+      setSelectedClassroom('');
+      setSelectedClassroomId('');
+      setSelectedClass('');
 
       // Refresh user data
       handleSearch();
@@ -288,7 +366,15 @@ const UserManagement = () => {
                   <Label htmlFor="role">分配新角色 / Assign New Role</Label>
                   <Select
                     value={selectedRole}
-                    onValueChange={setSelectedRole}
+                    onValueChange={(value) => {
+                      setSelectedRole(value);
+                      // Clear scope selections when role changes
+                      setSelectedMainBranch('');
+                      setSelectedSubBranch('');
+                      setSelectedClassroom('');
+                      setSelectedClassroomId('');
+                      setSelectedClass('');
+                    }}
                   >
                     <SelectTrigger id="role" data-testid="select-user-role">
                       <SelectValue placeholder="选择角色 / Select Role" />
@@ -302,6 +388,59 @@ const UserManagement = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Conditional Scope Selection */}
+                {selectedRole === 'state_admin' && (
+                  <div className="space-y-2">
+                    <Label>选择州属分院 / Select Main Branch</Label>
+                    <MainBranchSearchInput
+                      value={selectedMainBranch}
+                      onChange={setSelectedMainBranch}
+                      placeholder="搜索州属分院..."
+                      className="w-full"
+                    />
+                  </div>
+                )}
+
+                {selectedRole === 'branch_admin' && (
+                  <div className="space-y-2">
+                    <Label>选择分院 / Select Sub Branch</Label>
+                    <SubBranchSearchInput
+                      value={selectedSubBranch}
+                      onChange={(id) => setSelectedSubBranch(id)}
+                      placeholder="搜索分院..."
+                      className="w-full"
+                    />
+                  </div>
+                )}
+
+                {selectedRole === 'classroom_admin' && (
+                  <div className="space-y-2">
+                    <Label>选择教室 / Select Classroom</Label>
+                    <ClassroomNameSearchInput
+                      value={selectedClassroom}
+                      onChange={(name, data) => {
+                        setSelectedClassroom(name);
+                        setSelectedClassroomId(data?.id || '');
+                      }}
+                      placeholder="搜索教室..."
+                      classrooms={classrooms}
+                      className="w-full"
+                    />
+                  </div>
+                )}
+
+                {selectedRole === 'class_admin' && (
+                  <div className="space-y-2">
+                    <Label>选择班级 / Select Class</Label>
+                    <ClassSearchInput
+                      value={selectedClass}
+                      onChange={setSelectedClass}
+                      placeholder="搜索班级..."
+                      className="w-full"
+                    />
+                  </div>
+                )}
 
                 <Button 
                   onClick={handleUpdateRole} 

@@ -139,6 +139,8 @@ export const createUserManagementHandler = ({
       type Payload = {
         userId: string;
         role: string;
+        scopeType?: string;
+        scopeId?: string | number;
       };
 
       let payload: Payload;
@@ -148,15 +150,113 @@ export const createUserManagementHandler = ({
         return buildResponse(400, { error: 'invalid_json' }, cors);
       }
 
-      const { userId, role } = payload;
+      const { userId, role, scopeType, scopeId } = payload;
       if (!userId || !role) {
         return buildResponse(400, { error: 'missing_required_fields' }, cors);
       }
 
       // Validate role
-      const validRoles = ['student', 'class_admin', 'branch_admin', 'state_admin', 'super_admin'];
+      const validRoles = ['student', 'class_admin', 'classroom_admin', 'branch_admin', 'state_admin', 'super_admin'];
       if (!validRoles.includes(role)) {
         return buildResponse(400, { error: 'invalid_role' }, cors);
+      }
+
+      // Validate scope is provided for admin roles (except super_admin and student)
+      const requiresScope = ['state_admin', 'branch_admin', 'classroom_admin', 'class_admin'];
+      if (requiresScope.includes(role) && (!scopeType || scopeId === undefined)) {
+        return buildResponse(400, { error: 'scope_required_for_admin_role' }, cors);
+      }
+
+      // Validate that requester can assign the requested scope (hierarchical validation)
+      const requesterScopeId = authUser.user.user_metadata?.scope_id || authUser.user.app_metadata?.scope_id;
+      // Normalize scope IDs to numbers for comparison
+      const normalizedRequesterScopeId = requesterScopeId ? Number(requesterScopeId) : null;
+      const normalizedScopeId = scopeId ? Number(scopeId) : null;
+
+      if (requesterRole === 'state_admin' && scopeType && normalizedScopeId) {
+        // State admin can only assign scopes under their main_branch
+        if (scopeType === 'sub_branch') {
+          // Verify the sub_branch belongs to their main_branch
+          const { data: subBranch } = await supabaseAdmin
+            .from('sub_branches')
+            .select('main_branch_id')
+            .eq('id', normalizedScopeId)
+            .single();
+          
+          if (!subBranch || subBranch.main_branch_id !== normalizedRequesterScopeId) {
+            return buildResponse(403, { error: 'cannot_assign_scope_outside_hierarchy' }, cors);
+          }
+        } else if (scopeType === 'classroom') {
+          // Verify the classroom belongs to a sub_branch under their main_branch
+          const { data: classroom } = await supabaseAdmin
+            .from('classrooms')
+            .select('sub_branch_id')
+            .eq('id', normalizedScopeId)
+            .single();
+          
+          if (!classroom) {
+            return buildResponse(403, { error: 'classroom_not_found' }, cors);
+          }
+
+          // Check if the sub_branch belongs to their main_branch
+          const { data: subBranch } = await supabaseAdmin
+            .from('sub_branches')
+            .select('main_branch_id')
+            .eq('id', classroom.sub_branch_id)
+            .single();
+          
+          if (!subBranch || subBranch.main_branch_id !== normalizedRequesterScopeId) {
+            return buildResponse(403, { error: 'cannot_assign_scope_outside_hierarchy' }, cors);
+          }
+        } else if (scopeType === 'class') {
+          // Verify the class belongs to their main_branch (through sub_branch or classroom)
+          const { data: classData } = await supabaseAdmin
+            .from('classes')
+            .select('manage_by_sub_branch_id, manage_by_classroom_id')
+            .eq('id', normalizedScopeId)
+            .single();
+          
+          if (!classData) {
+            return buildResponse(403, { error: 'class_not_found' }, cors);
+          }
+
+          let mainBranchId = null;
+
+          // Check via sub_branch
+          if (classData.manage_by_sub_branch_id) {
+            const { data: subBranch } = await supabaseAdmin
+              .from('sub_branches')
+              .select('main_branch_id')
+              .eq('id', classData.manage_by_sub_branch_id)
+              .single();
+            mainBranchId = subBranch?.main_branch_id;
+          }
+
+          // Check via classroom
+          if (!mainBranchId && classData.manage_by_classroom_id) {
+            const { data: classroom } = await supabaseAdmin
+              .from('classrooms')
+              .select('sub_branch_id')
+              .eq('id', classData.manage_by_classroom_id)
+              .single();
+            
+            if (classroom?.sub_branch_id) {
+              const { data: subBranch } = await supabaseAdmin
+                .from('sub_branches')
+                .select('main_branch_id')
+                .eq('id', classroom.sub_branch_id)
+                .single();
+              mainBranchId = subBranch?.main_branch_id;
+            }
+          }
+          
+          if (!mainBranchId || mainBranchId !== normalizedRequesterScopeId) {
+            return buildResponse(403, { error: 'cannot_assign_scope_outside_hierarchy' }, cors);
+          }
+        } else if (scopeType === 'main_branch' && normalizedScopeId !== normalizedRequesterScopeId) {
+          // State admin can only assign their own main_branch
+          return buildResponse(403, { error: 'cannot_assign_scope_outside_hierarchy' }, cors);
+        }
       }
 
       // Get current user to preserve other metadata
@@ -165,15 +265,30 @@ export const createUserManagementHandler = ({
         return buildResponse(404, { error: 'user_not_found' }, cors);
       }
 
+      // Prepare metadata updates
+      const metadataUpdate: Record<string, any> = {
+        role: role
+      };
+
+      // Add scope information if provided
+      if (scopeType && scopeId !== undefined) {
+        metadataUpdate.scope_type = scopeType;
+        metadataUpdate.scope_id = scopeId;
+      } else {
+        // Clear scope if not an admin role
+        metadataUpdate.scope_type = null;
+        metadataUpdate.scope_id = null;
+      }
+
       // Update user role in both user_metadata and app_metadata
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
         user_metadata: {
           ...currentUser.user.user_metadata,
-          role: role
+          ...metadataUpdate
         },
         app_metadata: {
           ...currentUser.user.app_metadata,
-          role: role
+          ...metadataUpdate
         }
       });
 
