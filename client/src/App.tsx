@@ -42,7 +42,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <LoginForm />;
   }
   
-  return <MainLayout>{children}</MainLayout>;
+  return (
+    <DatabaseProvider>
+      <MainLayout>{children}</MainLayout>
+    </DatabaseProvider>
+  );
 };
 
 const AppRoutes: React.FC = () => {
@@ -165,11 +169,9 @@ const App = () => (
       <AuthProvider>
         <SupabaseAuthProvider>
           <HybridAuthProvider>
-            <DatabaseProvider>
-              <BrowserRouter>
-                <AppRoutes />
-              </BrowserRouter>
-            </DatabaseProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
           </HybridAuthProvider>
         </SupabaseAuthProvider>
       </AuthProvider>

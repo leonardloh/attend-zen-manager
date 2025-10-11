@@ -110,6 +110,12 @@ The system now supports Google Sign-In using Supabase OAuth:
 - **Direct Creation**: Removed from Settings (UserRoleManagerCard)
 
 ## Recent Changes
+- **2025-10-11**: Performance Optimization
+  - **Fixed slow login page load**: Moved DatabaseProvider to only wrap protected routes
+  - Previously, all database queries (students, classes, branches, etc.) ran on every page load
+  - Now, database data only loads after successful authentication
+  - Significantly improved initial page load speed and login page responsiveness
+
 - **2025-10-11**: Hierarchical Role-Based Access Control (RBAC) Implementation
   - **Added classroom_admin role**: New role for classroom-level administration
   - **UI Enhancements (UserManagement.tsx)**:
