@@ -1,5 +1,6 @@
 -- Comprehensive RLS Policies for Hierarchical Role-Based Access Control
 -- This file implements the complete access control system for all admin levels
+-- Updated to match actual database schema where main_branches.manage_sub_branches is an ARRAY
 
 -- ==================================================
 -- HELPER FUNCTIONS
@@ -58,6 +59,17 @@ AS $$
   SELECT get_user_role() = 'super_admin';
 $$;
 
+-- Function to get main_branch_id from sub_branch_id (handles array relationship)
+CREATE OR REPLACE FUNCTION get_main_branch_from_sub_branch(sub_branch_id bigint)
+RETURNS bigint
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT id FROM main_branches
+  WHERE sub_branch_id = ANY(manage_sub_branches);
+$$;
+
 -- Function to check if user can access a specific main_branch
 CREATE OR REPLACE FUNCTION can_access_main_branch(main_branch_id bigint)
 RETURNS boolean
@@ -82,8 +94,8 @@ AS $$
     (get_user_role() = 'branch_admin' AND get_user_scope_type() = 'sub_branch' AND get_user_scope_id() = sub_branch_id) OR
     -- State admin can access all sub_branches under their main_branch
     (get_user_role() = 'state_admin' AND get_user_scope_type() = 'main_branch' AND EXISTS (
-      SELECT 1 FROM sub_branches 
-      WHERE id = sub_branch_id AND main_branch_id = get_user_scope_id()
+      SELECT 1 FROM main_branches 
+      WHERE id = get_user_scope_id() AND sub_branch_id = ANY(manage_sub_branches)
     ));
 $$;
 
@@ -105,8 +117,11 @@ AS $$
     -- State admin can access classrooms under their main_branch
     (get_user_role() = 'state_admin' AND get_user_scope_type() = 'main_branch' AND EXISTS (
       SELECT 1 FROM classrooms c
-      JOIN sub_branches sb ON c.sub_branch_id = sb.id
-      WHERE c.id = classroom_id AND sb.main_branch_id = get_user_scope_id()
+      WHERE c.id = classroom_id 
+        AND EXISTS (
+          SELECT 1 FROM main_branches mb
+          WHERE mb.id = get_user_scope_id() AND c.sub_branch_id = ANY(mb.manage_sub_branches)
+        )
     ));
 $$;
 
@@ -138,12 +153,19 @@ AS $$
     -- State admin can access classes under their main_branch
     (get_user_role() = 'state_admin' AND get_user_scope_type() = 'main_branch' AND EXISTS (
       SELECT 1 FROM classes c
-      LEFT JOIN sub_branches sb ON c.manage_by_sub_branch_id = sb.id
-      LEFT JOIN classrooms cr ON c.manage_by_classroom_id = cr.id
-      LEFT JOIN sub_branches sb2 ON cr.sub_branch_id = sb2.id
       WHERE c.id = class_id AND (
-        sb.main_branch_id = get_user_scope_id() OR
-        sb2.main_branch_id = get_user_scope_id()
+        -- Classes managed by sub_branch under their main_branch
+        EXISTS (
+          SELECT 1 FROM main_branches mb
+          WHERE mb.id = get_user_scope_id() AND c.manage_by_sub_branch_id = ANY(mb.manage_sub_branches)
+        )
+        OR
+        -- Classes managed by classroom under their main_branch
+        EXISTS (
+          SELECT 1 FROM classrooms cr
+          JOIN main_branches mb ON cr.sub_branch_id = ANY(mb.manage_sub_branches)
+          WHERE mb.id = get_user_scope_id() AND c.manage_by_classroom_id = cr.id
+        )
       )
     ));
 $$;
@@ -187,6 +209,7 @@ DROP POLICY IF EXISTS "Class admins can view their students" ON "public"."studen
 -- Class Enrollments
 DROP POLICY IF EXISTS "super admins full access" ON "public"."class_enrollments";
 DROP POLICY IF EXISTS "Admin access by hierarchy" ON "public"."class_enrollments";
+DROP POLICY IF EXISTS "Class admins can view enrollments" ON "public"."class_enrollments";
 
 -- Class Attendance
 DROP POLICY IF EXISTS "super admins full access" ON "public"."class_attendance";
@@ -196,6 +219,11 @@ DROP POLICY IF EXISTS "Class admins can manage attendance" ON "public"."class_at
 -- Class Cadres
 DROP POLICY IF EXISTS "super admins full access" ON "public"."class_cadres";
 DROP POLICY IF EXISTS "Admin access by hierarchy" ON "public"."class_cadres";
+DROP POLICY IF EXISTS "Class admins can view cadres" ON "public"."class_cadres";
+
+-- User Roles
+DROP POLICY IF EXISTS "super admins full access" ON "public"."user_roles";
+DROP POLICY IF EXISTS "Admins can view roles in their hierarchy" ON "public"."user_roles";
 
 -- ==================================================
 -- MAIN BRANCHES POLICIES
@@ -347,12 +375,19 @@ USING (
   get_user_role() = 'state_admin' AND get_user_scope_type() = 'main_branch' AND EXISTS (
     SELECT 1 FROM class_enrollments ce
     JOIN classes c ON ce.class_id = c.id
-    LEFT JOIN sub_branches sb ON c.manage_by_sub_branch_id = sb.id
-    LEFT JOIN classrooms cr ON c.manage_by_classroom_id = cr.id
-    LEFT JOIN sub_branches sb2 ON cr.sub_branch_id = sb2.id
     WHERE ce.student_id = students.id AND (
-      sb.main_branch_id = get_user_scope_id() OR
-      sb2.main_branch_id = get_user_scope_id()
+      -- Students in classes managed by sub_branches under their main_branch
+      EXISTS (
+        SELECT 1 FROM main_branches mb
+        WHERE mb.id = get_user_scope_id() AND c.manage_by_sub_branch_id = ANY(mb.manage_sub_branches)
+      )
+      OR
+      -- Students in classes managed by classrooms under their main_branch
+      EXISTS (
+        SELECT 1 FROM classrooms cr
+        JOIN main_branches mb ON cr.sub_branch_id = ANY(mb.manage_sub_branches)
+        WHERE mb.id = get_user_scope_id() AND c.manage_by_classroom_id = cr.id
+      )
     )
   )
 )
@@ -360,12 +395,17 @@ WITH CHECK (
   get_user_role() = 'state_admin' AND get_user_scope_type() = 'main_branch' AND EXISTS (
     SELECT 1 FROM class_enrollments ce
     JOIN classes c ON ce.class_id = c.id
-    LEFT JOIN sub_branches sb ON c.manage_by_sub_branch_id = sb.id
-    LEFT JOIN classrooms cr ON c.manage_by_classroom_id = cr.id
-    LEFT JOIN sub_branches sb2 ON cr.sub_branch_id = sb2.id
     WHERE ce.student_id = students.id AND (
-      sb.main_branch_id = get_user_scope_id() OR
-      sb2.main_branch_id = get_user_scope_id()
+      EXISTS (
+        SELECT 1 FROM main_branches mb
+        WHERE mb.id = get_user_scope_id() AND c.manage_by_sub_branch_id = ANY(mb.manage_sub_branches)
+      )
+      OR
+      EXISTS (
+        SELECT 1 FROM classrooms cr
+        JOIN main_branches mb ON cr.sub_branch_id = ANY(mb.manage_sub_branches)
+        WHERE mb.id = get_user_scope_id() AND c.manage_by_classroom_id = cr.id
+      )
     )
   )
 );
@@ -453,7 +493,6 @@ WITH CHECK (
   get_user_role() IN ('state_admin', 'branch_admin', 'classroom_admin')
 );
 
--- Class admins can only view enrollments, not modify
 CREATE POLICY "Class admins can view enrollments"
 ON "public"."class_enrollments"
 FOR SELECT
@@ -478,7 +517,6 @@ TO authenticated
 USING (can_access_class(class_id))
 WITH CHECK (can_access_class(class_id));
 
--- Class admins can manage attendance for their class
 CREATE POLICY "Class admins can manage attendance"
 ON "public"."class_attendance"
 FOR ALL
@@ -512,7 +550,6 @@ TO authenticated
 USING (can_access_class(class_id))
 WITH CHECK (can_access_class(class_id));
 
--- Class admins can view cadres
 CREATE POLICY "Class admins can view cadres"
 ON "public"."class_cadres"
 FOR SELECT
@@ -520,7 +557,68 @@ TO authenticated
 USING (can_access_class(class_id));
 
 -- ==================================================
+-- USER ROLES POLICIES
+-- ==================================================
+
+CREATE POLICY "super admins full access"
+ON "public"."user_roles"
+FOR ALL
+TO authenticated
+USING (is_super_admin())
+WITH CHECK (is_super_admin());
+
+CREATE POLICY "Admins can view roles in their hierarchy"
+ON "public"."user_roles"
+FOR SELECT
+TO authenticated
+USING (
+  -- State admins can view roles for scopes within their main_branch
+  (get_user_role() = 'state_admin' AND get_user_scope_type() = 'main_branch' AND (
+    (scope_type = 'main_branch' AND scope_id = get_user_scope_id()) OR
+    (scope_type = 'sub_branch' AND EXISTS (
+      SELECT 1 FROM main_branches mb
+      WHERE mb.id = get_user_scope_id() AND scope_id = ANY(mb.manage_sub_branches)
+    )) OR
+    (scope_type = 'classroom' AND EXISTS (
+      SELECT 1 FROM classrooms cr
+      JOIN main_branches mb ON cr.sub_branch_id = ANY(mb.manage_sub_branches)
+      WHERE mb.id = get_user_scope_id() AND cr.id = scope_id
+    )) OR
+    (scope_type = 'class' AND EXISTS (
+      SELECT 1 FROM classes c
+      WHERE c.id = scope_id AND (
+        EXISTS (
+          SELECT 1 FROM main_branches mb
+          WHERE mb.id = get_user_scope_id() AND c.manage_by_sub_branch_id = ANY(mb.manage_sub_branches)
+        )
+        OR
+        EXISTS (
+          SELECT 1 FROM classrooms cr
+          JOIN main_branches mb ON cr.sub_branch_id = ANY(mb.manage_sub_branches)
+          WHERE mb.id = get_user_scope_id() AND c.manage_by_classroom_id = cr.id
+        )
+      )
+    ))
+  )) OR
+  -- Branch admins can view roles within their sub_branch
+  (get_user_role() = 'branch_admin' AND get_user_scope_type() = 'sub_branch' AND (
+    (scope_type = 'sub_branch' AND scope_id = get_user_scope_id()) OR
+    (scope_type = 'classroom' AND EXISTS (
+      SELECT 1 FROM classrooms WHERE id = scope_id AND sub_branch_id = get_user_scope_id()
+    )) OR
+    (scope_type = 'class' AND EXISTS (
+      SELECT 1 FROM classes c
+      WHERE c.id = scope_id AND (
+        c.manage_by_sub_branch_id = get_user_scope_id() OR
+        c.manage_by_classroom_id IN (SELECT id FROM classrooms WHERE sub_branch_id = get_user_scope_id())
+      )
+    ))
+  ))
+);
+
+-- ==================================================
 -- PROFILES POLICIES (unchanged - keep existing)
 -- ==================================================
 
 -- Profiles policies remain the same as they need special handling for user's own data
+-- These are typically managed by Supabase Auth and should already have appropriate policies
