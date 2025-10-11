@@ -110,6 +110,31 @@ The system now supports Google Sign-In using Supabase OAuth:
 - **Direct Creation**: Removed from Settings (UserRoleManagerCard)
 
 ## Recent Changes
+- **2025-10-11**: Hierarchical Role-Based Access Control (RBAC) Implementation
+  - **Added classroom_admin role**: New role for classroom-level administration
+  - **UI Enhancements (UserManagement.tsx)**:
+    - Conditional scope selection dropdowns based on admin role
+    - MainBranchSearchInput for state_admin role
+    - SubBranchSearchInput for branch_admin role
+    - ClassroomNameSearchInput for classroom_admin role
+    - ClassSearchInput for class_admin role
+    - Validation prevents role assignment without proper scope selection
+  - **Backend Security (server/userManagementHandler.ts)**:
+    - Hierarchical scope validation for state_admin requesters
+    - State admins can only assign scopes within their main_branch hierarchy
+    - Scope ID normalization to prevent type mismatch errors
+    - Returns 403 error when attempting to assign scopes outside hierarchy
+  - **Database RLS Policies (comprehensive_rls_policies.sql)**:
+    - Helper functions: get_user_role() and get_user_scope()
+    - Per-table policies enforcing hierarchical access:
+      - super_admin: Full access to all data
+      - state_admin: Access to data under their main_branch
+      - branch_admin: Access to data under their sub_branch
+      - classroom_admin: Access to data under their classroom
+      - class_admin: Read access + attendance management for their class
+    - Defense-in-depth: UI validation + backend validation + RLS policies
+  - **Security**: Multi-layer enforcement ensures admins cannot escalate privileges or access data outside their scope
+
 - **2025-10-10**: Secure User Management Implementation
   - Created secure backend API handler (server/userManagementHandler.ts) for user management
   - Moved all admin operations from client-side to server-side with service role key protection
