@@ -1,0 +1,135 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.class_attendance (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  class_id bigint,
+  attendance_date date,
+  learning_progress text,
+  lamrin_page bigint,
+  lamrin_line bigint,
+  student_id bigint,
+  attendance_status bigint,
+  CONSTRAINT class_attendance_pkey PRIMARY KEY (id),
+  CONSTRAINT class_attendance_class_id_fkey FOREIGN KEY (class_id) REFERENCES public.classes(id),
+  CONSTRAINT class_attendance_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.students(id)
+);
+CREATE TABLE public.class_cadres (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  class_id bigint NOT NULL,
+  student_id bigint NOT NULL,
+  role text NOT NULL CHECK (role = ANY (ARRAY['班长'::text, '副班长'::text, '关怀员'::text])),
+  CONSTRAINT class_cadres_pkey PRIMARY KEY (id),
+  CONSTRAINT class_cadres_class_id_fkey FOREIGN KEY (class_id) REFERENCES public.classes(id),
+  CONSTRAINT class_cadres_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.students(id)
+);
+CREATE TABLE public.class_enrollments (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp without time zone,
+  class_id bigint,
+  student_id bigint,
+  CONSTRAINT class_enrollments_pkey PRIMARY KEY (id),
+  CONSTRAINT class_enrollments_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.students(id)
+);
+CREATE TABLE public.classes (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp without time zone,
+  name text,
+  manage_by_sub_branch_id bigint,
+  day_of_week text,
+  class_start_time time without time zone,
+  class_end_time time without time zone,
+  category text,
+  level text,
+  manage_by_classroom_id bigint,
+  class_start_date date,
+  CONSTRAINT classes_pkey PRIMARY KEY (id),
+  CONSTRAINT classes_new_manage_by_sub_branch_id_fkey FOREIGN KEY (manage_by_sub_branch_id) REFERENCES public.sub_branches(id),
+  CONSTRAINT classes_manage_by_classroom_id_fkey FOREIGN KEY (manage_by_classroom_id) REFERENCES public.classrooms(id)
+);
+CREATE TABLE public.classrooms (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  name text NOT NULL UNIQUE,
+  state text,
+  address text,
+  person_in_charge bigint,
+  sub_branch_id bigint NOT NULL,
+  CONSTRAINT classrooms_pkey PRIMARY KEY (id),
+  CONSTRAINT classrooms_person_in_charge_fkey FOREIGN KEY (person_in_charge) REFERENCES public.students(id),
+  CONSTRAINT classrooms_sub_branch_id_fkey FOREIGN KEY (sub_branch_id) REFERENCES public.sub_branches(id)
+);
+CREATE TABLE public.main_branches (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  name text,
+  sub_branch_responsible bigint,
+  person_in_charge bigint,
+  manage_sub_branches ARRAY,
+  CONSTRAINT main_branches_pkey PRIMARY KEY (id),
+  CONSTRAINT main_branches_person_in_charge_fkey FOREIGN KEY (person_in_charge) REFERENCES public.students(id),
+  CONSTRAINT main_branches_sub_branch_responsible_fkey FOREIGN KEY (sub_branch_responsible) REFERENCES public.sub_branches(id)
+);
+CREATE TABLE public.profiles (
+  id uuid NOT NULL,
+  student_db_id bigint UNIQUE,
+  phone text,
+  state_admin_of bigint,
+  branch_admin_of bigint,
+  class_admin_of bigint,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id),
+  CONSTRAINT profiles_student_db_id_fkey FOREIGN KEY (student_db_id) REFERENCES public.students(id),
+  CONSTRAINT profiles_state_admin_of_fkey FOREIGN KEY (state_admin_of) REFERENCES public.main_branches(id),
+  CONSTRAINT profiles_branch_admin_of_fkey FOREIGN KEY (branch_admin_of) REFERENCES public.sub_branches(id),
+  CONSTRAINT profiles_class_admin_of_fkey FOREIGN KEY (class_admin_of) REFERENCES public.classes(id)
+);
+CREATE TABLE public.students (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
+  student_id text NOT NULL UNIQUE,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  chinese_name text,
+  english_name text,
+  gender text,
+  date_of_joining date,
+  status text,
+  email text,
+  postcode text,
+  emergency_contact_name text,
+  emergency_contact_number text,
+  emergency_contact_relationship text,
+  profession text,
+  education_level text,
+  maritial_status text,
+  state text,
+  year_of_birth integer,
+  personal_contact_number text UNIQUE,
+  CONSTRAINT students_pkey PRIMARY KEY (id, student_id)
+);
+CREATE TABLE public.sub_branches (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  name text,
+  state text,
+  address text,
+  person_in_charge bigint,
+  CONSTRAINT sub_branches_pkey PRIMARY KEY (id),
+  CONSTRAINT sub_branches_person_in_charge_fkey FOREIGN KEY (person_in_charge) REFERENCES public.students(id)
+);
+CREATE TABLE public.user_roles (
+  id bigint NOT NULL DEFAULT nextval('user_roles_id_seq'::regclass),
+  user_id uuid NOT NULL,
+  role USER-DEFINED NOT NULL,
+  scope_type text,
+  scope_id bigint,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  created_by uuid,
+  CONSTRAINT user_roles_pkey PRIMARY KEY (id),
+  CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT user_roles_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+);
