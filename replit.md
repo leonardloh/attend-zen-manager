@@ -110,22 +110,24 @@ The system now supports Google Sign-In using Supabase OAuth:
 - **Direct Creation**: Removed from Settings (UserRoleManagerCard)
 
 ## Recent Changes
-- **2025-10-17**: Session Persistence & Infinite Loading Fix
+- **2025-10-17**: Session Persistence & Instant Admin Login Fix
   - **Fixed critical bug**: Users experienced infinite loading when switching browser tabs or logging in
   - **Root causes identified**:
     1. Frontend Supabase client was using service role key instead of anon key, preventing session persistence
-    2. Database query for student data was hanging indefinitely due to RLS policy restrictions
+    2. Database query for student data was hanging indefinitely due to RLS policy restrictions blocking admin user's own student lookup
   - **Solutions implemented**: 
     - Configured frontend to always use anon key with explicit session persistence (localStorage)
-    - Added 5-second timeout to student data fetch to prevent infinite hangs
-    - Fallback to user metadata if database fetch fails or times out
+    - **Admin optimization**: Skip database student lookup for admin users (super_admin, state_admin, branch_admin, classroom_admin, class_admin)
+    - Admin users now use metadata directly for instant authentication (no 5-second timeout)
+    - Regular students still fetch from database with 5-second timeout and metadata fallback
     - Configured React Query to prevent infinite retries on auth errors (max 2 retries, no refetch on window focus)
     - Smart error handling for expired/invalid tokens with automatic cleanup
   - **Impact**: 
     - Sessions now persist correctly across tab switches and page reloads
-    - Login completes within 5 seconds even if database queries are slow
+    - **Admin login is now instant** (no database query delay)
+    - Regular student login completes within 5 seconds even if database queries are slow
     - Users can authenticate and access the app even if student record lookup fails
-  - **Files updated**: client/src/lib/supabase.ts, client/src/hooks/useSupabaseAuth.tsx, client/src/App.tsx
+  - **Files updated**: client/src/lib/supabase.ts, client/src/hooks/useSupabaseAuth.tsx, client/src/App.tsx, client/src/lib/database/students.ts
   - **Note**: Users may need to sign in once after this update due to session storage changes
 
 - **2025-10-11**: RLS Policy Fix - State Admin Visibility

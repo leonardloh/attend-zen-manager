@@ -110,9 +110,23 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const metadataRole = (supabaseUser.app_metadata?.role || supabaseUser.user_metadata?.role) as User['role'] | undefined;
       const studentId = supabaseUser.user_metadata?.student_id;
       
+      // Skip database lookup for admin users (they don't need student records for admin interface)
+      if (metadataRole && metadataRole !== 'student') {
+        const adminRole: User['role'] = metadataRole;
+        setUser({
+          id: supabaseUser.id,
+          student_id: studentId || supabaseUser.email?.split('@')[0] || 'unknown',
+          chinese_name: supabaseUser.user_metadata?.chinese_name || '管理员',
+          english_name: supabaseUser.user_metadata?.english_name || 'Admin',
+          role: adminRole,
+          phone: supabaseUser.user_metadata?.phone,
+          email: supabaseUser.email,
+        });
+        return;
+      }
+      
       if (studentId) {
-        console.log('🔵 [loadUserData] Attempting to fetch student data for student_id:', studentId);
-        // Fetch student data from database with timeout to prevent infinite loading
+        // Only fetch student data for non-admin users
         let studentData: Awaited<ReturnType<typeof fetchStudentByStudentId>> | null = null;
         try {
           // Add 5-second timeout to prevent hanging on slow/failed queries
@@ -124,9 +138,8 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
           ]);
           
           studentData = await fetchWithTimeout;
-          console.log('🔵 [loadUserData] Student data fetch result:', studentData ? 'Found' : 'Not found');
         } catch (error) {
-          console.warn('⚠️ Failed to fetch student data, falling back to metadata', error);
+          console.warn('Failed to fetch student data, falling back to metadata', error);
         }
 
         if (studentData) {
