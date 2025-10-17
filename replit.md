@@ -110,6 +110,18 @@ The system now supports Google Sign-In using Supabase OAuth:
 - **Direct Creation**: Removed from Settings (UserRoleManagerCard)
 
 ## Recent Changes
+- **2025-10-17**: Session Persistence Fix - Infinite Loading Loop
+  - **Fixed critical bug**: Users were logged out when switching browser tabs
+  - **Root cause**: Frontend Supabase client was using service role key instead of anon key, preventing session persistence
+  - **Solution**: 
+    - Configured frontend to always use anon key (service role key only for backend)
+    - Added explicit session persistence configuration (localStorage)
+    - Enabled auto token refresh to prevent expiration
+    - Configured React Query to prevent infinite retries on auth errors
+  - **Impact**: Sessions now persist across tab switches and page reloads
+  - **Files updated**: client/src/lib/supabase.ts, client/src/hooks/useSupabaseAuth.tsx, client/src/App.tsx
+  - **Note**: Users may need to sign in again after this update due to session storage changes
+
 - **2025-10-11**: RLS Policy Fix - State Admin Visibility
   - **Fixed critical bug**: State admins were seeing ALL main branches instead of only their assigned one
   - **Root cause**: Conflicting RLS policies - permissive "Other users read-only access" policy (USING true) was overriding restrictive state_admin policy

@@ -40,10 +40,13 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // Get initial session
     supabase.auth.getSession()
       .then(({ data: { session }, error }) => {
-        // Handle auth errors (like refresh_token_not_found)
-        if (error) {
-          console.error('Supabase session error:', error);
-          // Clear invalid session
+        // Only handle specific auth-related errors
+        if (error && (
+          error.message?.includes('refresh_token') || 
+          error.message?.includes('invalid') ||
+          error.message?.includes('expired')
+        )) {
+          console.error('Invalid auth session, signing out:', error.message);
           supabase.auth.signOut().catch(console.error);
           setSupabaseUser(null);
           setUser(null);
@@ -60,18 +63,26 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       })
       .catch((error) => {
         console.error('Supabase getSession error:', error);
-        // Clear invalid session on any error
-        supabase.auth.signOut().catch(console.error);
         setSupabaseUser(null);
-        setUser(null);
         setIsLoading(false);
       });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Handle auth errors and sign out events
-        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
+        // Handle sign out events
+        if (event === 'SIGNED_OUT') {
+          setSupabaseUser(null);
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Handle token refresh failures
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          console.warn('Token refresh failed, no session');
           setSupabaseUser(null);
           setUser(null);
           setIsLoading(false);
