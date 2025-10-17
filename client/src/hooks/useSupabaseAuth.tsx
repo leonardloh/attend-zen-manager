@@ -39,7 +39,18 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession()
-      .then(({ data: { session } }) => {
+      .then(({ data: { session }, error }) => {
+        // Handle auth errors (like refresh_token_not_found)
+        if (error) {
+          console.error('Supabase session error:', error);
+          // Clear invalid session
+          supabase.auth.signOut().catch(console.error);
+          setSupabaseUser(null);
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        
         setSupabaseUser(session?.user ?? null);
         if (session?.user) {
           loadUserData(session.user);
@@ -49,13 +60,24 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       })
       .catch((error) => {
         console.error('Supabase getSession error:', error);
+        // Clear invalid session on any error
+        supabase.auth.signOut().catch(console.error);
         setSupabaseUser(null);
+        setUser(null);
         setIsLoading(false);
       });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        // Handle auth errors and sign out events
+        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+          setSupabaseUser(null);
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        
         setSupabaseUser(session?.user ?? null);
         
         if (session?.user) {

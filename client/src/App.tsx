@@ -25,7 +25,28 @@ import SetPassword from '@/pages/SetPassword';
 import AuthCallback from '@/pages/AuthCallback';
 import CompleteProfile from '@/pages/CompleteProfile';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error: any) => {
+        // Don't retry on auth errors (401, 403) or if error is an auth error
+        if (error?.status === 401 || error?.status === 403) {
+          return false;
+        }
+        // Don't retry on "refresh_token_not_found" errors
+        if (error?.code === 'refresh_token_not_found' || error?.message?.includes('refresh_token')) {
+          return false;
+        }
+        // Retry other errors up to 2 times
+        return failureCount < 2;
+      },
+      // Increase stale time to reduce unnecessary refetches
+      staleTime: 1000 * 60, // 1 minute
+      // Prevent refetch on window focus for tab switching
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useHybridAuth();
