@@ -1,0 +1,19 @@
+🟡 [ProtectedRoute] Render: {hasUser: true, userEmail: 'lohleonard93@gmail.com', isLoading: false, showingLoginForm: false, showingContent: true}
+App.tsx:76 🟡 [ProtectedRoute] User authenticated, loading DatabaseProvider
+DatabaseContext.tsx:221 🟣 [DatabaseProvider] Render: {authUser: 'lohleonard93@gmail.com', authLoading: false, queriesEnabled: true}
+DatabaseContext.tsx:233 🟣 [DatabaseProvider] Query states: {students: {…}, classes: {…}, mainBranches: {…}, subBranches: {…}}
+DatabaseContext.tsx:271 Successfully mapped 9 students from database
+DatabaseContext.tsx:287 🔧 DatabaseContext - Starting async mapping of classes: 2
+DatabaseContext.tsx:221 🟣 [DatabaseProvider] Render: {authUser: 'lohleonard93@gmail.com', authLoading: false, queriesEnabled: true}
+DatabaseContext.tsx:233 🟣 [DatabaseProvider] Query states: {students: {…}, classes: {…}, mainBranches: {…}, subBranches: {…}}
+classes.ts:101 🔧 mapDbClassToFrontend - Enrolled students: {enrolledStudents: Array(0), motherClassStudents: Array(0), studentCount: 0}
+classes.ts:112 🔧 mapDbClassToFrontend - Time formatting: {originalStartTime: '08:00:00', originalEndTime: '08:30:00', formattedStartTime: '08:00', formattedEndTime: '08:30', finalTimeString: '周二 08:00-08:30'}
+classes.ts:101 🔧 mapDbClassToFrontend - Enrolled students: {enrolledStudents: Array(4), motherClassStudents: Array(4), studentCount: 4}
+classes.ts:112 🔧 mapDbClassToFrontend - Time formatting: {originalStartTime: '20:00:00', originalEndTime: '20:30:00', formattedStartTime: '20:00', formattedEndTime: '20:30', finalTimeString: '周二 20:00-20:30'}
+DatabaseContext.tsx:291 🔧 DatabaseContext - Classes mapped successfully: 2
+DatabaseContext.tsx:221 🟣 [DatabaseProvider] Render: {authUser: 'lohleonard93@gmail.com', authLoading: false, queriesEnabled: true}
+DatabaseContext.tsx:233 🟣 [DatabaseProvider] Query states: {students: {…}, classes: {…}, mainBranches: {…}, subBranches: {…}}
+classes.ts:101 🔧 mapDbClassToFrontend - Enrolled students: {enrolledStudents: Array(0), motherClassStudents: Array(0), studentCount: 0}
+classes.ts:112 🔧 mapDbClassToFrontend - Time formatting: {originalStartTime: '08:00:00', originalEndTime: '08:30:00', formattedStartTime: '08:00', formattedEndTime: '08:30', finalTimeString: '周二 08:00-08:30'}
+classes.ts:101 🔧 mapDbClassToFrontend - Enrolled students: {enrolledStudents: Array(4), motherClassStudents: Array(4), studentCount: 4}
+classes.ts:112 🔧 mapDbClassToFrontend - Time formatting: {originalStartTime: '20:00:00', originalEndTime: '20:30:00', formattedStartTime: '20:00', formattedEndTime: '20:30', finalTimeString: '周二 20:00-20:30'}

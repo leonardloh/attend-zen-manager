@@ -37,26 +37,16 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log('🔵 [useSupabaseAuth] Initializing auth...');
-    
     // Get initial session
     supabase.auth.getSession()
       .then(({ data: { session }, error }) => {
-        console.log('🔵 [useSupabaseAuth] getSession result:', {
-          hasSession: !!session,
-          hasError: !!error,
-          userId: session?.user?.id,
-          email: session?.user?.email,
-          errorMessage: error?.message
-        });
-        
         // Only handle specific auth-related errors
         if (error && (
           error.message?.includes('refresh_token') || 
           error.message?.includes('invalid') ||
           error.message?.includes('expired')
         )) {
-          console.error('❌ [useSupabaseAuth] Invalid auth session, signing out:', error.message);
+          console.error('Invalid auth session, signing out:', error.message);
           supabase.auth.signOut().catch(console.error);
           setSupabaseUser(null);
           setUser(null);
@@ -66,15 +56,13 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         setSupabaseUser(session?.user ?? null);
         if (session?.user) {
-          console.log('🔵 [useSupabaseAuth] Loading user data for:', session.user.email);
           loadUserData(session.user);
         } else {
-          console.log('🔵 [useSupabaseAuth] No session, setting loading to false');
           setIsLoading(false);
         }
       })
       .catch((error) => {
-        console.error('❌ [useSupabaseAuth] getSession error:', error);
+        console.error('Supabase getSession error:', error);
         setSupabaseUser(null);
         setIsLoading(false);
       });
@@ -82,16 +70,8 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🟢 [useSupabaseAuth] Auth state changed:', {
-          event,
-          hasSession: !!session,
-          userId: session?.user?.id,
-          email: session?.user?.email
-        });
-        
         // Handle sign out events
         if (event === 'SIGNED_OUT') {
-          console.log('🔴 [useSupabaseAuth] User signed out');
           setSupabaseUser(null);
           setUser(null);
           setIsLoading(false);
@@ -100,7 +80,7 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         // Handle token refresh failures
         if (event === 'TOKEN_REFRESHED' && !session) {
-          console.warn('⚠️ [useSupabaseAuth] Token refresh failed, no session');
+          console.warn('Token refresh failed, no session');
           setSupabaseUser(null);
           setUser(null);
           setIsLoading(false);
@@ -110,10 +90,8 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setSupabaseUser(session?.user ?? null);
         
         if (session?.user) {
-          console.log('🔵 [useSupabaseAuth] Loading user data from auth change:', session.user.email);
           await loadUserData(session.user);
         } else {
-          console.log('🔵 [useSupabaseAuth] No session in auth change, setting user to null');
           setUser(null);
           setIsLoading(false);
         }
@@ -124,7 +102,6 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, []);
 
   const loadUserData = async (supabaseUser: SupabaseUser) => {
-    console.log('🔵 [loadUserData] START - Setting isLoading to true');
     try {
       setIsLoading(true);
       
@@ -133,15 +110,11 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const metadataRole = (supabaseUser.app_metadata?.role || supabaseUser.user_metadata?.role) as User['role'] | undefined;
       const studentId = supabaseUser.user_metadata?.student_id;
       
-      console.log('🔵 [loadUserData] Metadata:', { metadataRole, studentId });
-      
       if (studentId) {
-        // Fetch student data from database with timeout
+        // Fetch student data from database with timeout to prevent infinite loading
         let studentData: Awaited<ReturnType<typeof fetchStudentByStudentId>> | null = null;
         try {
-          console.log('🔵 [loadUserData] Fetching student data for:', studentId);
-          
-          // Add timeout to prevent hanging forever
+          // Add 5-second timeout to prevent hanging on slow/failed queries
           const fetchWithTimeout = Promise.race([
             fetchStudentByStudentId(studentId),
             new Promise<null>((_, reject) => 
@@ -150,14 +123,12 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
           ]);
           
           studentData = await fetchWithTimeout;
-          console.log('🔵 [loadUserData] Student data fetched:', !!studentData);
         } catch (error) {
-          console.warn('⚠️ [loadUserData] Failed to fetch student data, falling back to metadata', error);
+          console.warn('Failed to fetch student data, falling back to metadata', error);
         }
 
         if (studentData) {
           const derivedRole = getUserRole(studentData, metadataRole);
-          console.log('🔵 [loadUserData] Setting user with student data, role:', derivedRole);
 
           setUser({
             id: studentData.id.toString(),
@@ -170,7 +141,6 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
           });
         } else {
           const fallbackRole: User['role'] = getUserRole(null, metadataRole);
-          console.log('🔵 [loadUserData] Setting user with metadata fallback, role:', fallbackRole);
           setUser({
             id: supabaseUser.id,
             student_id: studentId,
@@ -183,7 +153,6 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       } else {
         // No student_id in metadata - new user from Google SSO, default to student role
         const fallbackRole: User['role'] = getUserRole(null, metadataRole);
-        console.log('🔵 [loadUserData] No student_id, setting admin user, role:', fallbackRole);
         setUser({
           id: supabaseUser.id,
           student_id: supabaseUser.email?.split('@')[0] || 'unknown',
@@ -193,12 +162,10 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
           email: supabaseUser.email,
         });
       }
-      console.log('🔵 [loadUserData] User set successfully');
     } catch (error) {
-      console.error('❌ [loadUserData] Error loading user data:', error);
+      console.error('Error loading user data:', error);
       setUser(null);
     } finally {
-      console.log('🔵 [loadUserData] FINALLY - Setting isLoading to false');
       setIsLoading(false);
     }
   };
