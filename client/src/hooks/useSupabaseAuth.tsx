@@ -111,6 +111,7 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const studentId = supabaseUser.user_metadata?.student_id;
       
       if (studentId) {
+        console.log('🔵 [loadUserData] Attempting to fetch student data for student_id:', studentId);
         // Fetch student data from database with timeout to prevent infinite loading
         let studentData: Awaited<ReturnType<typeof fetchStudentByStudentId>> | null = null;
         try {
@@ -123,8 +124,9 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
           ]);
           
           studentData = await fetchWithTimeout;
+          console.log('🔵 [loadUserData] Student data fetch result:', studentData ? 'Found' : 'Not found');
         } catch (error) {
-          console.warn('Failed to fetch student data, falling back to metadata', error);
+          console.warn('⚠️ Failed to fetch student data, falling back to metadata', error);
         }
 
         if (studentData) {
