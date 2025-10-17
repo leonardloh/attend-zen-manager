@@ -218,11 +218,24 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   const { user: authUser, isLoading: authLoading } = useHybridAuth();
   const queriesEnabled = !authLoading && !!authUser;
 
+  console.log('🟣 [DatabaseProvider] Render:', {
+    authUser: authUser?.email || 'none',
+    authLoading,
+    queriesEnabled
+  });
+
   // Database hooks
   const { data: dbStudents, isLoading: isLoadingStudents, error: studentsError } = useStudents({ enabled: queriesEnabled });
   const { data: dbClasses, isLoading: isLoadingClasses, error: classesError } = useClasses({ enabled: queriesEnabled });
   const { data: dbMainBranches, isLoading: isLoadingMainBranches, error: mainBranchesError } = useMainBranches({ enabled: queriesEnabled });
   const { data: dbSubBranches, isLoading: isLoadingSubBranches, error: subBranchesError } = useSubBranches({ enabled: queriesEnabled });
+
+  console.log('🟣 [DatabaseProvider] Query states:', {
+    students: { loading: isLoadingStudents, hasData: !!dbStudents, error: !!studentsError },
+    classes: { loading: isLoadingClasses, hasData: !!dbClasses, error: !!classesError },
+    mainBranches: { loading: isLoadingMainBranches, hasData: !!dbMainBranches, error: !!mainBranchesError },
+    subBranches: { loading: isLoadingSubBranches, hasData: !!dbSubBranches, error: !!subBranchesError }
+  });
   
   // Mutation hooks
   const createStudentMutation = useCreateStudent();

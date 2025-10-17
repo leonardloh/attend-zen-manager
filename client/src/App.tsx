@@ -51,7 +51,16 @@ const queryClient = new QueryClient({
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useHybridAuth();
   
+  console.log('🟡 [ProtectedRoute] Render:', {
+    hasUser: !!user,
+    userEmail: user?.email,
+    isLoading,
+    showingLoginForm: !isLoading && !user,
+    showingContent: !isLoading && !!user
+  });
+  
   if (isLoading) {
+    console.log('🟡 [ProtectedRoute] Showing loading spinner');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -60,9 +69,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   }
   
   if (!user) {
+    console.log('🟡 [ProtectedRoute] No user, showing login form');
     return <LoginForm />;
   }
   
+  console.log('🟡 [ProtectedRoute] User authenticated, loading DatabaseProvider');
   return (
     <DatabaseProvider>
       <MainLayout>{children}</MainLayout>

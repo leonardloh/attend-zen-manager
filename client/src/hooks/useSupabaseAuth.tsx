@@ -37,16 +37,26 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔵 [useSupabaseAuth] Initializing auth...');
+    
     // Get initial session
     supabase.auth.getSession()
       .then(({ data: { session }, error }) => {
+        console.log('🔵 [useSupabaseAuth] getSession result:', {
+          hasSession: !!session,
+          hasError: !!error,
+          userId: session?.user?.id,
+          email: session?.user?.email,
+          errorMessage: error?.message
+        });
+        
         // Only handle specific auth-related errors
         if (error && (
           error.message?.includes('refresh_token') || 
           error.message?.includes('invalid') ||
           error.message?.includes('expired')
         )) {
-          console.error('Invalid auth session, signing out:', error.message);
+          console.error('❌ [useSupabaseAuth] Invalid auth session, signing out:', error.message);
           supabase.auth.signOut().catch(console.error);
           setSupabaseUser(null);
           setUser(null);
@@ -56,13 +66,15 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         setSupabaseUser(session?.user ?? null);
         if (session?.user) {
+          console.log('🔵 [useSupabaseAuth] Loading user data for:', session.user.email);
           loadUserData(session.user);
         } else {
+          console.log('🔵 [useSupabaseAuth] No session, setting loading to false');
           setIsLoading(false);
         }
       })
       .catch((error) => {
-        console.error('Supabase getSession error:', error);
+        console.error('❌ [useSupabaseAuth] getSession error:', error);
         setSupabaseUser(null);
         setIsLoading(false);
       });
@@ -70,10 +82,16 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+        console.log('🟢 [useSupabaseAuth] Auth state changed:', {
+          event,
+          hasSession: !!session,
+          userId: session?.user?.id,
+          email: session?.user?.email
+        });
         
         // Handle sign out events
         if (event === 'SIGNED_OUT') {
+          console.log('🔴 [useSupabaseAuth] User signed out');
           setSupabaseUser(null);
           setUser(null);
           setIsLoading(false);
@@ -82,7 +100,7 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         // Handle token refresh failures
         if (event === 'TOKEN_REFRESHED' && !session) {
-          console.warn('Token refresh failed, no session');
+          console.warn('⚠️ [useSupabaseAuth] Token refresh failed, no session');
           setSupabaseUser(null);
           setUser(null);
           setIsLoading(false);
@@ -92,8 +110,10 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setSupabaseUser(session?.user ?? null);
         
         if (session?.user) {
+          console.log('🔵 [useSupabaseAuth] Loading user data from auth change:', session.user.email);
           await loadUserData(session.user);
         } else {
+          console.log('🔵 [useSupabaseAuth] No session in auth change, setting user to null');
           setUser(null);
           setIsLoading(false);
         }
