@@ -205,6 +205,7 @@ DROP POLICY IF EXISTS "State admins can manage students" ON "public"."students";
 DROP POLICY IF EXISTS "Branch admins can manage students" ON "public"."students";
 DROP POLICY IF EXISTS "Classroom admins can manage students" ON "public"."students";
 DROP POLICY IF EXISTS "Class admins can view their students" ON "public"."students";
+DROP POLICY IF EXISTS "Users can access their own student record" ON "public"."students";
 
 -- Class Enrollments
 DROP POLICY IF EXISTS "super admins full access" ON "public"."class_enrollments";
@@ -475,6 +476,18 @@ USING (
   get_user_role() = 'class_admin' AND get_user_scope_type() = 'class' AND EXISTS (
     SELECT 1 FROM class_enrollments ce
     WHERE ce.student_id = students.id AND ce.class_id = get_user_scope_id()
+  )
+);
+
+CREATE POLICY "Users can access their own student record"
+ON "public"."students"
+FOR SELECT
+TO authenticated
+USING (
+  -- Allow users to see their own student record by matching student_id from metadata
+  students.student_id = COALESCE(
+    auth.jwt() -> 'user_metadata' ->> 'student_id',
+    auth.jwt() -> 'app_metadata' ->> 'student_id'
   )
 );
 
