@@ -136,11 +136,20 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       console.log('🔵 [loadUserData] Metadata:', { metadataRole, studentId });
       
       if (studentId) {
-        // Fetch student data from database
+        // Fetch student data from database with timeout
         let studentData: Awaited<ReturnType<typeof fetchStudentByStudentId>> | null = null;
         try {
           console.log('🔵 [loadUserData] Fetching student data for:', studentId);
-          studentData = await fetchStudentByStudentId(studentId);
+          
+          // Add timeout to prevent hanging forever
+          const fetchWithTimeout = Promise.race([
+            fetchStudentByStudentId(studentId),
+            new Promise<null>((_, reject) => 
+              setTimeout(() => reject(new Error('Student data fetch timeout after 5s')), 5000)
+            )
+          ]);
+          
+          studentData = await fetchWithTimeout;
           console.log('🔵 [loadUserData] Student data fetched:', !!studentData);
         } catch (error) {
           console.warn('⚠️ [loadUserData] Failed to fetch student data, falling back to metadata', error);
