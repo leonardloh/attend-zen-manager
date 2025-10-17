@@ -1,0 +1,24 @@
+🔵 [loadUserData] Attempting to fetch student data for student_id: ADM001
+useSupabaseAuth.tsx:129 ⚠️ Failed to fetch student data, falling back to metadata Error: Student data fetch timeout after 5s
+    at useSupabaseAuth.tsx:122:39
+loadUserData @ useSupabaseAuth.tsx:129
+await in loadUserData
+(anonymous) @ useSupabaseAuth.tsx:93
+(anonymous) @ @supabase_supabase-js.js?v=ae3a3e81:8230
+_notifyAllSubscribers @ @supabase_supabase-js.js?v=ae3a3e81:8228
+_recoverAndRefresh @ @supabase_supabase-js.js?v=ae3a3e81:8171
+await in _recoverAndRefresh
+(anonymous) @ @supabase_supabase-js.js?v=ae3a3e81:8443
+(anonymous) @ @supabase_supabase-js.js?v=ae3a3e81:7433
+(anonymous) @ @supabase_supabase-js.js?v=ae3a3e81:5669Understand this warning
+DatabaseContext.tsx:258 Successfully mapped 9 students from database
+DatabaseContext.tsx:274 🔧 DatabaseContext - Starting async mapping of classes: 2
+classes.ts:101 🔧 mapDbClassToFrontend - Enrolled students: {enrolledStudents: Array(0), motherClassStudents: Array(0), studentCount: 0}
+classes.ts:112 🔧 mapDbClassToFrontend - Time formatting: {originalStartTime: '08:00:00', originalEndTime: '08:30:00', formattedStartTime: '08:00', formattedEndTime: '08:30', finalTimeString: '周二 08:00-08:30'}
+classes.ts:101 🔧 mapDbClassToFrontend - Enrolled students: {enrolledStudents: Array(4), motherClassStudents: Array(4), studentCount: 4}
+classes.ts:112 🔧 mapDbClassToFrontend - Time formatting: {originalStartTime: '20:00:00', originalEndTime: '20:30:00', formattedStartTime: '20:00', formattedEndTime: '20:30', finalTimeString: '周二 20:00-20:30'}
+DatabaseContext.tsx:278 🔧 DatabaseContext - Classes mapped successfully: 2
+classes.ts:101 🔧 mapDbClassToFrontend - Enrolled students: {enrolledStudents: Array(0), motherClassStudents: Array(0), studentCount: 0}
+classes.ts:112 🔧 mapDbClassToFrontend - Time formatting: {originalStartTime: '08:00:00', originalEndTime: '08:30:00', formattedStartTime: '08:00', formattedEndTime: '08:30', finalTimeString: '周二 08:00-08:30'}
+classes.ts:101 🔧 mapDbClassToFrontend - Enrolled students: {enrolledStudents: Array(4), motherClassStudents: Array(4), studentCount: 4}
+classes.ts:112 🔧 mapDbClassToFrontend - Time formatting: {originalStartTime: '20:00:00', originalEndTime: '20:30:00', formattedStartTime: '20:00', formattedEndTime: '20:30', finalTimeString: '周二 20:00-20:30'}

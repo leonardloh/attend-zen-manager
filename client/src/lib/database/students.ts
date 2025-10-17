@@ -83,6 +83,8 @@ export const fetchStudentById = async (id: number): Promise<StudentWithDetails |
 
 // Fetch student by student_id
 export const fetchStudentByStudentId = async (studentId: string): Promise<StudentWithDetails | null> => {
+  console.log('🔍 fetchStudentByStudentId - Querying for:', studentId);
+  
   const { data, error } = await supabase
     .from('students')
     .select('*')
@@ -90,10 +92,17 @@ export const fetchStudentByStudentId = async (studentId: string): Promise<Studen
     .single();
 
   if (error) {
+    console.error('❌ fetchStudentByStudentId - Error:', {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint
+    });
     if (error.code === 'PGRST116') return null; // Not found
     throw new Error(`Failed to fetch student: ${error.message}`);
   }
 
+  console.log('✅ fetchStudentByStudentId - Found student:', data?.student_id);
   return mapDbStudentToFrontend(data);
 };
 
