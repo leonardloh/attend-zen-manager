@@ -124,6 +124,7 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, []);
 
   const loadUserData = async (supabaseUser: SupabaseUser) => {
+    console.log('🔵 [loadUserData] START - Setting isLoading to true');
     try {
       setIsLoading(true);
       
@@ -132,17 +133,22 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const metadataRole = (supabaseUser.app_metadata?.role || supabaseUser.user_metadata?.role) as User['role'] | undefined;
       const studentId = supabaseUser.user_metadata?.student_id;
       
+      console.log('🔵 [loadUserData] Metadata:', { metadataRole, studentId });
+      
       if (studentId) {
         // Fetch student data from database
         let studentData: Awaited<ReturnType<typeof fetchStudentByStudentId>> | null = null;
         try {
+          console.log('🔵 [loadUserData] Fetching student data for:', studentId);
           studentData = await fetchStudentByStudentId(studentId);
+          console.log('🔵 [loadUserData] Student data fetched:', !!studentData);
         } catch (error) {
-          console.warn('Failed to fetch student data, falling back to metadata', error);
+          console.warn('⚠️ [loadUserData] Failed to fetch student data, falling back to metadata', error);
         }
 
         if (studentData) {
           const derivedRole = getUserRole(studentData, metadataRole);
+          console.log('🔵 [loadUserData] Setting user with student data, role:', derivedRole);
 
           setUser({
             id: studentData.id.toString(),
@@ -155,6 +161,7 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
           });
         } else {
           const fallbackRole: User['role'] = getUserRole(null, metadataRole);
+          console.log('🔵 [loadUserData] Setting user with metadata fallback, role:', fallbackRole);
           setUser({
             id: supabaseUser.id,
             student_id: studentId,
@@ -167,6 +174,7 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       } else {
         // No student_id in metadata - new user from Google SSO, default to student role
         const fallbackRole: User['role'] = getUserRole(null, metadataRole);
+        console.log('🔵 [loadUserData] No student_id, setting admin user, role:', fallbackRole);
         setUser({
           id: supabaseUser.id,
           student_id: supabaseUser.email?.split('@')[0] || 'unknown',
@@ -176,10 +184,12 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
           email: supabaseUser.email,
         });
       }
+      console.log('🔵 [loadUserData] User set successfully');
     } catch (error) {
-      console.error('Error loading user data:', error);
+      console.error('❌ [loadUserData] Error loading user data:', error);
       setUser(null);
     } finally {
+      console.log('🔵 [loadUserData] FINALLY - Setting isLoading to false');
       setIsLoading(false);
     }
   };
