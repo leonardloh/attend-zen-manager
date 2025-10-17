@@ -82,10 +82,10 @@ const Dashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <DashboardCard
-            title="总学员数"
-            subtitle="Total Students"
-            value={stats.totalStudents.toString()}
-            description={`活跃学员 ${stats.activeStudents}`}
+            title="活跃学员"
+            subtitle="Active Students"
+            value={stats.activeStudents.toString()}
+            description={`总学员 ${stats.totalStudents}`}
             icon={Users}
             onClick={() => navigate('/students')}
           />
