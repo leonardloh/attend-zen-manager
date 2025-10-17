@@ -41,14 +41,14 @@ export const mapFrontendStudentToDb = (student: Partial<StudentWithDetails> & { 
   status: student.status,
   email: student.email,
   state: student.state,
-  postcode: student.postal_code || student.postcode,
+  postcode: student.postcode,
   year_of_birth: student.year_of_birth,
   emergency_contact_name: student.emergency_contact_name,
   emergency_contact_number: student.phone || student.emergency_contact_number,
-  emergency_contact_relationship: student.emergency_contact_relation || student.emergency_contact_relationship,
-  profession: student.occupation || student.profession,
-  education_level: student.academic_level || student.education_level,
-  maritial_status: student.marriage_status || student.maritial_status,
+  emergency_contact_relationship: student.emergency_contact_relationship,
+  profession: student.profession,
+  education_level: student.education_level,
+  maritial_status: student.maritial_status,
 });
 
 // Fetch all students
@@ -83,8 +83,6 @@ export const fetchStudentById = async (id: number): Promise<StudentWithDetails |
 
 // Fetch student by student_id
 export const fetchStudentByStudentId = async (studentId: string): Promise<StudentWithDetails | null> => {
-  console.log('🔍 fetchStudentByStudentId - Querying for:', studentId);
-  
   const { data, error } = await supabase
     .from('students')
     .select('*')
@@ -92,17 +90,10 @@ export const fetchStudentByStudentId = async (studentId: string): Promise<Studen
     .single();
 
   if (error) {
-    console.error('❌ fetchStudentByStudentId - Error:', {
-      code: error.code,
-      message: error.message,
-      details: error.details,
-      hint: error.hint
-    });
     if (error.code === 'PGRST116') return null; // Not found
     throw new Error(`Failed to fetch student: ${error.message}`);
   }
 
-  console.log('✅ fetchStudentByStudentId - Found student:', data?.student_id);
   return mapDbStudentToFrontend(data);
 };
 
