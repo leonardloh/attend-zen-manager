@@ -200,7 +200,9 @@ export const useArchiveClass = () => {
   return useMutation({
     mutationFn: archiveClass,
     onSuccess: () => {
+      // Invalidate both active and archived class queries
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CLASSES });
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.CLASSES, 'archived'] });
       toast.success('班级已归档');
     },
     onError: (error: Error) => {
@@ -215,7 +217,9 @@ export const useUnarchiveClass = () => {
   return useMutation({
     mutationFn: unarchiveClass,
     onSuccess: () => {
+      // Invalidate both active and archived class queries
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CLASSES });
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.CLASSES, 'archived'] });
       toast.success('班级已恢复');
     },
     onError: (error: Error) => {
