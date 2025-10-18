@@ -130,11 +130,13 @@ export const useDeleteStudent = () => {
 };
 
 // Class Hooks
-export const useClasses = (options: QueryOptions = {}) => {
+export const useClasses = (options: QueryOptions & { includeArchived?: boolean } = {}) => {
+  const { includeArchived = false, ...queryOptions } = options;
+  
   return useQuery({
-    queryKey: QUERY_KEYS.CLASSES,
-    queryFn: fetchClasses,
-    enabled: options.enabled ?? true,
+    queryKey: includeArchived ? [...QUERY_KEYS.CLASSES, 'archived'] : QUERY_KEYS.CLASSES,
+    queryFn: () => includeArchived ? fetchArchivedClasses() : fetchClasses(),
+    enabled: queryOptions.enabled ?? true,
   });
 };
 

@@ -3,13 +3,15 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Clock, Users, MapPin, Calendar, TrendingUp, BarChart, Eye, Edit, BookOpen, Hash, Archive, ArchiveRestore } from 'lucide-react';
 import ClassForm from '@/components/Classes/ClassForm';
 import ClassDetailsView from '@/components/Classes/ClassDetailsView';
 import { useToast } from '@/hooks/use-toast';
 import { useDatabase } from '@/contexts/DatabaseContext';
-import { useArchiveClass, useUnarchiveClass } from '@/hooks/useDatabase';
+import { useArchiveClass, useUnarchiveClass, useClasses } from '@/hooks/useDatabase';
 import { getStudentById, type ClassInfo } from '@/data/types';
 
 const Classes: React.FC = () => {
@@ -17,15 +19,18 @@ const Classes: React.FC = () => {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassInfo | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const { toast } = useToast();
   
   const { 
-    classes, 
     addClass, 
-    updateClass, 
-    isLoadingClasses, 
-    classesError 
+    updateClass
   } = useDatabase();
+  
+  // Fetch classes based on archive filter
+  const { data: classes = [], isLoading: isLoadingClasses, error: classesError } = useClasses({ 
+    includeArchived: showArchived 
+  });
   
   const archiveClassMutation = useArchiveClass();
   const unarchiveClassMutation = useUnarchiveClass();
@@ -172,28 +177,41 @@ const Classes: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">班级管理</h1>
           <p className="text-gray-600">Class Management</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="mt-4 sm:mt-0">
-              <Plus className="h-4 w-4 mr-2" />
-              创建班级
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>创建新班级</DialogTitle>
-            </DialogHeader>
-            <ClassForm
-              onSubmit={handleAddClass}
-              onCancel={() => setIsDialogOpen(false)}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="show-archived"
+              checked={showArchived}
+              onCheckedChange={setShowArchived}
+              data-testid="switch-show-archived"
             />
-          </DialogContent>
-        </Dialog>
+            <Label htmlFor="show-archived" className="text-sm cursor-pointer">
+              {showArchived ? '显示已归档' : '显示活跃'}
+            </Label>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="mt-4 sm:mt-0">
+                <Plus className="h-4 w-4 mr-2" />
+                创建班级
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>创建新班级</DialogTitle>
+              </DialogHeader>
+              <ClassForm
+                onSubmit={handleAddClass}
+                onCancel={() => setIsDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Class Stats */}
@@ -236,7 +254,14 @@ const Classes: React.FC = () => {
           <Card key={classInfo.id} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{classInfo.name}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">{classInfo.name}</CardTitle>
+                  {classInfo.is_archived && (
+                    <Badge variant="secondary" className="bg-gray-500 text-white">
+                      已归档
+                    </Badge>
+                  )}
+                </div>
                 <Badge className={getRegionColor(classInfo.region)}>
                   {classInfo.region}
                 </Badge>
@@ -328,26 +353,41 @@ const Classes: React.FC = () => {
                     <Eye className="h-4 w-4 mr-1" />
                     查看详情
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => handleEditClass(classInfo)}
-                    data-testid={`button-edit-class-${classInfo.id}`}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    编辑
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1 text-orange-600 hover:text-orange-700 hover:border-orange-300"
-                    onClick={() => handleArchiveClass(classInfo)}
-                    data-testid={`button-archive-class-${classInfo.id}`}
-                  >
-                    <Archive className="h-4 w-4 mr-1" />
-                    归档
-                  </Button>
+                  {!classInfo.is_archived && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleEditClass(classInfo)}
+                      data-testid={`button-edit-class-${classInfo.id}`}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      编辑
+                    </Button>
+                  )}
+                  {classInfo.is_archived ? (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 text-green-600 hover:text-green-700 hover:border-green-300"
+                      onClick={() => handleUnarchiveClass(classInfo)}
+                      data-testid={`button-unarchive-class-${classInfo.id}`}
+                    >
+                      <ArchiveRestore className="h-4 w-4 mr-1" />
+                      恢复
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 text-orange-600 hover:text-orange-700 hover:border-orange-300"
+                      onClick={() => handleArchiveClass(classInfo)}
+                      data-testid={`button-archive-class-${classInfo.id}`}
+                    >
+                      <Archive className="h-4 w-4 mr-1" />
+                      归档
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
