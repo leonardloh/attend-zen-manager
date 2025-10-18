@@ -110,6 +110,21 @@ The system now supports Google Sign-In using Supabase OAuth:
 - **Direct Creation**: Removed from Settings (UserRoleManagerCard)
 
 ## Recent Changes
+- **2025-10-18**: Class Archiving System Implementation
+  - **Added soft delete functionality**: Classes are now archived instead of hard deleted
+  - **Database schema**: Added `is_archived` boolean column to classes table
+  - **Automatic timestamp tracking**: Created `auto_update_timestamp_trigger.sql` to automatically update `updated_at` column on class modifications
+  - **API functions**: 
+    - `archiveClass()` - Sets is_archived to true
+    - `unarchiveClass()` - Sets is_archived to false
+    - `fetchClasses()` - Excludes archived classes by default (accepts includeArchived parameter)
+    - `fetchArchivedClasses()` - Returns only archived classes
+  - **UI updates (Classes.tsx)**: Replaced delete button with archive button (orange color)
+  - **Hooks**: Added `useArchiveClass()` and `useUnarchiveClass()` hooks in useDatabase.ts
+  - **Database types**: Added `is_archived?: boolean` to DbClass and ClassWithDetails interfaces
+  - **User messages**: Toast notifications display "班级已归档" (Class archived) and "班级已恢复" (Class restored)
+  - **Deployment**: Administrators must run `scripts/sql/auto_update_timestamp_trigger.sql` in Supabase SQL Editor to enable automatic timestamp updates
+
 - **2025-10-17**: Session Persistence & Instant Admin Login Fix
   - **Fixed critical bug**: Users experienced infinite loading when switching browser tabs or logging in
   - **Root causes identified**:

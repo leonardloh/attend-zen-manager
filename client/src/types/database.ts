@@ -52,6 +52,7 @@ export interface DbClass {
   class_start_date?: string;
   class_start_time?: string;
   class_end_time?: string;
+  is_archived?: boolean;
 }
 
 export interface DbClassCadre {
@@ -107,6 +108,7 @@ export interface ClassWithDetails extends DbClass {
   page_number?: string;
   line_number?: string;
   status: 'active' | 'inactive';
+  is_archived?: boolean;
 }
 
 export interface MainBranchWithDetails extends DbMainBranch {
