@@ -4,22 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Clock, Users, MapPin, Calendar, TrendingUp, BarChart, Eye, Edit, BookOpen, Hash, Trash2 } from 'lucide-react';
+import { Plus, Clock, Users, MapPin, Calendar, TrendingUp, BarChart, Eye, Edit, BookOpen, Hash, Archive, ArchiveRestore } from 'lucide-react';
 import ClassForm from '@/components/Classes/ClassForm';
 import ClassDetailsView from '@/components/Classes/ClassDetailsView';
-import DeleteClassDialog from '@/components/Classes/DeleteClassDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useDatabase } from '@/contexts/DatabaseContext';
-import { useDeleteClass } from '@/hooks/useDatabase';
+import { useArchiveClass, useUnarchiveClass } from '@/hooks/useDatabase';
 import { getStudentById, type ClassInfo } from '@/data/types';
 
 const Classes: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassInfo | null>(null);
-  const [classToDelete, setClassToDelete] = useState<ClassInfo | null>(null);
   const { toast } = useToast();
   
   const { 
@@ -30,7 +27,8 @@ const Classes: React.FC = () => {
     classesError 
   } = useDatabase();
   
-  const deleteClassMutation = useDeleteClass();
+  const archiveClassMutation = useArchiveClass();
+  const unarchiveClassMutation = useUnarchiveClass();
 
   const getRegionColor = (region: string) => {
     switch (region) {
@@ -109,19 +107,40 @@ const Classes: React.FC = () => {
     }
   };
 
-  const handleDeleteClass = (classInfo: ClassInfo) => {
-    setClassToDelete(classInfo);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = (classId: string) => {
-    deleteClassMutation.mutate(classId, {
+  const handleArchiveClass = (classInfo: ClassInfo) => {
+    archiveClassMutation.mutate(Number(classInfo.id), {
       onSuccess: () => {
-        setClassToDelete(null);
-        setIsDeleteDialogOpen(false);
+        toast({
+          title: '班级已归档',
+          description: `${classInfo.name} 已成功归档。`,
+        });
       },
       onError: (error) => {
-        console.error('Failed to delete class:', error);
+        console.error('Failed to archive class:', error);
+        toast({
+          title: '归档失败',
+          description: error instanceof Error ? error.message : '无法归档班级',
+          variant: 'destructive',
+        });
+      }
+    });
+  };
+
+  const handleUnarchiveClass = (classInfo: ClassInfo) => {
+    unarchiveClassMutation.mutate(Number(classInfo.id), {
+      onSuccess: () => {
+        toast({
+          title: '班级已恢复',
+          description: `${classInfo.name} 已成功恢复。`,
+        });
+      },
+      onError: (error) => {
+        console.error('Failed to unarchive class:', error);
+        toast({
+          title: '恢复失败',
+          description: error instanceof Error ? error.message : '无法恢复班级',
+          variant: 'destructive',
+        });
       }
     });
   };
@@ -304,6 +323,7 @@ const Classes: React.FC = () => {
                     size="sm" 
                     className="flex-1"
                     onClick={() => handleViewClass(classInfo)}
+                    data-testid={`button-view-class-${classInfo.id}`}
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     查看详情
@@ -313,6 +333,7 @@ const Classes: React.FC = () => {
                     size="sm" 
                     className="flex-1"
                     onClick={() => handleEditClass(classInfo)}
+                    data-testid={`button-edit-class-${classInfo.id}`}
                   >
                     <Edit className="h-4 w-4 mr-1" />
                     编辑
@@ -320,11 +341,12 @@ const Classes: React.FC = () => {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex-1 text-red-600 hover:text-red-700 hover:border-red-300"
-                    onClick={() => handleDeleteClass(classInfo)}
+                    className="flex-1 text-orange-600 hover:text-orange-700 hover:border-orange-300"
+                    onClick={() => handleArchiveClass(classInfo)}
+                    data-testid={`button-archive-class-${classInfo.id}`}
                   >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    删除
+                    <Archive className="h-4 w-4 mr-1" />
+                    归档
                   </Button>
                 </div>
               </div>
@@ -364,14 +386,6 @@ const Classes: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <DeleteClassDialog
-        isOpen={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        classToDelete={classToDelete}
-        onConfirmDelete={handleConfirmDelete}
-        isDeleting={deleteClassMutation.isPending}
-      />
     </div>
   );
 };

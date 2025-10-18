@@ -140,18 +140,43 @@ export const mapDbClassToFrontend = async (dbClass: DbClass): Promise<ClassWithD
   };
 };
 
-// Fetch all classes
-export const fetchClasses = async (): Promise<ClassWithDetails[]> => {
-  const { data, error } = await supabase
+// Fetch all classes (excludes archived by default)
+export const fetchClasses = async (includeArchived: boolean = false): Promise<ClassWithDetails[]> => {
+  let query = supabase
     .from('classes')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('*');
+    
+  // Filter out archived classes unless explicitly requested
+  if (!includeArchived) {
+    query = query.or('is_archived.is.null,is_archived.eq.false');
+  }
+  
+  const { data, error } = await query.order('created_at', { ascending: false });
 
   if (error) {
     throw new Error(`Failed to fetch classes: ${error.message}`);
   }
 
   // Map each class with additional details
+  const classesWithDetails = await Promise.all(
+    data.map(cls => mapDbClassToFrontend(cls))
+  );
+
+  return classesWithDetails;
+};
+
+// Fetch only archived classes
+export const fetchArchivedClasses = async (): Promise<ClassWithDetails[]> => {
+  const { data, error } = await supabase
+    .from('classes')
+    .select('*')
+    .eq('is_archived', true)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to fetch archived classes: ${error.message}`);
+  }
+
   const classesWithDetails = await Promise.all(
     data.map(cls => mapDbClassToFrontend(cls))
   );
@@ -237,10 +262,16 @@ export const updateClass = async (classData: UpdateClassData): Promise<ClassWith
     updateData
   });
   
+  // Add updated_at timestamp (trigger will also set it, but being explicit)
+  const dataWithTimestamp = {
+    ...updateData,
+    updated_at: new Date().toISOString()
+  };
+  
   // First, update the basic class data
   const { data, error } = await supabase
     .from('classes')
-    .update(updateData)
+    .update(dataWithTimestamp)
     .eq('id', id)
     .select()
     .single();
@@ -275,7 +306,45 @@ export const updateClass = async (classData: UpdateClassData): Promise<ClassWith
   return await mapDbClassToFrontend(data);
 };
 
-// Delete class
+// Archive class (soft delete)
+export const archiveClass = async (id: number): Promise<ClassWithDetails> => {
+  const { data, error } = await supabase
+    .from('classes')
+    .update({ 
+      is_archived: true,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to archive class: ${error.message}`);
+  }
+
+  return await mapDbClassToFrontend(data);
+};
+
+// Unarchive class
+export const unarchiveClass = async (id: number): Promise<ClassWithDetails> => {
+  const { data, error } = await supabase
+    .from('classes')
+    .update({ 
+      is_archived: false,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to unarchive class: ${error.message}`);
+  }
+
+  return await mapDbClassToFrontend(data);
+};
+
+// Delete class (hard delete - kept for admin purposes, but not exposed in UI)
 export const deleteClass = async (id: number): Promise<void> => {
   // First, delete related enrollments
   await supabase

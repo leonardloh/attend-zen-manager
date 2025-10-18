@@ -13,9 +13,12 @@ import {
   
   // Class operations
   fetchClasses,
+  fetchArchivedClasses,
   createClass,
   updateClass,
   deleteClass,
+  archiveClass,
+  unarchiveClass,
   searchClasses,
   type CreateClassData,
   type UpdateClassData,
@@ -185,6 +188,36 @@ export const useDeleteClass = () => {
     },
     onError: (error: Error) => {
       toast.error(`删除班级失败: ${error.message}`);
+    },
+  });
+};
+
+export const useArchiveClass = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: archiveClass,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CLASSES });
+      toast.success('班级已归档');
+    },
+    onError: (error: Error) => {
+      toast.error(`归档班级失败: ${error.message}`);
+    },
+  });
+};
+
+export const useUnarchiveClass = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: unarchiveClass,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CLASSES });
+      toast.success('班级已恢复');
+    },
+    onError: (error: Error) => {
+      toast.error(`恢复班级失败: ${error.message}`);
     },
   });
 };
