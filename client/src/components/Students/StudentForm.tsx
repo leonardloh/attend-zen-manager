@@ -14,7 +14,7 @@ interface Student {
   phone: string;
   email?: string;
   enrollment_date: string;
-  status: '活跃' | '旁听' | '保留';
+  status: '活跃' | '不活跃' | '退学' | '往生';
   state?: string;
   // Required fields
   postal_code: string;
@@ -57,7 +57,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
     marriage_status: initialData?.marriage_status || undefined
   });
 
-  const statuses = ['活跃', '旁听', '保留'];
+  const statuses = ['活跃', '不活跃', '退学', '往生'];
   const academicLevels = ['Bachelor', 'Master', 'PhD', 'Other'];
   const marriageStatuses = ['Single', 'Married', 'Divorced', 'Widowed', 'Other'];
   const emergencyRelations = ['Parent', 'Spouse', 'Sibling', 'Child', 'Friend', 'Other'];
@@ -156,7 +156,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ initialData, onSubmit, onCanc
           <select
             id="status"
             value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value as '活跃' | '旁听' | '保留' })}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value as '活跃' | '不活跃' | '退学' | '往生' })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           >

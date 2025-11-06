@@ -11,7 +11,7 @@ export interface Student {
   phone: string;
   email?: string;
   enrollment_date: string;
-  status: '活跃' | '旁听' | '保留';
+  status: '活跃' | '不活跃' | '退学' | '往生';
   // Location
   state?: string; // Malaysian state / 州属
   // Mother class information
@@ -153,7 +153,7 @@ export const mockStudents: Student[] = [
     phone: '13800138002',
     email: 'li.xiaohong@example.com',
     enrollment_date: '2024-02-01',
-    status: '旁听',
+    status: '不活跃',
     mother_class_id: '2', // 中级班B
     mother_class_name: '中级班B',
     postal_code: '100002',
@@ -195,7 +195,7 @@ export const mockStudents: Student[] = [
     phone: '13800138004',
     email: 'li.si@example.com',
     enrollment_date: '2024-03-01',
-    status: '保留',
+    status: '退学',
     postal_code: '100004',
     year_of_birth: 1990,
     emergency_contact_name: '李大四',
@@ -268,7 +268,7 @@ export const mockStudents: Student[] = [
     phone: '13800138008',
     email: 'sun.ba@example.com',
     enrollment_date: '2024-03-10',
-    status: '旁听',
+    status: '不活跃',
     postal_code: '100008',
     year_of_birth: 1989,
     emergency_contact_name: '孙大八',
@@ -344,7 +344,7 @@ export const mockStudents: Student[] = [
     phone: '13800138012',
     email: 'wang.shier@example.com',
     enrollment_date: '2024-01-18',
-    status: '旁听',
+    status: '不活跃',
     postal_code: '100012',
     year_of_birth: 1993,
     emergency_contact_name: '王大十二',
@@ -827,6 +827,6 @@ export const getActiveClasses = (): ClassInfo[] => {
 };
 
 // Get students by status
-export const getStudentsByStatus = (status: '活跃' | '旁听' | '保留'): Student[] => {
+export const getStudentsByStatus = (status: '活跃' | '不活跃' | '退学' | '往生'): Student[] => {
   return mockStudents.filter(student => student.status === status);
 };

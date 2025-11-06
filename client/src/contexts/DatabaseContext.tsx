@@ -166,7 +166,7 @@ const convertStudentWithDetailsToStudent = (studentDetails: StudentWithDetails):
     phone: studentDetails.phone || studentDetails.emergency_contact_number || '',
     email: studentDetails.email,
     enrollment_date: studentDetails.enrollment_date || studentDetails.date_of_joining || '',
-    status: (studentDetails.status as '活跃' | '旁听' | '保留') || '活跃',
+    status: (studentDetails.status as '活跃' | '不活跃' | '退学' | '往生') || '活跃',
     state: studentDetails.state || '',
     postal_code: studentDetails.postcode || '',
     year_of_birth: studentDetails.year_of_birth || new Date().getFullYear() - 25,

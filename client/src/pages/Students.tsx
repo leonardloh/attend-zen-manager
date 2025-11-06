@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 const Students: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'全部' | '活跃' | '旁听' | '保留'>('全部');
+  const [statusFilter, setStatusFilter] = useState<'全部' | '活跃' | '不活跃' | '退学' | '往生'>('全部');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [stateFilter, setStateFilter] = useState<string>('all');
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
@@ -78,8 +78,9 @@ const Students: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case '活跃': return 'bg-green-100 text-green-800';
-      case '旁听': return 'bg-blue-100 text-blue-800';
-      case '保留': return 'bg-orange-100 text-orange-800';
+      case '不活跃': return 'bg-blue-100 text-blue-800';
+      case '退学': return 'bg-orange-100 text-orange-800';
+      case '往生': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -224,18 +225,25 @@ const Students: React.FC = () => {
                 活跃
               </Button>
               <Button 
-                variant={statusFilter === '旁听' ? 'default' : 'outline'} 
+                variant={statusFilter === '不活跃' ? 'default' : 'outline'} 
                 size="sm"
-                onClick={() => setStatusFilter('旁听')}
+                onClick={() => setStatusFilter('不活跃')}
               >
-                旁听
+                不活跃
               </Button>
               <Button 
-                variant={statusFilter === '保留' ? 'default' : 'outline'} 
+                variant={statusFilter === '退学' ? 'default' : 'outline'} 
                 size="sm"
-                onClick={() => setStatusFilter('保留')}
+                onClick={() => setStatusFilter('退学')}
               >
-                保留
+                退学
+              </Button>
+              <Button 
+                variant={statusFilter === '往生' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setStatusFilter('往生')}
+              >
+                往生
               </Button>
               <Select value={stateFilter} onValueChange={(v) => setStateFilter(v)}>
                 <SelectTrigger className="h-8 w-[160px]">
@@ -412,17 +420,25 @@ const Students: React.FC = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {students.filter(s => s.status === '旁听').length}
+              {students.filter(s => s.status === '不活跃').length}
             </div>
-            <div className="text-sm text-gray-600">旁听学员</div>
+            <div className="text-sm text-gray-600">不活跃学员</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-orange-600">
-              {students.filter(s => s.status === '保留').length}
+              {students.filter(s => s.status === '退学').length}
             </div>
-            <div className="text-sm text-gray-600">保留学员</div>
+            <div className="text-sm text-gray-600">退学学员</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-gray-600">
+              {students.filter(s => s.status === '往生').length}
+            </div>
+            <div className="text-sm text-gray-600">往生学员</div>
           </CardContent>
         </Card>
       </div>

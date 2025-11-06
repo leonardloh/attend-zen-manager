@@ -365,9 +365,11 @@ const Dashboard: React.FC = () => {
                   <span className={`px-2 py-1 text-xs rounded-full ${
                     userStudent.status === '活跃' 
                       ? 'bg-green-100 text-green-800' 
-                      : userStudent.status === '旁听'
+                      : userStudent.status === '不活跃'
                       ? 'bg-blue-100 text-blue-800'
-                      : 'bg-orange-100 text-orange-800'
+                      : userStudent.status === '退学'
+                      ? 'bg-orange-100 text-orange-800'
+                      : 'bg-gray-100 text-gray-800'
                   }`}>
                     {userStudent.status}
                   </span>
