@@ -56,6 +56,32 @@ const Attendance: React.FC = () => {
     [classes, selectedClass]
   );
 
+  // Extract day of week from class time (e.g., "周二 20:00-20:30" -> 2 for Tuesday)
+  const getClassDayOfWeek = useCallback((classTime: string): number | null => {
+    const dayMap: Record<string, number> = {
+      '周日': 0,
+      '周一': 1,
+      '周二': 2,
+      '周三': 3,
+      '周四': 4,
+      '周五': 5,
+      '周六': 6,
+    };
+    
+    for (const [dayName, dayNum] of Object.entries(dayMap)) {
+      if (classTime.includes(dayName)) {
+        return dayNum;
+      }
+    }
+    return null;
+  }, []);
+
+  // Get the day of week for the selected class
+  const selectedClassDayOfWeek = useMemo(() => {
+    if (!selectedClassInfo?.time) return null;
+    return getClassDayOfWeek(selectedClassInfo.time);
+  }, [selectedClassInfo, getClassDayOfWeek]);
+
   // Get students for the selected class using DatabaseContext
   const selectedClassStudents = selectedClass ? getClassAllStudents(selectedClass) : [];
 
@@ -304,6 +330,10 @@ const Attendance: React.FC = () => {
                     onSelect={setSelectedDate}
                     initialFocus
                     className="pointer-events-auto"
+                    disabled={(date) => {
+                      if (selectedClassDayOfWeek === null) return false;
+                      return date.getDay() !== selectedClassDayOfWeek;
+                    }}
                   />
                 </PopoverContent>
               </Popover>
