@@ -66,8 +66,8 @@ const Cadres: React.FC = () => {
       cadre.support_classes?.some(cls => cls.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    // Get all class IDs this cadre is involved in
-    const cadreClassIds = cadre.roles.map(role => role.class_id);
+    // Get all class IDs this cadre is involved in (convert to string for map lookup)
+    const cadreClassIds = cadre.roles.map(role => String(role.class_id));
 
     // Main Branch filter
     if (selectedMainBranch !== 'all') {
