@@ -154,7 +154,7 @@ const Cadres: React.FC = () => {
       {/* Search and Filters */}
       <CadreFilters
         searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
+        onSearch={setSearchTerm}
         mainBranches={mainBranches}
         subBranches={subBranches}
         classrooms={classrooms}

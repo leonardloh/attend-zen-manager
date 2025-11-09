@@ -1,14 +1,15 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
 
 interface CadreFiltersProps {
   searchTerm: string;
-  onSearchChange: (value: string) => void;
+  onSearch: (value: string) => void;
   mainBranches: Array<{ id: string; name: string }>;
   subBranches: Array<{ id: string; name: string; main_branch_id: string }>;
   classrooms: Array<{ id: string; name: string; sub_branch_id: string }>;
@@ -22,7 +23,7 @@ interface CadreFiltersProps {
 
 const CadreFilters: React.FC<CadreFiltersProps> = ({ 
   searchTerm, 
-  onSearchChange,
+  onSearch,
   mainBranches,
   subBranches,
   classrooms,
@@ -33,6 +34,8 @@ const CadreFilters: React.FC<CadreFiltersProps> = ({
   onSubBranchChange,
   onClassroomChange
 }) => {
+  const [inputValue, setInputValue] = useState(searchTerm);
+
   // Filter sub-branches based on selected main branch
   const filteredSubBranches = selectedMainBranch === 'all' 
     ? subBranches 
@@ -43,19 +46,40 @@ const CadreFilters: React.FC<CadreFiltersProps> = ({
     ? classrooms
     : classrooms.filter(c => c.sub_branch_id === selectedSubBranch);
 
+  const handleSearch = () => {
+    onSearch(inputValue);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   return (
     <Card>
       <CardContent className="p-4">
         <div className="space-y-4">
           {/* Search Input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="搜索干部姓名、职位、母班或护持班..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="搜索干部姓名、职位、母班或护持班..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="pl-10"
+                data-testid="input-search-cadre"
+              />
+            </div>
+            <Button 
+              onClick={handleSearch}
+              data-testid="button-search-cadre"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              搜索
+            </Button>
           </div>
 
           {/* Filter Dropdowns */}
