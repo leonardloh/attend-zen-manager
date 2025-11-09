@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import CadreCard from '@/components/Cadres/CadreCard';
 import CadreStats from '@/components/Cadres/CadreStats';
 import CadreFilters from '@/components/Cadres/CadreFilters';
-import CadreDialog from '@/components/Cadres/CadreDialog';
 import { useDatabase } from '@/contexts/DatabaseContext';
-import { type Cadre } from '@/data/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
@@ -16,11 +13,10 @@ import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, Pagi
 
 const Cadres: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
 
   // Use DatabaseContext for cadres data
-  const { cadres, updateCadre, addCadre, deleteCadre } = useDatabase();
+  const { cadres, deleteCadre } = useDatabase();
 
   const filteredCadres = cadres.filter(cadre =>
     cadre.chinese_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -41,16 +37,6 @@ const Cadres: React.FC = () => {
   const pagedCadres = filteredCadres.slice(start, start + pageSize);
   const goTo = (p: number) => setPage(Math.min(Math.max(1, p), totalPages));
 
-  const handleAddCadre = (newCadre: Omit<Cadre, 'id'>) => {
-    addCadre(newCadre);
-    setIsAddDialogOpen(false);
-    toast({
-      title: "成功",
-      description: "干部已成功添加"
-    });
-  };
-
-
   const handleDeleteCadre = (cadreId: string) => {
     const deletedCadre = cadres.find(cadre => cadre.id === cadreId);
     deleteCadre(cadreId);
@@ -63,16 +49,9 @@ const Cadres: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">干部管理</h1>
-          <p className="text-gray-600">Cadre Management</p>
-        </div>
-        <CadreDialog
-          isAddDialogOpen={isAddDialogOpen}
-          onAddDialogChange={setIsAddDialogOpen}
-          onAddCadre={handleAddCadre}
-        />
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">干部管理</h1>
+        <p className="text-gray-600">Cadre Management</p>
       </div>
 
       {/* Search and Filters */}
