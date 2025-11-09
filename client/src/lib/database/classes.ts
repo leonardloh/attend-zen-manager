@@ -262,11 +262,30 @@ export const updateClass = async (classData: UpdateClassData): Promise<ClassWith
     updateData
   });
   
+  // Ensure one of the manager fields is explicitly null when the other is set
+  // This prevents both fields from being set simultaneously
+  const dataWithClearedFields = {
+    ...updateData,
+    // If manage_by_sub_branch_id is set, explicitly clear manage_by_classroom_id
+    manage_by_classroom_id: updateData.manage_by_sub_branch_id !== undefined 
+      ? null 
+      : updateData.manage_by_classroom_id,
+    // If manage_by_classroom_id is set, explicitly clear manage_by_sub_branch_id
+    manage_by_sub_branch_id: updateData.manage_by_classroom_id !== undefined
+      ? null
+      : updateData.manage_by_sub_branch_id,
+  };
+  
   // Add updated_at timestamp (trigger will also set it, but being explicit)
   const dataWithTimestamp = {
-    ...updateData,
+    ...dataWithClearedFields,
     updated_at: new Date().toISOString()
   };
+  
+  console.log('🔧 updateClass - Final data with cleared fields:', {
+    manage_by_sub_branch_id: dataWithTimestamp.manage_by_sub_branch_id,
+    manage_by_classroom_id: dataWithTimestamp.manage_by_classroom_id
+  });
   
   // First, update the basic class data
   const { data, error } = await supabase
