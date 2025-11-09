@@ -33,23 +33,23 @@ const Cadres: React.FC = () => {
     setSelectedClassroom('all');
   };
 
-  // Build mappings for filtering
+  // Build mappings for filtering (ensure all IDs are strings for consistent comparison)
   const classToSubBranch = new Map<string, string>();
   const classToClassroom = new Map<string, string>();
   const subBranchToMainBranch = new Map<string, string>();
   const classroomToSubBranch = new Map<string, string>();
 
   classes.forEach(cls => {
-    if (cls.sub_branch_id) classToSubBranch.set(cls.id, cls.sub_branch_id);
-    if (cls.classroom_id) classToClassroom.set(cls.id, cls.classroom_id);
+    if (cls.sub_branch_id) classToSubBranch.set(String(cls.id), String(cls.sub_branch_id));
+    if (cls.classroom_id) classToClassroom.set(String(cls.id), String(cls.classroom_id));
   });
 
   subBranches.forEach(sb => {
-    if (sb.main_branch_id) subBranchToMainBranch.set(sb.id, sb.main_branch_id);
+    if (sb.main_branch_id) subBranchToMainBranch.set(String(sb.id), String(sb.main_branch_id));
   });
 
   classrooms.forEach(c => {
-    if (c.sub_branch_id) classroomToSubBranch.set(c.id, c.sub_branch_id);
+    if (c.sub_branch_id) classroomToSubBranch.set(String(c.id), String(c.sub_branch_id));
   });
 
   // Filter cadres based on all criteria
