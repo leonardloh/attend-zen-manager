@@ -52,6 +52,23 @@ const Cadres: React.FC = () => {
     if (c.sub_branch_id) classroomToSubBranch.set(String(c.id), String(c.sub_branch_id));
   });
 
+  // Debug logging for classroom filter
+  if (selectedClassroom !== 'all') {
+    console.log('🔍 Classroom Filter Debug:', {
+      selectedClassroom,
+      classToClassroomMap: Array.from(classToClassroom.entries()),
+      allCadres: cadres.map(c => ({
+        name: c.chinese_name,
+        roles: c.roles.map(r => ({
+          class_id: r.class_id,
+          class_id_string: String(r.class_id),
+          class_name: r.class_name,
+          role: r.role
+        }))
+      }))
+    });
+  }
+
   // Filter cadres based on all criteria
   const filteredCadres = cadres.filter(cadre => {
     // Text search filter
