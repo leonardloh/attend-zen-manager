@@ -531,13 +531,18 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       });
     }
     
+    // Explicitly set both manager fields - one will be a value, the other should be undefined
+    // This ensures when switching manager types, the old field is cleared
+    const hasSubBranch = classData.sub_branch_id && classData.sub_branch_id.trim() !== '';
+    const hasClassroom = classData.classroom_id && classData.classroom_id.trim() !== '';
+    
     const updateData: UpdateClassData = {
       id: parseInt(classData.id),
       name: classData.name,
       category: classData.category,
       level: classData.level,
-      manage_by_sub_branch_id: classData.sub_branch_id ? parseInt(classData.sub_branch_id) : undefined,
-      manage_by_classroom_id: classData.classroom_id ? parseInt(classData.classroom_id) : undefined,
+      manage_by_sub_branch_id: hasSubBranch ? parseInt(classData.sub_branch_id!) : undefined,
+      manage_by_classroom_id: hasClassroom ? parseInt(classData.classroom_id!) : undefined,
       day_of_week: classData.time?.split(' ')[0],
       class_start_date: normalizedStartDate,
       class_start_time: classData.time?.split(' ')[1]?.split('-')[0],
@@ -550,6 +555,8 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     
     console.log('🔧 Final UPDATE class data being sent to database:', {
       id: updateData.id,
+      manage_by_sub_branch_id: updateData.manage_by_sub_branch_id,
+      manage_by_classroom_id: updateData.manage_by_classroom_id,
       monitor_id: monitorDatabaseId,
       deputy_monitors: deputyMonitorDatabaseIds,
       care_officers: careOfficerDatabaseIds,
