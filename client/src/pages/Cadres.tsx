@@ -13,21 +13,118 @@ import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, Pagi
 
 const Cadres: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedMainBranch, setSelectedMainBranch] = useState('all');
+  const [selectedSubBranch, setSelectedSubBranch] = useState('all');
+  const [selectedClassroom, setSelectedClassroom] = useState('all');
   const { toast } = useToast();
 
   // Use DatabaseContext for cadres data
-  const { cadres, deleteCadre } = useDatabase();
+  const { cadres, deleteCadre, classes, mainBranches, subBranches, classrooms } = useDatabase();
 
-  const filteredCadres = cadres.filter(cadre =>
-    cadre.chinese_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cadre.english_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cadre.student_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cadre.roles.some(role => 
-      role.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      role.class_name.toLowerCase().includes(searchTerm.toLowerCase())
-    ) ||
-    cadre.support_classes?.some(cls => cls.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Handle cascading filter resets
+  const handleMainBranchChange = (value: string) => {
+    setSelectedMainBranch(value);
+    setSelectedSubBranch('all');
+    setSelectedClassroom('all');
+  };
+
+  const handleSubBranchChange = (value: string) => {
+    setSelectedSubBranch(value);
+    setSelectedClassroom('all');
+  };
+
+  // Build mappings for filtering
+  const classToSubBranch = new Map<string, string>();
+  const classToClassroom = new Map<string, string>();
+  const subBranchToMainBranch = new Map<string, string>();
+  const classroomToSubBranch = new Map<string, string>();
+
+  classes.forEach(cls => {
+    if (cls.sub_branch_id) classToSubBranch.set(cls.id, cls.sub_branch_id);
+    if (cls.classroom_id) classToClassroom.set(cls.id, cls.classroom_id);
+  });
+
+  subBranches.forEach(sb => {
+    if (sb.main_branch_id) subBranchToMainBranch.set(sb.id, sb.main_branch_id);
+  });
+
+  classrooms.forEach(c => {
+    if (c.sub_branch_id) classroomToSubBranch.set(c.id, c.sub_branch_id);
+  });
+
+  // Filter cadres based on all criteria
+  const filteredCadres = cadres.filter(cadre => {
+    // Text search filter
+    const matchesSearch = !searchTerm || (
+      cadre.chinese_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cadre.english_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cadre.student_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cadre.roles.some(role => 
+        role.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        role.class_name.toLowerCase().includes(searchTerm.toLowerCase())
+      ) ||
+      cadre.support_classes?.some(cls => cls.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
+    // Get all class IDs this cadre is involved in
+    const cadreClassIds = cadre.roles.map(role => role.class_id);
+
+    // Main Branch filter
+    if (selectedMainBranch !== 'all') {
+      const hasMatchingMainBranch = cadreClassIds.some(classId => {
+        const subBranchId = classToSubBranch.get(classId);
+        const classroomId = classToClassroom.get(classId);
+        
+        // Check if class is managed by a sub-branch under this main branch
+        if (subBranchId && subBranchToMainBranch.get(subBranchId) === selectedMainBranch) {
+          return true;
+        }
+        
+        // Check if class is managed by a classroom under a sub-branch of this main branch
+        if (classroomId) {
+          const classroomSubBranch = classroomToSubBranch.get(classroomId);
+          if (classroomSubBranch && subBranchToMainBranch.get(classroomSubBranch) === selectedMainBranch) {
+            return true;
+          }
+        }
+        
+        return false;
+      });
+      
+      if (!hasMatchingMainBranch) return false;
+    }
+
+    // Sub Branch filter
+    if (selectedSubBranch !== 'all') {
+      const hasMatchingSubBranch = cadreClassIds.some(classId => {
+        const subBranchId = classToSubBranch.get(classId);
+        const classroomId = classToClassroom.get(classId);
+        
+        // Check if class is managed directly by this sub-branch
+        if (subBranchId === selectedSubBranch) return true;
+        
+        // Check if class is managed by a classroom under this sub-branch
+        if (classroomId && classroomToSubBranch.get(classroomId) === selectedSubBranch) {
+          return true;
+        }
+        
+        return false;
+      });
+      
+      if (!hasMatchingSubBranch) return false;
+    }
+
+    // Classroom filter
+    if (selectedClassroom !== 'all') {
+      const hasMatchingClassroom = cadreClassIds.some(classId => {
+        return classToClassroom.get(classId) === selectedClassroom;
+      });
+      
+      if (!hasMatchingClassroom) return false;
+    }
+
+    return matchesSearch;
+  });
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -58,6 +155,15 @@ const Cadres: React.FC = () => {
       <CadreFilters
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        mainBranches={mainBranches}
+        subBranches={subBranches}
+        classrooms={classrooms}
+        selectedMainBranch={selectedMainBranch}
+        selectedSubBranch={selectedSubBranch}
+        selectedClassroom={selectedClassroom}
+        onMainBranchChange={handleMainBranchChange}
+        onSubBranchChange={handleSubBranchChange}
+        onClassroomChange={setSelectedClassroom}
       />
 
       {/* Cadres Table */}

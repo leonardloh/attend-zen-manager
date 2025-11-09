@@ -1,21 +1,54 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
 
 interface CadreFiltersProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
+  mainBranches: Array<{ id: string; name: string }>;
+  subBranches: Array<{ id: string; name: string; main_branch_id: string }>;
+  classrooms: Array<{ id: string; name: string; sub_branch_id: string }>;
+  selectedMainBranch: string;
+  selectedSubBranch: string;
+  selectedClassroom: string;
+  onMainBranchChange: (value: string) => void;
+  onSubBranchChange: (value: string) => void;
+  onClassroomChange: (value: string) => void;
 }
 
-const CadreFilters: React.FC<CadreFiltersProps> = ({ searchTerm, onSearchChange }) => {
+const CadreFilters: React.FC<CadreFiltersProps> = ({ 
+  searchTerm, 
+  onSearchChange,
+  mainBranches,
+  subBranches,
+  classrooms,
+  selectedMainBranch,
+  selectedSubBranch,
+  selectedClassroom,
+  onMainBranchChange,
+  onSubBranchChange,
+  onClassroomChange
+}) => {
+  // Filter sub-branches based on selected main branch
+  const filteredSubBranches = selectedMainBranch === 'all' 
+    ? subBranches 
+    : subBranches.filter(sb => sb.main_branch_id === selectedMainBranch);
+
+  // Filter classrooms based on selected sub-branch
+  const filteredClassrooms = selectedSubBranch === 'all'
+    ? classrooms
+    : classrooms.filter(c => c.sub_branch_id === selectedSubBranch);
+
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
+        <div className="space-y-4">
+          {/* Search Input */}
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="搜索干部姓名、职位、母班或护持班..."
@@ -24,19 +57,56 @@ const CadreFilters: React.FC<CadreFiltersProps> = ({ searchTerm, onSearchChange 
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              全部
-            </Button>
-            <Button variant="outline" size="sm">
-              班长
-            </Button>
-            <Button variant="outline" size="sm">
-              副班长
-            </Button>
-            <Button variant="outline" size="sm">
-              关怀员
-            </Button>
+
+          {/* Filter Dropdowns */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Main Branch Filter */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">州属分院 / Main Branch</Label>
+              <Select value={selectedMainBranch} onValueChange={onMainBranchChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择州属分院" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部州属分院</SelectItem>
+                  {mainBranches.map(mb => (
+                    <SelectItem key={mb.id} value={mb.id}>{mb.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sub Branch Filter */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">分院 / Sub Branch</Label>
+              <Select value={selectedSubBranch} onValueChange={onSubBranchChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择分院" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部分院</SelectItem>
+                  {filteredSubBranches.map(sb => (
+                    <SelectItem key={sb.id} value={sb.id}>{sb.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Classroom Filter */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">教室 / Classroom</Label>
+              <Select value={selectedClassroom} onValueChange={onClassroomChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择教室" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部教室</SelectItem>
+                  {filteredClassrooms.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </CardContent>
