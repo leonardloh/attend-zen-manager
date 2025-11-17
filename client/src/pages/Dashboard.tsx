@@ -206,7 +206,7 @@ const Dashboard: React.FC = () => {
             <p className="text-gray-600">Cadre Dashboard</p>
           </div>
           <Button onClick={() => navigate('/attendance')}>
-            开始考勤 / Start Attendance
+            开始点名 / Start Attendance
           </Button>
         </div>
 
@@ -242,7 +242,7 @@ const Dashboard: React.FC = () => {
               <CardTitle className="flex items-center justify-between">
                 <span>我的班级</span>
                 <Button size="sm" onClick={() => navigate('/attendance')}>
-                  开始考勤
+                  开始点名
                 </Button>
               </CardTitle>
             </CardHeader>

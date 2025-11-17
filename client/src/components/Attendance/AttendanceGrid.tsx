@@ -239,7 +239,7 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({
       {isHoliday && (
         <Card className="border-orange-200 bg-orange-50">
           <CardContent className="py-4 text-sm text-orange-800">
-            本次考勤已标记为 <strong>放假</strong>，所有学员将记录为放假状态。若需恢复考勤，请取消放假后重新标记。
+            本次点名已标记为 <strong>放假</strong>，所有学员将记录为放假状态。若需恢复点名，请取消放假后重新标记。
           </CardContent>
         </Card>
       )}
@@ -262,7 +262,7 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>考勤统计 / Attendance Summary</span>
+            <span>点名统计 / Attendance Summary</span>
             <div className="flex gap-2">
               <Button onClick={markAllPresent} variant="outline" size="sm" disabled={isHoliday}>
                 全部出席

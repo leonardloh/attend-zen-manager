@@ -70,7 +70,7 @@ const DeleteClassDialog: React.FC<DeleteClassDialogProps> = ({
                 </p>
                 <ul className="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
                   <li>班级基本信息和学习进度</li>
-                  <li>与该班级关联的考勤记录</li>
+                  <li>与该班级关联的点名记录</li>
                   <li>干部职位分配信息</li>
                   <li>学员班级归属记录</li>
                 </ul>

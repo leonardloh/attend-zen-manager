@@ -36,7 +36,7 @@ const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-base font-semibold">
-            <span>历史考勤记录概览</span>
+            <span>历史点名记录概览</span>
             {loading && <span className="text-xs text-muted-foreground">加载中...</span>}
           </CardTitle>
         </CardHeader>
@@ -47,7 +47,7 @@ const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center gap-3 py-10 text-center text-sm text-red-600">
-              <span>无法获取该班级的历史考勤记录：{error}</span>
+              <span>无法获取该班级的历史点名记录：{error}</span>
               {onRetry && (
                 <Button variant="outline" size="sm" onClick={onRetry}>
                   重试
@@ -78,7 +78,7 @@ const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
             </div>
           ) : (
             <div className="py-10 text-center text-sm text-muted-foreground">
-              暂无历史考勤记录
+              暂无历史点名记录
             </div>
           )}
         </CardContent>
@@ -89,7 +89,7 @@ const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
           <CardContent className="space-y-3 py-4 text-sm text-red-700">
             <div className="flex items-center gap-2 font-medium">
               <AlertTriangle className="h-4 w-4" />
-              提醒：以下周次尚未填写考勤
+              提醒：以下周次尚未填写点名
             </div>
             <ul className="list-disc space-y-1 pl-5">
               {missingWeeks.map((week) => (
@@ -97,7 +97,7 @@ const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
               ))}
             </ul>
             <p className="text-xs text-red-600">
-              请尽快补充该班级以上周次的考勤数据，以保持记录完整。
+              请尽快补充该班级以上周次的点名数据，以保持记录完整。
             </p>
           </CardContent>
         </Card>

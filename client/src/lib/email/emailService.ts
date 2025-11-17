@@ -229,13 +229,13 @@ export const generateInvitationEmail = (data: InvitationEmailData): EmailTemplat
     <body>
       <div class="header">
         <h1>邀请加入 Attend Zen Manager</h1>
-        <p>您已被邀请加入考勤管理系统</p>
+        <p>您已被邀请加入点名管理系统</p>
       </div>
       
       <div class="content">
         <p>您好！</p>
         
-        <p>您已被邀请加入 Attend Zen Manager 考勤管理系统。请点击下面的链接接受邀请并创建您的账户。</p>
+        <p>您已被邀请加入 Attend Zen Manager 点名管理系统。请点击下面的链接接受邀请并创建您的账户。</p>
         
         <div class="details">
           <h3>邀请详情：</h3>
@@ -269,7 +269,7 @@ export const generateInvitationEmail = (data: InvitationEmailData): EmailTemplat
 
 您好！
 
-您已被邀请加入 Attend Zen Manager 考勤管理系统。
+您已被邀请加入 Attend Zen Manager 点名管理系统。
 
 邀请详情：
 - 邮箱：${data.email}
@@ -287,7 +287,7 @@ ${data.invitationLink}
 
   return {
     to: data.email,
-    subject: '邀请加入 Attend Zen Manager 考勤管理系统',
+    subject: '邀请加入 Attend Zen Manager 点名管理系统',
     html,
     text,
   };

@@ -49,7 +49,7 @@ const CadreStats: React.FC<CadreStatsProps> = ({ cadres }) => {
           <div className="text-2xl font-bold text-green-600">
             {cadres.filter(c => c.can_take_attendance).length}
           </div>
-          <div className="text-sm text-gray-600">可管理考勤</div>
+          <div className="text-sm text-gray-600">可管理点名</div>
         </CardContent>
       </Card>
       <Card>

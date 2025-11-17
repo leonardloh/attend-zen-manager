@@ -30,7 +30,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { icon: BookOpen, label: '班级管理', sublabel: 'Classes', path: '/classes' },
     { icon: UserCheck, label: '干部管理', sublabel: 'Cadres', path: '/cadres' },
     { icon: Building2, label: '教室管理', sublabel: 'Classrooms', path: '/classrooms' },
-    { icon: ClipboardList, label: '考勤记录', sublabel: 'Attendance', path: '/attendance' },
+    { icon: ClipboardList, label: '点名记录', sublabel: 'Attendance', path: '/attendance' },
     { icon: BarChart3, label: '报告统计', sublabel: 'Reports', path: '/reports' },
     { icon: UserCog, label: '用戶管理', sublabel: 'User Management', path: '/user-management' },
     { icon: Settings, label: '系统设置', sublabel: 'Settings', path: '/settings' },
@@ -38,14 +38,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const cadreNavItems = [
     { icon: Home, label: '主页', sublabel: 'Dashboard', path: '/dashboard' },
-    { icon: ClipboardList, label: '考勤记录', sublabel: 'Attendance', path: '/attendance' },
+    { icon: ClipboardList, label: '点名记录', sublabel: 'Attendance', path: '/attendance' },
     { icon: Users, label: '我的班级', sublabel: 'My Classes', path: '/my-classes' },
-    { icon: BarChart3, label: '考勤报告', sublabel: 'Reports', path: '/reports' },
+    { icon: BarChart3, label: '点名报告', sublabel: 'Reports', path: '/reports' },
   ];
 
   const studentNavItems = [
     { icon: Home, label: '主页', sublabel: 'Dashboard', path: '/dashboard' },
-    { icon: Calendar, label: '我的考勤', sublabel: 'My Attendance', path: '/my-attendance' },
+    { icon: Calendar, label: '我的点名', sublabel: 'My Attendance', path: '/my-attendance' },
   ];
 
   const getNavItems = () => {

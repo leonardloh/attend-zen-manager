@@ -224,7 +224,7 @@ const Attendance: React.FC = () => {
       if (records.length > 0) {
         await createBulkAttendance(records);
       }
-      alert('考勤数据和学习进度已保存！');
+      alert('点名数据和学习进度已保存！');
       setSessionActive(false);
       setIsHoliday(false);
       setHistoryRecords([]);
@@ -240,7 +240,7 @@ const Attendance: React.FC = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">考勤管理</h1>
+          <h1 className="text-2xl font-bold text-gray-900">点名管理</h1>
           <p className="text-gray-600">Attendance Management</p>
         </div>
 
@@ -248,7 +248,7 @@ const Attendance: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              开始考勤会话
+              开始点名会话
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -320,7 +320,7 @@ const Attendance: React.FC = () => {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "yyyy年MM月dd日") : "选择考勤日期"}
+                    {selectedDate ? format(selectedDate, "yyyy年MM月dd日") : "选择点名日期"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -351,7 +351,7 @@ const Attendance: React.FC = () => {
                 disabled={!selectedClass || !selectedDate}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                开始考勤
+                开始点名
               </Button>
             </div>
           </CardContent>
@@ -365,7 +365,7 @@ const Attendance: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {selectedClassInfo?.name} - 考勤中
+            {selectedClassInfo?.name} - 点名中
           </h1>
           <p className="text-gray-600">
             {selectedClassInfo?.time} • {selectedDate ? format(selectedDate, "yyyy年MM月dd日") : ''}
@@ -383,7 +383,7 @@ const Attendance: React.FC = () => {
           </Button>
           <Button onClick={endAttendanceSession} className="bg-green-600 hover:bg-green-700">
             <Save className="h-4 w-4 mr-2" />
-            结束考勤
+            结束点名
           </Button>
         </div>
       </div>

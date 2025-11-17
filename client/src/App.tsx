@@ -167,7 +167,7 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <div className="text-center py-20">
-              <h2 className="text-xl font-semibold mb-4">我的考勤</h2>
+              <h2 className="text-xl font-semibold mb-4">我的点名</h2>
               <p className="text-gray-600">功能开发中...</p>
             </div>
           </ProtectedRoute>

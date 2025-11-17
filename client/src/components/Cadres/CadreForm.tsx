@@ -240,8 +240,8 @@ const CadreForm: React.FC<CadreFormProps> = ({ initialData, onSubmit, onCancel }
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label htmlFor="can_take_attendance">考勤管理权限</Label>
-              <p className="text-sm text-gray-500">允许该干部管理班级考勤</p>
+              <Label htmlFor="can_take_attendance">点名管理权限</Label>
+              <p className="text-sm text-gray-500">允许该干部管理班级点名</p>
             </div>
             <Switch
               id="can_take_attendance"

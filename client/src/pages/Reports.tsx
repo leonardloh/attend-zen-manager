@@ -207,7 +207,7 @@ const Reports: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>周考勤趋势</CardTitle>
+            <CardTitle>周点名趋势</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -255,7 +255,7 @@ const Reports: React.FC = () => {
       {/* Detailed Report Table */}
       <Card>
         <CardHeader>
-          <CardTitle>详细考勤报告</CardTitle>
+          <CardTitle>详细点名报告</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">

@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
             <Menu className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">考勤管理系统</h1>
+            <h1 className="text-lg font-semibold text-gray-900">点名管理系统</h1>
             <p className="text-sm text-gray-500">Attendance Management</p>
           </div>
         </div>

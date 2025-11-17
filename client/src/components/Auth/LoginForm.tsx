@@ -94,7 +94,7 @@ const LoginForm: React.FC = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-gray-900">
-            考勤管理系统
+            点名管理系统
           </CardTitle>
           <CardDescription>
             Attendance Management System
