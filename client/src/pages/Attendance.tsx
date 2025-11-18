@@ -467,6 +467,8 @@ const Attendance: React.FC = () => {
         isHistoryLoading={isHistoryLoading}
         historyError={historyError}
         onReloadHistory={loadAttendanceHistory}
+        initialAttendanceData={attendanceData}
+        initialProgressData={progressData}
       />
     </div>
   );

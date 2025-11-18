@@ -43,6 +43,8 @@ interface AttendanceGridProps {
   isHistoryLoading?: boolean;
   historyError?: string | null;
   onReloadHistory?: () => void;
+  initialAttendanceData?: AttendanceStatus[];
+  initialProgressData?: AttendanceProgressData;
 }
 
 const AttendanceGrid: React.FC<AttendanceGridProps> = ({
@@ -55,6 +57,12 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({
   isHistoryLoading = false,
   historyError = null,
   onReloadHistory,
+  initialAttendanceData = [],
+  initialProgressData = {
+    learning_progress: '',
+    page_number: '',
+    line_number: '',
+  },
 }) => {
   // Default mock students data - in a real app, this would be fetched based on classId
   const defaultStudents: Student[] = [
@@ -89,17 +97,22 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Update attendance when students change
+  // Initialize attendance with prefilled data
   useEffect(() => {
-    // Preserve existing statuses when the roster is stable; initialize new ones as null
-    setAttendance((prev) => {
-      const statusById = new Map(prev.map(a => [a.studentId, a.status]));
+    if (initialAttendanceData.length > 0) {
+      console.log('🔄 AttendanceGrid: Applying prefilled data', initialAttendanceData);
+      const statusById = new Map(initialAttendanceData.map(a => [a.studentId, a.status]));
       const updated = students.map(s => ({ studentId: s.id, status: statusById.get(s.id) ?? null }));
+      setAttendance(updated);
       previousAttendanceRef.current = updated;
-      return updated;
-    });
-    setPage(1); // reset page when roster changes
-  }, [students]);
+    } else {
+      // Initialize with empty statuses
+      const updated = students.map(s => ({ studentId: s.id, status: null as AttendanceStatusValue | null }));
+      setAttendance(updated);
+      previousAttendanceRef.current = updated;
+    }
+    setPage(1);
+  }, [students, initialAttendanceData]);
 
   // Handle holiday toggles
   useEffect(() => {
@@ -123,11 +136,15 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHoliday]);
 
-  const [progressData, setProgressData] = useState<AttendanceProgressData>({
-    learning_progress: '',
-    page_number: '',
-    line_number: '',
-  });
+  const [progressData, setProgressData] = useState<AttendanceProgressData>(initialProgressData);
+
+  // Update progress data when initial data changes
+  useEffect(() => {
+    if (initialProgressData.learning_progress || initialProgressData.page_number || initialProgressData.line_number) {
+      console.log('🔄 AttendanceGrid: Applying prefilled progress data', initialProgressData);
+      setProgressData(initialProgressData);
+    }
+  }, [initialProgressData]);
 
   const statusConfig = {
     present: { label: '实体出席', color: 'bg-green-500 hover:bg-green-600 text-white' },
