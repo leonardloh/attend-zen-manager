@@ -261,6 +261,47 @@ export const createBulkAttendance = async (attendanceRecords: CreateAttendanceDa
   }));
 };
 
+// Upsert bulk attendance - delete existing records for the same class/date, then insert new ones
+export const upsertBulkAttendance = async (attendanceRecords: CreateAttendanceData[]): Promise<AttendanceRecord[]> => {
+  if (attendanceRecords.length === 0) {
+    return [];
+  }
+
+  const classId = attendanceRecords[0].class_id;
+  const attendanceDate = attendanceRecords[0].attendance_date;
+
+  // Delete existing records for this class and date
+  const { error: deleteError } = await supabase
+    .from('class_attendance')
+    .delete()
+    .eq('class_id', classId)
+    .eq('attendance_date', attendanceDate);
+
+  if (deleteError) {
+    throw new Error(`Failed to delete existing attendance: ${deleteError.message}`);
+  }
+
+  // Insert new records
+  const { data, error } = await supabase
+    .from('class_attendance')
+    .insert(attendanceRecords)
+    .select(`
+      *,
+      students!inner(chinese_name),
+      classes!inner(name)
+    `);
+
+  if (error) {
+    throw new Error(`Failed to upsert bulk attendance: ${error.message}`);
+  }
+
+  return data.map(record => ({
+    ...record,
+    student_name: record.students?.chinese_name,
+    class_name: record.classes?.name
+  }));
+};
+
 // Helper functions for statistics - for latest attendance session only
 export const getAttendanceStats = async (classId?: number, studentId?: number) => {
   let query = supabase

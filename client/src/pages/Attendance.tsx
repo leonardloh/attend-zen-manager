@@ -11,7 +11,7 @@ import { Calendar as CalendarIcon, Clock, Users, Save, Search } from 'lucide-rea
 import { addWeeks, endOfWeek, format, parseISO, startOfWeek, startOfYear } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useDatabase } from '@/contexts/DatabaseContext';
-import { createBulkAttendance, fetchAttendanceByClass, type AttendanceRecord, type CreateAttendanceData } from '@/lib/database/attendance';
+import { upsertBulkAttendance, fetchAttendanceByClass, type AttendanceRecord, type CreateAttendanceData } from '@/lib/database/attendance';
 import { WeeklyAttendancePoint } from '@/components/Attendance/types';
 
 type AttendanceStatusValue = 'present' | 'online' | 'leave' | 'absent' | 'holiday';
@@ -187,17 +187,66 @@ const Attendance: React.FC = () => {
     return result;
   }, [historyRecords, selectedClass, selectedDate, selectedClassInfo]);
 
-  const startAttendanceSession = () => {
+  const startAttendanceSession = async () => {
     if (selectedClass && selectedDate) {
+      const dateString = format(selectedDate, 'yyyy-MM-dd');
+      
+      // Check if there's existing attendance for this date
+      try {
+        const existingRecords = await fetchAttendanceByClass(parseInt(selectedClass, 10), dateString);
+        
+        if (existingRecords.length > 0) {
+          // Prefill with existing data
+          console.log(`📝 Found ${existingRecords.length} existing records for ${dateString}, prefilling...`);
+          
+          const statusCodeToValue: Record<number, AttendanceStatusValue> = {
+            1: 'present',
+            2: 'online',
+            3: 'leave',
+            0: 'absent',
+            4: 'holiday',
+          };
+          
+          const prefilledAttendance = existingRecords.map(record => ({
+            studentId: String(record.student_id),
+            status: record.attendance_status !== undefined ? (statusCodeToValue[record.attendance_status] || null) : null,
+          }));
+          
+          setAttendanceData(prefilledAttendance);
+          
+          // Prefill progress data from first record
+          const firstRecord = existingRecords[0];
+          setProgressData({
+            learning_progress: firstRecord.learning_progress || '',
+            page_number: firstRecord.lamrin_page ? String(firstRecord.lamrin_page) : '',
+            line_number: firstRecord.lamrin_line ? String(firstRecord.lamrin_line) : '',
+          });
+          
+          setIsHoliday(firstRecord.attendance_status === 4);
+        } else {
+          // No existing records, start fresh
+          console.log(`📝 No existing records for ${dateString}, starting fresh`);
+          setAttendanceData([]);
+          setProgressData({
+            learning_progress: '',
+            page_number: '',
+            line_number: '',
+          });
+          setIsHoliday(false);
+        }
+      } catch (error) {
+        console.error('Failed to load existing attendance:', error);
+        // Start fresh on error
+        setAttendanceData([]);
+        setProgressData({
+          learning_progress: '',
+          page_number: '',
+          line_number: '',
+        });
+        setIsHoliday(false);
+      }
+      
       setSessionActive(true);
-      // Reset data when starting a new session
-      setAttendanceData([]);
-      setProgressData({
-        learning_progress: '',
-        page_number: '',
-        line_number: '',
-      });
-      setIsHoliday(false);
       setHistoryRecords([]);
       setHistoryError(null);
     }
@@ -241,7 +290,8 @@ const Attendance: React.FC = () => {
 
     try {
       if (records.length > 0) {
-        await createBulkAttendance(records);
+        // Use upsert to update existing records or create new ones
+        await upsertBulkAttendance(records);
       }
       alert('点名数据和学习进度已保存！');
       setSessionActive(false);
