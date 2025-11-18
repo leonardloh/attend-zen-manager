@@ -132,9 +132,22 @@ const Attendance: React.FC = () => {
     const rangeStart = lowerBound;
     const rangeEnd = currentWeekStart.getTime() >= lowerBound.getTime() ? currentWeekStart : lowerBound;
 
+    // Group records by date and count attendance per session
+    const recordsByDate = new Map<string, typeof historyRecords>();
     historyRecords.forEach((record) => {
       if (!record.attendance_date) return;
-      const recordDate = parseISO(record.attendance_date);
+      const dateKey = record.attendance_date;
+      if (!recordsByDate.has(dateKey)) {
+        recordsByDate.set(dateKey, []);
+      }
+      recordsByDate.get(dateKey)!.push(record);
+    });
+
+    console.log(`📊 Processing ${recordsByDate.size} attendance sessions for class ${selectedClass}`);
+
+    // Process each date's records as a single session
+    recordsByDate.forEach((dateRecords, dateKey) => {
+      const recordDate = parseISO(dateKey);
       if (Number.isNaN(recordDate.getTime())) return;
       const weekStart = startOfWeek(recordDate, { weekStartsOn: 1 });
       if (weekStart.getTime() < lowerBound.getTime() || weekStart.getTime() > rangeEnd.getTime()) {
@@ -142,10 +155,16 @@ const Attendance: React.FC = () => {
       }
       const key = format(weekStart, 'yyyy-MM-dd');
       const existing = historyMap.get(key) ?? { weekStart, attendanceCount: 0, totalRecords: 0 };
-      if (record.attendance_status === 1 || record.attendance_status === 2) {
-        existing.attendanceCount += 1;
-      }
-      existing.totalRecords += 1;
+      
+      // Count how many students attended (present or online) on this date
+      const attendedCount = dateRecords.filter(
+        record => record.attendance_status === 1 || record.attendance_status === 2
+      ).length;
+      
+      console.log(`📅 Date ${dateKey}: ${attendedCount} students attended (${dateRecords.length} total records)`);
+      
+      existing.attendanceCount += attendedCount;
+      existing.totalRecords += dateRecords.length;
       historyMap.set(key, existing);
     });
 

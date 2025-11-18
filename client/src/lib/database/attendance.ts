@@ -261,7 +261,7 @@ export const createBulkAttendance = async (attendanceRecords: CreateAttendanceDa
   }));
 };
 
-// Helper functions for statistics
+// Helper functions for statistics - for latest attendance session only
 export const getAttendanceStats = async (classId?: number, studentId?: number) => {
   let query = supabase
     .from('class_attendance')
@@ -276,22 +276,36 @@ export const getAttendanceStats = async (classId?: number, studentId?: number) =
     throw new Error(`Failed to fetch attendance stats: ${error.message}`);
   }
 
-  const present = data.filter(record => record.attendance_status === 1).length;
-  const online = data.filter(record => record.attendance_status === 2).length;
-  const leave = data.filter(record => record.attendance_status === 3).length;
-  const absent = data.filter(record => record.attendance_status === 0).length;
-  const holiday = data.filter(record => record.attendance_status === 4).length;
+  if (!data || data.length === 0) {
+    return {
+      total: 0,
+      present: 0,
+      absent: 0,
+      online: 0,
+      leave: 0,
+      holiday: 0,
+      attendanceRate: 0,
+      latestDate: undefined
+    };
+  }
 
   // Find the latest attendance date
-  const latestDate = data.length > 0 
-    ? data.reduce((latest, record) => {
-        if (!record.attendance_date) return latest;
-        if (!latest) return record.attendance_date;
-        return record.attendance_date > latest ? record.attendance_date : latest;
-      }, null as string | null)
-    : null;
+  const latestDate = data.reduce((latest, record) => {
+    if (!record.attendance_date) return latest;
+    if (!latest) return record.attendance_date;
+    return record.attendance_date > latest ? record.attendance_date : latest;
+  }, null as string | null);
 
-  const total = data.length;
+  // Only count records from the latest date
+  const latestRecords = data.filter(record => record.attendance_date === latestDate);
+
+  const present = latestRecords.filter(record => record.attendance_status === 1).length;
+  const online = latestRecords.filter(record => record.attendance_status === 2).length;
+  const leave = latestRecords.filter(record => record.attendance_status === 3).length;
+  const absent = latestRecords.filter(record => record.attendance_status === 0).length;
+  const holiday = latestRecords.filter(record => record.attendance_status === 4).length;
+
+  const total = latestRecords.length;
   const effectiveTotal = total - holiday;
   const attendanceRate = effectiveTotal > 0 ? ((present + online) / effectiveTotal) * 100 : 0;
 
