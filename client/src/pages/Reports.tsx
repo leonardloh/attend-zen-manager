@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,22 +7,49 @@ import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Download, Calendar, TrendingUp, Users, CheckCircle } from 'lucide-react';
 import { useDatabase } from '@/contexts/DatabaseContext';
+import { getAttendanceStats } from '@/lib/database/attendance';
 
 const Reports: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
   const [selectedClass, setSelectedClass] = useState('all');
+  const [classAttendanceStats, setClassAttendanceStats] = useState<Map<number, {
+    present: number;
+    online: number;
+    leave: number;
+    absent: number;
+    total: number;
+    attendanceRate: number;
+  }>>(new Map());
   
   // Get data from database context
   const {
     students,
     classes,
-    cadres,
     isLoadingStudents,
-    isLoadingClasses,
-    isLoadingCadres
+    isLoadingClasses
   } = useDatabase();
   
-  const isLoading = isLoadingStudents || isLoadingClasses || isLoadingCadres;
+  const isLoading = isLoadingStudents || isLoadingClasses;
+
+  // Fetch real attendance statistics for each class
+  useEffect(() => {
+    const fetchAttendanceStats = async () => {
+      const statsMap = new Map();
+      for (const cls of classes) {
+        try {
+          const stats = await getAttendanceStats(Number(cls.id));
+          statsMap.set(Number(cls.id), stats);
+        } catch (error) {
+          console.error(`Failed to fetch stats for class ${cls.id}:`, error);
+        }
+      }
+      setClassAttendanceStats(statsMap);
+    };
+
+    if (classes.length > 0) {
+      fetchAttendanceStats();
+    }
+  }, [classes]);
 
   // Calculate real statistics from database
   const stats = useMemo(() => {
@@ -241,7 +268,7 @@ const Reports: React.FC = () => {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {classAttendanceData.map((entry, index) => (
+                  {classAttendanceData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -273,26 +300,26 @@ const Reports: React.FC = () => {
               </thead>
               <tbody>
                 {classes.map((cls) => {
-                  const totalStudents = cls.student_count;
-                  const attendanceRate = cls.attendance_rate;
-                  const presentCount = Math.round(totalStudents * attendanceRate / 100);
-                  const onlineCount = Math.round(totalStudents * 0.15); // Estimate 15% online
-                  const leaveCount = Math.round(totalStudents * 0.05); // Estimate 5% on leave
-                  const absentCount = totalStudents - presentCount - onlineCount - leaveCount;
+                  const stats = classAttendanceStats.get(Number(cls.id));
+                  const presentCount = stats?.present ?? 0;
+                  const onlineCount = stats?.online ?? 0;
+                  const leaveCount = stats?.leave ?? 0;
+                  const absentCount = stats?.absent ?? 0;
+                  const attendanceRate = stats?.attendanceRate ?? 0;
                   
                   return (
                     <tr key={cls.id} className="border-b hover:bg-gray-50">
                       <td className="p-2 font-medium">{cls.name}</td>
-                      <td className="p-2">{new Date().toISOString().split('T')[0]}</td>
-                      <td className="p-2">{Math.max(0, presentCount)}</td>
-                      <td className="p-2">{Math.max(0, onlineCount)}</td>
-                      <td className="p-2">{Math.max(0, leaveCount)}</td>
-                      <td className="p-2">{Math.max(0, absentCount)}</td>
+                      <td className="p-2">所有记录 / All Records</td>
+                      <td className="p-2">{presentCount}</td>
+                      <td className="p-2">{onlineCount}</td>
+                      <td className="p-2">{leaveCount}</td>
+                      <td className="p-2">{absentCount}</td>
                       <td className="p-2">
                         <Badge 
                           variant={attendanceRate >= 90 ? 'default' : attendanceRate >= 80 ? 'secondary' : 'destructive'}
                         >
-                          {attendanceRate}%
+                          {attendanceRate.toFixed(1)}%
                         </Badge>
                       </td>
                     </tr>
