@@ -265,7 +265,7 @@ export const createBulkAttendance = async (attendanceRecords: CreateAttendanceDa
 export const getAttendanceStats = async (classId?: number, studentId?: number) => {
   let query = supabase
     .from('class_attendance')
-    .select('attendance_status');
+    .select('attendance_status, attendance_date');
 
   if (classId) query = query.eq('class_id', classId);
   if (studentId) query = query.eq('student_id', studentId);
@@ -282,6 +282,15 @@ export const getAttendanceStats = async (classId?: number, studentId?: number) =
   const absent = data.filter(record => record.attendance_status === 0).length;
   const holiday = data.filter(record => record.attendance_status === 4).length;
 
+  // Find the latest attendance date
+  const latestDate = data.length > 0 
+    ? data.reduce((latest, record) => {
+        if (!record.attendance_date) return latest;
+        if (!latest) return record.attendance_date;
+        return record.attendance_date > latest ? record.attendance_date : latest;
+      }, null as string | null)
+    : null;
+
   const total = data.length;
   const effectiveTotal = total - holiday;
   const attendanceRate = effectiveTotal > 0 ? ((present + online) / effectiveTotal) * 100 : 0;
@@ -293,7 +302,8 @@ export const getAttendanceStats = async (classId?: number, studentId?: number) =
     online,
     leave,
     holiday,
-    attendanceRate: Math.round(attendanceRate * 100) / 100
+    attendanceRate: Math.round(attendanceRate * 100) / 100,
+    latestDate: latestDate || undefined
   };
 };
 

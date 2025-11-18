@@ -19,6 +19,7 @@ const Reports: React.FC = () => {
     absent: number;
     total: number;
     attendanceRate: number;
+    latestDate?: string;
   }>>(new Map());
   
   // Get data from database context
@@ -306,11 +307,12 @@ const Reports: React.FC = () => {
                   const leaveCount = stats?.leave ?? 0;
                   const absentCount = stats?.absent ?? 0;
                   const attendanceRate = stats?.attendanceRate ?? 0;
+                  const latestDate = stats?.latestDate || '暂无记录';
                   
                   return (
                     <tr key={cls.id} className="border-b hover:bg-gray-50">
                       <td className="p-2 font-medium">{cls.name}</td>
-                      <td className="p-2">所有记录 / All Records</td>
+                      <td className="p-2">{latestDate}</td>
                       <td className="p-2">{presentCount}</td>
                       <td className="p-2">{onlineCount}</td>
                       <td className="p-2">{leaveCount}</td>
