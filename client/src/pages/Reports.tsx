@@ -1,16 +1,21 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, type FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, Calendar, TrendingUp, Users, CheckCircle } from 'lucide-react';
+import { Download, Calendar as CalendarIcon, TrendingUp, Users, CheckCircle } from 'lucide-react';
 import { useDatabase } from '@/contexts/DatabaseContext';
 import { getAttendanceStats } from '@/lib/database/attendance';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format, startOfMonth } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
-const Reports: React.FC = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState('monthly');
+const Reports: FC = () => {
+  const [startDate, setStartDate] = useState<Date>(() => startOfMonth(new Date()));
+  const [endDate, setEndDate] = useState<Date>(() => new Date());
   const [selectedClass, setSelectedClass] = useState('all');
   const [classAttendanceStats, setClassAttendanceStats] = useState<Map<number, {
     present: number;
@@ -136,26 +141,68 @@ const Reports: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                时间范围
+                开始日期
               </label>
-              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">本周</SelectItem>
-                  <SelectItem value="monthly">本月</SelectItem>
-                  <SelectItem value="quarterly">本季度</SelectItem>
-                  <SelectItem value="yearly">本年</SelectItem>
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                    data-testid="button-start-date"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "yyyy年MM月dd日", { locale: zhCN }) : "选择开始日期"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={(date) => date && setStartDate(date)}
+                    disabled={(date) => date > endDate || date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                结束日期
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                    data-testid="button-end-date"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "yyyy年MM月dd日", { locale: zhCN }) : "选择结束日期"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={(date) => date && setEndDate(date)}
+                    disabled={(date) => date < startDate || date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 班级筛选
               </label>
               <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger>
+                <SelectTrigger data-testid="select-class-filter">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -204,7 +251,7 @@ const Reports: React.FC = () => {
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="p-2 bg-yellow-100 rounded-lg">
-                <Calendar className="h-6 w-6 text-yellow-600" />
+                <CalendarIcon className="h-6 w-6 text-yellow-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">本月课程数</p>
