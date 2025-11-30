@@ -1,5 +1,6 @@
 import { supabase } from '../supabase';
 import { DbClass, DbClassCadre, ClassWithDetails } from '@/types/database';
+import { getClassAttendanceSummary } from './attendance';
 
 export interface CreateClassData {
   name: string;
@@ -117,6 +118,9 @@ export const mapDbClassToFrontend = async (dbClass: DbClass): Promise<ClassWithD
     finalTimeString: time
   });
 
+  // Get attendance summary (learning_progress, page/line numbers, attendance rate)
+  const attendanceSummary = await getClassAttendanceSummary(dbClass.id);
+
   return {
     ...dbClass,
     sub_branch_name,
@@ -132,10 +136,10 @@ export const mapDbClassToFrontend = async (dbClass: DbClass): Promise<ClassWithD
     care_officer_names: careOfficers.map(co => (co.students as any).chinese_name),
     mother_class_students: motherClassStudents,
     time,
-    attendance_rate: 0, // TODO: Calculate from attendance data
-    learning_progress: '',
-    page_number: '',
-    line_number: '',
+    attendance_rate: attendanceSummary.attendance_rate,
+    learning_progress: attendanceSummary.learning_progress,
+    page_number: attendanceSummary.page_number,
+    line_number: attendanceSummary.line_number,
     status: 'active' // Default status
   };
 };

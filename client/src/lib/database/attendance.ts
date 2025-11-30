@@ -417,87 +417,72 @@ export interface ClassAttendanceSummary {
   latest_attendance_date: string | null;
 }
 
-// Get the latest attendance data for a class (learning_progress, lamrin_page, lamrin_line)
-export const getLatestClassAttendance = async (classId: number): Promise<{
-  learning_progress: string;
-  lamrin_page: number | null;
-  lamrin_line: number | null;
-  latest_date: string | null;
-}> => {
-  // Get the latest attendance record for this class
-  const { data, error } = await supabase
+// Get complete attendance summary for a class in a single query
+// Returns the latest session's learning_progress, page/line numbers, and attendance rate
+// Attendance rate is calculated from the latest session only (not historical aggregate)
+export const getClassAttendanceSummary = async (classId: number): Promise<ClassAttendanceSummary> => {
+  // First, get the latest attendance date for this class
+  const { data: latestDateData, error: dateError } = await supabase
     .from('class_attendance')
-    .select('learning_progress, lamrin_page, lamrin_line, attendance_date')
+    .select('attendance_date')
     .eq('class_id', classId)
     .order('attendance_date', { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  if (error) {
-    console.error(`Failed to fetch latest attendance for class ${classId}:`, error);
+  if (dateError || !latestDateData) {
     return {
       learning_progress: '',
-      lamrin_page: null,
-      lamrin_line: null,
-      latest_date: null
+      page_number: '',
+      line_number: '',
+      attendance_rate: 0,
+      latest_attendance_date: null
     };
   }
 
-  return {
-    learning_progress: data?.learning_progress || '',
-    lamrin_page: data?.lamrin_page || null,
-    lamrin_line: data?.lamrin_line || null,
-    latest_date: data?.attendance_date || null
-  };
-};
+  const latestDate = latestDateData.attendance_date;
 
-// Calculate attendance rate for a class
-// Attendance rate = (present + online) / total * 100
-// Excludes holiday records from calculation
-export const calculateClassAttendanceRate = async (classId: number): Promise<number> => {
-  // Get all attendance records for this class
-  const { data, error } = await supabase
+  // Get all attendance records for the latest date only
+  const { data: latestRecords, error: recordsError } = await supabase
     .from('class_attendance')
-    .select('attendance_status')
-    .eq('class_id', classId);
+    .select('attendance_status, learning_progress, lamrin_page, lamrin_line')
+    .eq('class_id', classId)
+    .eq('attendance_date', latestDate);
 
-  if (error) {
-    console.error(`Failed to calculate attendance rate for class ${classId}:`, error);
-    return 0;
+  if (recordsError || !latestRecords || latestRecords.length === 0) {
+    return {
+      learning_progress: '',
+      page_number: '',
+      line_number: '',
+      attendance_rate: 0,
+      latest_attendance_date: latestDate
+    };
   }
 
-  if (!data || data.length === 0) {
-    return 0;
-  }
+  // Get learning_progress and page/line from the first record (they should be same for all records in a session)
+  const firstRecord = latestRecords[0];
+  const learning_progress = firstRecord.learning_progress || '';
+  const page_number = firstRecord.lamrin_page ? String(firstRecord.lamrin_page) : '';
+  const line_number = firstRecord.lamrin_line ? String(firstRecord.lamrin_line) : '';
 
+  // Calculate attendance rate for this session only
   // Filter out holiday records (status 4)
-  const nonHolidayRecords = data.filter(record => record.attendance_status !== 4);
+  const nonHolidayRecords = latestRecords.filter(record => record.attendance_status !== 4);
   
-  if (nonHolidayRecords.length === 0) {
-    return 0;
+  let attendance_rate = 0;
+  if (nonHolidayRecords.length > 0) {
+    // Count present (1) and online (2) as attended
+    const attendedCount = nonHolidayRecords.filter(
+      record => record.attendance_status === 1 || record.attendance_status === 2
+    ).length;
+    attendance_rate = Math.round((attendedCount / nonHolidayRecords.length) * 100);
   }
-
-  // Count present (1) and online (2) as attended
-  const attendedCount = nonHolidayRecords.filter(
-    record => record.attendance_status === 1 || record.attendance_status === 2
-  ).length;
-
-  const attendanceRate = Math.round((attendedCount / nonHolidayRecords.length) * 100);
-  return attendanceRate;
-};
-
-// Get complete attendance summary for a class (combines latest data and rate)
-export const getClassAttendanceSummary = async (classId: number): Promise<ClassAttendanceSummary> => {
-  const [latestData, attendanceRate] = await Promise.all([
-    getLatestClassAttendance(classId),
-    calculateClassAttendanceRate(classId)
-  ]);
 
   return {
-    learning_progress: latestData.learning_progress,
-    page_number: latestData.lamrin_page ? String(latestData.lamrin_page) : '',
-    line_number: latestData.lamrin_line ? String(latestData.lamrin_line) : '',
-    attendance_rate: attendanceRate,
-    latest_attendance_date: latestData.latest_date
+    learning_progress,
+    page_number,
+    line_number,
+    attendance_rate,
+    latest_attendance_date: latestDate
   };
 };
