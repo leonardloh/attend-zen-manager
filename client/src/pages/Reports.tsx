@@ -1,14 +1,14 @@
 import { useState, useMemo, useEffect, type FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, Calendar as CalendarIcon, TrendingUp, Users, CheckCircle } from 'lucide-react';
+import { Download, Calendar as CalendarIcon, TrendingUp, Users, CheckCircle, Check, ChevronsUpDown } from 'lucide-react';
 import { useDatabase } from '@/contexts/DatabaseContext';
 import { getAttendanceStats } from '@/lib/database/attendance';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { format, startOfMonth } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ const Reports: FC = () => {
   const [startDate, setStartDate] = useState<Date>(() => startOfMonth(new Date()));
   const [endDate, setEndDate] = useState<Date>(() => new Date());
   const [selectedClass, setSelectedClass] = useState('all');
+  const [classFilterOpen, setClassFilterOpen] = useState(false);
   const [classAttendanceStats, setClassAttendanceStats] = useState<Map<number, {
     present: number;
     online: number;
@@ -201,17 +202,67 @@ const Reports: FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 班级筛选
               </label>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger data-testid="select-class-filter">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部班级</SelectItem>
-                  {classes.map((cls) => (
-                    <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={classFilterOpen} onOpenChange={setClassFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={classFilterOpen}
+                    className="w-full justify-between"
+                    data-testid="button-class-filter"
+                  >
+                    {selectedClass === 'all'
+                      ? "全部班级"
+                      : classes.find((cls) => String(cls.id) === selectedClass)?.name || "选择班级"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="搜索班级..." data-testid="input-search-class" />
+                    <CommandList>
+                      <CommandEmpty>未找到班级</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setSelectedClass('all');
+                            setClassFilterOpen(false);
+                          }}
+                          data-testid="option-class-all"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedClass === 'all' ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          全部班级
+                        </CommandItem>
+                        {classes.map((cls) => (
+                          <CommandItem
+                            key={cls.id}
+                            value={cls.name}
+                            onSelect={() => {
+                              setSelectedClass(String(cls.id));
+                              setClassFilterOpen(false);
+                            }}
+                            data-testid={`option-class-${cls.id}`}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedClass === String(cls.id) ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {cls.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </CardContent>
