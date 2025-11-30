@@ -407,3 +407,97 @@ export const getClassStudentsWithAttendance = async (classId: number, date?: str
     };
   });
 };
+
+// Interface for class attendance summary
+export interface ClassAttendanceSummary {
+  learning_progress: string;
+  page_number: string;
+  line_number: string;
+  attendance_rate: number;
+  latest_attendance_date: string | null;
+}
+
+// Get the latest attendance data for a class (learning_progress, lamrin_page, lamrin_line)
+export const getLatestClassAttendance = async (classId: number): Promise<{
+  learning_progress: string;
+  lamrin_page: number | null;
+  lamrin_line: number | null;
+  latest_date: string | null;
+}> => {
+  // Get the latest attendance record for this class
+  const { data, error } = await supabase
+    .from('class_attendance')
+    .select('learning_progress, lamrin_page, lamrin_line, attendance_date')
+    .eq('class_id', classId)
+    .order('attendance_date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error(`Failed to fetch latest attendance for class ${classId}:`, error);
+    return {
+      learning_progress: '',
+      lamrin_page: null,
+      lamrin_line: null,
+      latest_date: null
+    };
+  }
+
+  return {
+    learning_progress: data?.learning_progress || '',
+    lamrin_page: data?.lamrin_page || null,
+    lamrin_line: data?.lamrin_line || null,
+    latest_date: data?.attendance_date || null
+  };
+};
+
+// Calculate attendance rate for a class
+// Attendance rate = (present + online) / total * 100
+// Excludes holiday records from calculation
+export const calculateClassAttendanceRate = async (classId: number): Promise<number> => {
+  // Get all attendance records for this class
+  const { data, error } = await supabase
+    .from('class_attendance')
+    .select('attendance_status')
+    .eq('class_id', classId);
+
+  if (error) {
+    console.error(`Failed to calculate attendance rate for class ${classId}:`, error);
+    return 0;
+  }
+
+  if (!data || data.length === 0) {
+    return 0;
+  }
+
+  // Filter out holiday records (status 4)
+  const nonHolidayRecords = data.filter(record => record.attendance_status !== 4);
+  
+  if (nonHolidayRecords.length === 0) {
+    return 0;
+  }
+
+  // Count present (1) and online (2) as attended
+  const attendedCount = nonHolidayRecords.filter(
+    record => record.attendance_status === 1 || record.attendance_status === 2
+  ).length;
+
+  const attendanceRate = Math.round((attendedCount / nonHolidayRecords.length) * 100);
+  return attendanceRate;
+};
+
+// Get complete attendance summary for a class (combines latest data and rate)
+export const getClassAttendanceSummary = async (classId: number): Promise<ClassAttendanceSummary> => {
+  const [latestData, attendanceRate] = await Promise.all([
+    getLatestClassAttendance(classId),
+    calculateClassAttendanceRate(classId)
+  ]);
+
+  return {
+    learning_progress: latestData.learning_progress,
+    page_number: latestData.lamrin_page ? String(latestData.lamrin_page) : '',
+    line_number: latestData.lamrin_line ? String(latestData.lamrin_line) : '',
+    attendance_rate: attendanceRate,
+    latest_attendance_date: latestData.latest_date
+  };
+};
