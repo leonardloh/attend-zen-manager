@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect, type FC } from 'react';
+import { useState, useMemo, useEffect, useCallback, type FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, Calendar as CalendarIcon, TrendingUp, Users, CheckCircle, Check, ChevronsUpDown } from 'lucide-react';
+import { Download, Calendar as CalendarIcon, TrendingUp, Users, CheckCircle, Check, ChevronsUpDown, Search } from 'lucide-react';
 import { useDatabase } from '@/contexts/DatabaseContext';
 import { getAttendanceStats } from '@/lib/database/attendance';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -12,12 +12,24 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { format, startOfMonth } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
+
+interface WeeklyAttendanceData {
+  name: string;
+  present: number;
+  online: number;
+  absent: number;
+  leave: number;
+}
 
 const Reports: FC = () => {
   const [startDate, setStartDate] = useState<Date>(() => startOfMonth(new Date()));
   const [endDate, setEndDate] = useState<Date>(() => new Date());
   const [selectedClass, setSelectedClass] = useState('all');
   const [classFilterOpen, setClassFilterOpen] = useState(false);
+  const [weeklyAttendanceData, setWeeklyAttendanceData] = useState<WeeklyAttendanceData[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [classAttendanceStats, setClassAttendanceStats] = useState<Map<number, {
     present: number;
     online: number;
@@ -37,6 +49,51 @@ const Reports: FC = () => {
   } = useDatabase();
   
   const isLoading = isLoadingStudents || isLoadingClasses;
+
+  // Handle search button click - calls server-side API for secure data aggregation
+  const handleSearch = useCallback(async () => {
+    setIsSearching(true);
+    
+    try {
+      const startStr = format(startDate, 'yyyy-MM-dd');
+      const endStr = format(endDate, 'yyyy-MM-dd');
+      
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.error('No auth session');
+        return;
+      }
+      
+      // Call server-side API for secure data aggregation
+      const params = new URLSearchParams({
+        startDate: startStr,
+        endDate: endStr,
+        classId: selectedClass
+      });
+      
+      const response = await fetch(`/api/reports/weekly-attendance?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API error:', errorData.error);
+        return;
+      }
+      
+      const result = await response.json();
+      setWeeklyAttendanceData(result.data || []);
+      setHasSearched(true);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [startDate, endDate, selectedClass]);
 
   // Fetch real attendance statistics for each class
   useEffect(() => {
@@ -82,17 +139,14 @@ const Reports: FC = () => {
     };
   }, [students, classes]);
   
-  // Generate attendance trend data from classes
+  // Generate attendance trend data - only show data after search is performed
   const attendanceData = useMemo(() => {
-    // Simulate weekly data based on current class attendance rates
-    const baseRate = stats.overallAttendanceRate;
-    return [
-      { name: '第1周', present: Math.max(0, Math.round(baseRate - 5)), online: Math.round(baseRate * 0.15), absent: Math.round(100 - baseRate) },
-      { name: '第2周', present: Math.max(0, Math.round(baseRate - 2)), online: Math.round(baseRate * 0.18), absent: Math.round(100 - baseRate - 3) },
-      { name: '第3周', present: Math.max(0, Math.round(baseRate + 3)), online: Math.round(baseRate * 0.12), absent: Math.round(100 - baseRate + 2) },
-      { name: '第4周', present: Math.max(0, Math.round(baseRate)), online: Math.round(baseRate * 0.16), absent: Math.round(100 - baseRate) },
-    ];
-  }, [stats.overallAttendanceRate]);
+    if (hasSearched && weeklyAttendanceData.length > 0) {
+      return weeklyAttendanceData;
+    }
+    // Before search: return empty array (chart will show message)
+    return [];
+  }, [hasSearched, weeklyAttendanceData]);
 
   // Generate class attendance data from real classes
   const classAttendanceData = useMemo(() => {
@@ -264,6 +318,26 @@ const Reports: FC = () => {
                 </PopoverContent>
               </Popover>
             </div>
+            <div className="flex items-end">
+              <Button 
+                onClick={handleSearch}
+                disabled={isSearching}
+                className="w-full sm:w-auto"
+                data-testid="button-search"
+              >
+                {isSearching ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    搜索中...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 mr-2" />
+                    搜索
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -336,17 +410,26 @@ const Reports: FC = () => {
             <CardTitle>周点名趋势</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={attendanceData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="present" fill="#10B981" name="实体出席" />
-                <Bar dataKey="online" fill="#3B82F6" name="线上出席" />
-                <Bar dataKey="absent" fill="#EF4444" name="缺席" />
-              </BarChart>
-            </ResponsiveContainer>
+            {attendanceData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={attendanceData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="present" fill="#10B981" name="实体出席" />
+                  <Bar dataKey="online" fill="#3B82F6" name="线上出席" />
+                  <Bar dataKey="absent" fill="#EF4444" name="缺席" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-gray-500">
+                <div className="text-center">
+                  <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p>请选择日期范围和班级后点击"搜索"按钮查看数据</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

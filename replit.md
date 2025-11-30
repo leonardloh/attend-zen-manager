@@ -110,6 +110,25 @@ The system now supports Google Sign-In using Supabase OAuth:
 - **Direct Creation**: Removed from Settings (UserRoleManagerCard)
 
 ## Recent Changes
+- **2025-11-30**: Secure Weekly Attendance Reports API
+  - **Created server-side endpoint**: `/api/reports/weekly-attendance` in `server/reportsHandler.ts`
+  - **Hierarchical authorization enforcement**:
+    - super_admin: Can see all classes
+    - state_admin: Can only see classes under their main_branch (scope required)
+    - branch_admin: Can only see classes under their sub_branch (scope required)
+    - classroom_admin: Can only see classes under their classroom (scope required)
+    - class_admin: Can only see their own class (scope required)
+  - **Security features**:
+    - Bearer token authentication required
+    - Role-based access (only admin roles can access)
+    - Mandatory scope metadata for non-super_admin roles (returns 403 if missing)
+    - Scope validation with type checking
+    - Error handling for database query failures
+    - Request validation for unauthorized class access
+  - **Attendance aggregation**: Weekly data bucketed by date ranges (MM/dd-MM/dd format)
+  - **Excludes holidays**: Attendance status 4 (holiday) records not included in calculations
+  - **Files updated**: server/reportsHandler.ts, server/routes.ts, client/src/pages/Reports.tsx
+
 - **2025-10-18**: Class Archiving System Implementation
   - **Added soft delete functionality**: Classes are now archived instead of hard deleted
   - **Database schema**: Added `is_archived` boolean column to classes table

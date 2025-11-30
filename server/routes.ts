@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { createAdminUsersHandler } from "./adminUsersHandler";
 import { createUserManagementHandler } from "./userManagementHandler";
+import { createReportsHandler } from "./reportsHandler";
 
 export function registerRoutes(app: Express): Server {
   // Admin users endpoint
@@ -33,6 +34,25 @@ export function registerRoutes(app: Express): Server {
       headers: req.headers as Record<string, string>,
       query: req.query as Record<string, string>,
       body: req.body ? JSON.stringify(req.body) : undefined,
+    });
+
+    res.status(response.status);
+    if (response.headers) {
+      Object.entries(response.headers).forEach(([key, value]) => {
+        if (value) res.setHeader(key, value);
+      });
+    }
+    res.send(response.body);
+  });
+
+  // Reports endpoint for weekly attendance data
+  const reportsHandler = createReportsHandler({ cors: true });
+  
+  app.get("/api/reports/weekly-attendance", async (req, res) => {
+    const response = await reportsHandler({
+      method: req.method,
+      headers: req.headers as Record<string, string>,
+      query: req.query as Record<string, string>,
     });
 
     res.status(response.status);
