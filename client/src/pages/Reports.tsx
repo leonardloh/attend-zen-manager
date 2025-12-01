@@ -9,6 +9,7 @@ import { getAttendanceStats } from '@/lib/database/attendance';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { useToast } from '@/hooks/use-toast';
 import { format, startOfMonth } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,7 @@ interface WeeklyAttendanceData {
 }
 
 const Reports: FC = () => {
+  const { toast } = useToast();
   const [startDate, setStartDate] = useState<Date>(() => startOfMonth(new Date()));
   const [endDate, setEndDate] = useState<Date>(() => new Date());
   const [selectedClass, setSelectedClass] = useState('all');
@@ -50,7 +52,49 @@ const Reports: FC = () => {
   
   const isLoading = isLoadingStudents || isLoadingClasses;
 
-  // Handle search button click - calls server-side API for secure data aggregation
+  // Calculate weekly date ranges from start and end dates
+  const calculateWeeklyRanges = useCallback((start: Date, end: Date): { start: string; end: string; label: string }[] => {
+    const weeks: { start: string; end: string; label: string }[] = [];
+    
+    // Create a copy to avoid mutating the original
+    let weekStart = new Date(start);
+    
+    // Adjust to Monday of the week (or keep start date if it's after Monday)
+    const dayOfWeek = weekStart.getDay();
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Days since Monday (Monday=0)
+    weekStart = new Date(weekStart.getTime() - daysFromMonday * 24 * 60 * 60 * 1000);
+    
+    // If week start is before the range start, use the range start
+    if (weekStart < start) {
+      weekStart = new Date(start);
+    }
+    
+    while (weekStart <= end) {
+      // Calculate end of week (Sunday) or end date, whichever is earlier
+      const dayOfWeekNow = weekStart.getDay();
+      const daysToSunday = dayOfWeekNow === 0 ? 0 : 7 - dayOfWeekNow;
+      let weekEnd = new Date(weekStart.getTime() + daysToSunday * 24 * 60 * 60 * 1000);
+      
+      // Cap at end date
+      if (weekEnd > end) {
+        weekEnd = new Date(end);
+      }
+      
+      const label = `${format(weekStart, 'MM/dd', { locale: zhCN })}-${format(weekEnd, 'MM/dd', { locale: zhCN })}`;
+      weeks.push({ 
+        start: format(weekStart, 'yyyy-MM-dd'), 
+        end: format(weekEnd, 'yyyy-MM-dd'), 
+        label 
+      });
+      
+      // Move to next Monday
+      weekStart = new Date(weekEnd.getTime() + 24 * 60 * 60 * 1000);
+    }
+    
+    return weeks;
+  }, []);
+
+  // Handle search button click - uses direct Supabase query with RLS for security
   const handleSearch = useCallback(async () => {
     setIsSearching(true);
     
@@ -58,42 +102,78 @@ const Reports: FC = () => {
       const startStr = format(startDate, 'yyyy-MM-dd');
       const endStr = format(endDate, 'yyyy-MM-dd');
       
-      // Get auth token
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        console.error('No auth session');
+      // Fetch attendance records directly from Supabase (RLS will filter by user's scope)
+      let query = supabase
+        .from('class_attendance')
+        .select('attendance_status, attendance_date')
+        .gte('attendance_date', startStr)
+        .lte('attendance_date', endStr);
+      
+      // Filter by class if not "all"
+      if (selectedClass !== 'all') {
+        query = query.eq('class_id', Number(selectedClass));
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching attendance data:', error);
+        toast({
+          title: '查询失败',
+          description: '获取点名数据失败，请稍后再试',
+          variant: 'destructive'
+        });
         return;
       }
       
-      // Call server-side API for secure data aggregation
-      const params = new URLSearchParams({
-        startDate: startStr,
-        endDate: endStr,
-        classId: selectedClass
+      // Calculate weekly ranges
+      const weeks = calculateWeeklyRanges(startDate, endDate);
+      
+      // Bucket records into weeks
+      const weeklyData: WeeklyAttendanceData[] = weeks.map(week => {
+        // Filter records for this week
+        const weekRecords = (data || []).filter(r => {
+          return r.attendance_date >= week.start && r.attendance_date <= week.end;
+        });
+        
+        // Count statuses (excluding holidays - status 4)
+        const nonHolidayRecords = weekRecords.filter(r => r.attendance_status !== 4);
+        
+        return {
+          name: week.label,
+          present: nonHolidayRecords.filter(r => r.attendance_status === 1).length,
+          online: nonHolidayRecords.filter(r => r.attendance_status === 2).length,
+          leave: nonHolidayRecords.filter(r => r.attendance_status === 3).length,
+          absent: nonHolidayRecords.filter(r => r.attendance_status === 0).length
+        };
       });
       
-      const response = await fetch(`/api/reports/weekly-attendance?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        }
+      console.log('Search results:', { 
+        totalRecords: data?.length || 0, 
+        weeks: weeks.length,
+        weeklyData 
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API error:', errorData.error);
-        return;
-      }
-      
-      const result = await response.json();
-      setWeeklyAttendanceData(result.data || []);
+      setWeeklyAttendanceData(weeklyData);
       setHasSearched(true);
+      
+      if (weeklyData.every(w => w.present === 0 && w.online === 0 && w.leave === 0 && w.absent === 0)) {
+        toast({
+          title: '无数据',
+          description: '所选时间范围内没有点名记录'
+        });
+      }
     } catch (error) {
       console.error('Search error:', error);
+      toast({
+        title: '网络错误',
+        description: '获取数据失败，请检查网络连接',
+        variant: 'destructive'
+      });
     } finally {
       setIsSearching(false);
     }
-  }, [startDate, endDate, selectedClass]);
+  }, [startDate, endDate, selectedClass, toast, calculateWeeklyRanges]);
 
   // Fetch real attendance statistics for each class
   useEffect(() => {
@@ -419,6 +499,7 @@ const Reports: FC = () => {
                   <Tooltip />
                   <Bar dataKey="present" fill="#10B981" name="实体出席" />
                   <Bar dataKey="online" fill="#3B82F6" name="线上出席" />
+                  <Bar dataKey="leave" fill="#F59E0B" name="请假" />
                   <Bar dataKey="absent" fill="#EF4444" name="缺席" />
                 </BarChart>
               </ResponsiveContainer>

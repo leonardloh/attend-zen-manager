@@ -136,10 +136,19 @@ export function createReportsHandler(options: { cors?: boolean } = {}) {
       const userRole = user.user_metadata?.role || user.app_metadata?.role;
       const allowedRoles = ['super_admin', 'state_admin', 'branch_admin', 'classroom_admin', 'class_admin'];
       
+      console.log('Reports API - User info:', {
+        email: user.email,
+        userRole,
+        user_metadata_role: user.user_metadata?.role,
+        app_metadata_role: user.app_metadata?.role,
+        scope: user.user_metadata?.scope || user.app_metadata?.scope
+      });
+      
       if (!userRole || !allowedRoles.includes(userRole)) {
+        console.log('Reports API - Access denied: role not in allowed list');
         return {
           status: 403,
-          body: JSON.stringify({ error: 'Forbidden - admin role required' }),
+          body: JSON.stringify({ error: 'Forbidden - admin role required', details: { userRole, allowedRoles } }),
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         };
       }
