@@ -112,7 +112,7 @@ const Attendance: React.FC = () => {
       return [];
     }
 
-    const historyMap = new Map<string, { weekStart: Date; attendanceCount: number; totalRecords: number }>();
+    const historyMap = new Map<string, { weekStart: Date; attendanceCount: number; totalRecords: number; holidayCount: number }>();
 
     const targetDate = selectedDate ?? new Date();
     const currentWeekStart = startOfWeek(targetDate, { weekStartsOn: 1 });
@@ -154,16 +154,26 @@ const Attendance: React.FC = () => {
         return;
       }
       const key = format(weekStart, 'yyyy-MM-dd');
-      const existing = historyMap.get(key) ?? { weekStart, attendanceCount: 0, totalRecords: 0 };
+      const existing = historyMap.get(key) ?? { weekStart, attendanceCount: 0, totalRecords: 0, holidayCount: 0 };
       
-      // Count how many students attended (present or online) on this date
-      const attendedCount = dateRecords.filter(
-        record => record.attendance_status === 1 || record.attendance_status === 2
-      ).length;
+      // Check if this session is marked as holiday (all records have status 4)
+      const holidayRecords = dateRecords.filter(record => record.attendance_status === 4);
+      const isHolidaySession = holidayRecords.length > 0 && holidayRecords.length === dateRecords.length;
       
-      console.log(`📅 Date ${dateKey}: ${attendedCount} students attended (${dateRecords.length} total records)`);
+      if (isHolidaySession) {
+        existing.holidayCount = (existing.holidayCount ?? 0) + 1;
+        console.log(`📅 Date ${dateKey}: Holiday session (${dateRecords.length} records)`);
+      } else {
+        // Count how many students attended (present or online) on this date
+        const attendedCount = dateRecords.filter(
+          record => record.attendance_status === 1 || record.attendance_status === 2
+        ).length;
+        
+        console.log(`📅 Date ${dateKey}: ${attendedCount} students attended (${dateRecords.length} total records)`);
+        
+        existing.attendanceCount += attendedCount;
+      }
       
-      existing.attendanceCount += attendedCount;
       existing.totalRecords += dateRecords.length;
       historyMap.set(key, existing);
     });
@@ -175,11 +185,15 @@ const Attendance: React.FC = () => {
       const key = format(cursor, 'yyyy-MM-dd');
       const entry = historyMap.get(key);
       const weekEnd = endOfWeek(cursor, { weekStartsOn: 1 });
+      const holidayCount = entry?.holidayCount ?? 0;
+      const isHolidayWeek = holidayCount > 0 && entry?.attendanceCount === 0;
       result.push({
         weekKey: key,
         weekLabel: `${format(cursor, 'MM/dd')} ~ ${format(weekEnd, 'MM/dd')}`,
         attendanceCount: entry?.attendanceCount ?? 0,
         isMissing: !entry,
+        isHoliday: isHolidayWeek,
+        holidayCount: holidayCount,
       });
       cursor = addWeeks(cursor, 1);
     }

@@ -30,6 +30,20 @@ const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
 }) => {
   const hasData = data.length > 0;
   const missingWeeks = data.filter((item) => item.isMissing);
+  const holidayWeeks = data.filter((item) => item.isHoliday);
+  
+  const getBarColor = (entry: WeeklyAttendancePoint) => {
+    if (entry.isHoliday) return '#f59e0b';
+    if (entry.isMissing) return '#ef4444';
+    return '#22c55e';
+  };
+  
+  const getBarHeight = (entry: WeeklyAttendancePoint) => {
+    if (entry.isHoliday && entry.attendanceCount === 0) {
+      return 1;
+    }
+    return entry.attendanceCount;
+  };
 
   return (
     <div className="space-y-4">
@@ -57,19 +71,28 @@ const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
           ) : hasData ? (
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data}>
+                <BarChart data={data.map(entry => ({
+                  ...entry,
+                  displayCount: getBarHeight(entry)
+                }))}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="weekLabel" tick={{ fontSize: 12 }} interval={0} angle={-15} textAnchor="end" height={60} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 12 }} label={{ value: '出席人数', angle: -90, position: 'insideLeft', offset: 10 }} />
                   <Tooltip
-                    formatter={(value: number) => [`${value} 人`, '出席人数']}
+                    formatter={(value: number, _name: string, props: { payload?: WeeklyAttendancePoint & { displayCount: number } }) => {
+                      const entry = props.payload;
+                      if (entry?.isHoliday) {
+                        return ['放假', '状态'];
+                      }
+                      return [`${entry?.attendanceCount ?? value} 人`, '出席人数'];
+                    }}
                     labelFormatter={(label: string) => `周次：${label}`}
                   />
-                  <Bar dataKey="attendanceCount" radius={[6, 6, 0, 0]}>
+                  <Bar dataKey="displayCount" radius={[6, 6, 0, 0]}>
                     {data.map((entry) => (
                       <Cell
                         key={entry.weekKey}
-                        fill={entry.isMissing ? '#ef4444' : '#22c55e'}
+                        fill={getBarColor(entry)}
                       />
                     ))}
                   </Bar>
@@ -83,6 +106,22 @@ const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {holidayWeeks.length > 0 && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="space-y-2 py-4 text-sm text-amber-700">
+            <div className="flex items-center gap-2 font-medium">
+              <span className="inline-block h-3 w-3 rounded bg-amber-500" />
+              放假周次
+            </div>
+            <ul className="list-disc space-y-1 pl-5">
+              {holidayWeeks.map((week) => (
+                <li key={week.weekKey}>{week.weekLabel}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {missingWeeks.length > 0 && (
         <Card className="border-red-200 bg-red-50">

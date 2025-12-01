@@ -21,6 +21,7 @@ interface WeeklyAttendanceData {
   online: number;
   absent: number;
   leave: number;
+  holiday: number;
 }
 
 const Reports: FC = () => {
@@ -136,7 +137,8 @@ const Reports: FC = () => {
           return r.attendance_date >= week.start && r.attendance_date <= week.end;
         });
         
-        // Count statuses (excluding holidays - status 4)
+        // Count all statuses including holidays
+        const holidayRecords = weekRecords.filter(r => r.attendance_status === 4);
         const nonHolidayRecords = weekRecords.filter(r => r.attendance_status !== 4);
         
         return {
@@ -144,7 +146,8 @@ const Reports: FC = () => {
           present: nonHolidayRecords.filter(r => r.attendance_status === 1).length,
           online: nonHolidayRecords.filter(r => r.attendance_status === 2).length,
           leave: nonHolidayRecords.filter(r => r.attendance_status === 3).length,
-          absent: nonHolidayRecords.filter(r => r.attendance_status === 0).length
+          absent: nonHolidayRecords.filter(r => r.attendance_status === 0).length,
+          holiday: holidayRecords.length
         };
       });
       
@@ -157,7 +160,7 @@ const Reports: FC = () => {
       setWeeklyAttendanceData(weeklyData);
       setHasSearched(true);
       
-      if (weeklyData.every(w => w.present === 0 && w.online === 0 && w.leave === 0 && w.absent === 0)) {
+      if (weeklyData.every(w => w.present === 0 && w.online === 0 && w.leave === 0 && w.absent === 0 && w.holiday === 0)) {
         toast({
           title: '无数据',
           description: '所选时间范围内没有点名记录'
@@ -501,6 +504,7 @@ const Reports: FC = () => {
                   <Bar dataKey="online" fill="#3B82F6" name="线上出席" />
                   <Bar dataKey="leave" fill="#F59E0B" name="请假" />
                   <Bar dataKey="absent" fill="#EF4444" name="缺席" />
+                  <Bar dataKey="holiday" fill="#8B5CF6" name="放假" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (

@@ -3,4 +3,6 @@ export interface WeeklyAttendancePoint {
   weekLabel: string;
   attendanceCount: number;
   isMissing: boolean;
+  isHoliday?: boolean;
+  holidayCount?: number;
 }
