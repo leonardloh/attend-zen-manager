@@ -37,12 +37,13 @@ interface AttendanceGridProps {
   classId?: string;
   classDate?: Date;
   onDataChange?: (attendanceData: AttendanceStatus[], progressData: AttendanceProgressData) => void;
-  students?: Student[]; // Allow passing students from parent
+  students?: Student[];
   isHoliday?: boolean;
   attendanceHistory?: WeeklyAttendancePoint[];
   isHistoryLoading?: boolean;
   historyError?: string | null;
   onReloadHistory?: () => void;
+  onWeekClick?: (week: WeeklyAttendancePoint) => void;
   initialAttendanceData?: AttendanceStatus[];
   initialProgressData?: AttendanceProgressData;
 }
@@ -57,6 +58,7 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({
   isHistoryLoading = false,
   historyError = null,
   onReloadHistory,
+  onWeekClick,
   initialAttendanceData = [],
   initialProgressData = {
     learning_progress: '',
@@ -266,6 +268,7 @@ const AttendanceGrid: React.FC<AttendanceGridProps> = ({
         loading={isHistoryLoading}
         error={historyError}
         onRetry={onReloadHistory}
+        onWeekClick={onWeekClick}
       />
 
       {/* Progress Form */}

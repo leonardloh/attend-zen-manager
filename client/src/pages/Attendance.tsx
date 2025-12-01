@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,9 +6,17 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import AttendanceGrid from '@/components/Attendance/AttendanceGrid';
 import { Calendar as CalendarIcon, Clock, Users, Save, Search } from 'lucide-react';
-import { addWeeks, endOfWeek, format, parseISO, startOfWeek, startOfYear } from 'date-fns';
+import { addWeeks, endOfWeek, format, parseISO, startOfWeek, startOfYear, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useDatabase } from '@/contexts/DatabaseContext';
 import { upsertBulkAttendance, fetchAttendanceByClass, type AttendanceRecord, type CreateAttendanceData } from '@/lib/database/attendance';
@@ -42,6 +50,10 @@ const Attendance: React.FC = () => {
   const [historyRecords, setHistoryRecords] = useState<AttendanceRecord[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  
+  const [navigationDialogOpen, setNavigationDialogOpen] = useState(false);
+  const [pendingNavigationDate, setPendingNavigationDate] = useState<Date | null>(null);
+  const [pendingNavigationWeekLabel, setPendingNavigationWeekLabel] = useState<string>('');
 
   // Use DatabaseContext for reactive classes data
   const { classes, getClassAllStudents } = useDatabase();
@@ -181,12 +193,23 @@ const Attendance: React.FC = () => {
     const result: WeeklyAttendancePoint[] = [];
     let cursor = new Date(rangeStart);
     const effectiveEnd = rangeEnd.getTime();
+    
     while (cursor.getTime() <= effectiveEnd) {
       const key = format(cursor, 'yyyy-MM-dd');
       const entry = historyMap.get(key);
       const weekEnd = endOfWeek(cursor, { weekStartsOn: 1 });
       const holidayCount = entry?.holidayCount ?? 0;
       const isHolidayWeek = holidayCount > 0 && entry?.attendanceCount === 0;
+      
+      // Calculate the target date for this week based on the class day
+      let targetDate: string | undefined;
+      if (selectedClassDayOfWeek !== null) {
+        const weekStart = cursor;
+        const dayOffset = (selectedClassDayOfWeek - 1 + 7) % 7;
+        const classDayInWeek = addDays(weekStart, dayOffset);
+        targetDate = format(classDayInWeek, 'yyyy-MM-dd');
+      }
+      
       result.push({
         weekKey: key,
         weekLabel: `${format(cursor, 'MM/dd')} ~ ${format(weekEnd, 'MM/dd')}`,
@@ -194,12 +217,13 @@ const Attendance: React.FC = () => {
         isMissing: !entry,
         isHoliday: isHolidayWeek,
         holidayCount: holidayCount,
+        targetDate,
       });
       cursor = addWeeks(cursor, 1);
     }
 
     return result;
-  }, [historyRecords, selectedClass, selectedDate, selectedClassInfo]);
+  }, [historyRecords, selectedClass, selectedDate, selectedClassInfo, selectedClassDayOfWeek]);
 
   const startAttendanceSession = async () => {
     if (selectedClass && selectedDate) {
@@ -304,7 +328,6 @@ const Attendance: React.FC = () => {
 
     try {
       if (records.length > 0) {
-        // Use upsert to update existing records or create new ones
         await upsertBulkAttendance(records);
       }
       alert('点名数据和学习进度已保存！');
@@ -317,6 +340,99 @@ const Attendance: React.FC = () => {
       const message = err instanceof Error ? err.message : '未知错误';
       alert(`保存失败：${message}`);
     }
+  };
+  
+  const handleWeekClick = useCallback((week: WeeklyAttendancePoint) => {
+    if (!week.targetDate) return;
+    
+    const targetDate = parseISO(week.targetDate);
+    if (selectedDate && format(selectedDate, 'yyyy-MM-dd') === week.targetDate) {
+      return;
+    }
+    
+    setPendingNavigationDate(targetDate);
+    setPendingNavigationWeekLabel(week.weekLabel);
+    setNavigationDialogOpen(true);
+  }, [selectedDate]);
+  
+  const handleSaveAndNavigate = async () => {
+    if (!selectedClass || !selectedDate || !pendingNavigationDate) return;
+    
+    const statusToCode: Record<AttendanceStatusValue, number> = {
+      present: 1,
+      online: 2,
+      leave: 3,
+      absent: 0,
+      holiday: 4,
+    };
+
+    const attendance_date = format(selectedDate, 'yyyy-MM-dd');
+    const lamrin_page = progressData.page_number ? parseInt(progressData.page_number, 10) : undefined;
+    const lamrin_line = progressData.line_number ? parseInt(progressData.line_number, 10) : undefined;
+
+    const roster = selectedClassStudents.map(student => student.id);
+    const effectiveAttendance = isHoliday
+      ? roster.map(studentId => ({ studentId, status: 'holiday' as AttendanceStatusValue }))
+      : attendanceData;
+
+    const records: CreateAttendanceData[] = effectiveAttendance
+      .filter(item => item.status !== null)
+      .map(item => ({
+        class_id: parseInt(selectedClass, 10),
+        student_id: parseInt(item.studentId, 10),
+        attendance_date,
+        attendance_status: statusToCode[item.status!],
+        learning_progress: progressData.learning_progress || undefined,
+        lamrin_page,
+        lamrin_line,
+      }));
+
+    try {
+      if (records.length > 0) {
+        await upsertBulkAttendance(records);
+      }
+      alert('点名数据已保存！正在跳转...');
+      
+      setSelectedDate(pendingNavigationDate);
+      setNavigationDialogOpen(false);
+      setPendingNavigationDate(null);
+      setPendingNavigationWeekLabel('');
+      setSessionActive(false);
+      
+      setTimeout(() => {
+        setSelectedDate(pendingNavigationDate);
+      }, 100);
+    } catch (err) {
+      console.error('Failed to save attendance:', err);
+      const message = err instanceof Error ? err.message : '未知错误';
+      alert(`保存失败：${message}`);
+    }
+  };
+  
+  const handleDiscardAndNavigate = () => {
+    if (!pendingNavigationDate) return;
+    
+    setNavigationDialogOpen(false);
+    setSessionActive(false);
+    setIsHoliday(false);
+    setAttendanceData([]);
+    setProgressData({ learning_progress: '', page_number: '', line_number: '' });
+    setHistoryRecords([]);
+    setHistoryError(null);
+    
+    const navDate = pendingNavigationDate;
+    setPendingNavigationDate(null);
+    setPendingNavigationWeekLabel('');
+    
+    setTimeout(() => {
+      setSelectedDate(navDate);
+    }, 100);
+  };
+  
+  const handleCancelNavigation = () => {
+    setNavigationDialogOpen(false);
+    setPendingNavigationDate(null);
+    setPendingNavigationWeekLabel('');
   };
 
   if (!sessionActive) {
@@ -481,9 +597,46 @@ const Attendance: React.FC = () => {
         isHistoryLoading={isHistoryLoading}
         historyError={historyError}
         onReloadHistory={loadAttendanceHistory}
+        onWeekClick={handleWeekClick}
         initialAttendanceData={attendanceData}
         initialProgressData={progressData}
       />
+      
+      <AlertDialog open={navigationDialogOpen} onOpenChange={setNavigationDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>切换点名日期</AlertDialogTitle>
+            <AlertDialogDescription>
+              您正在为 {selectedDate ? format(selectedDate, 'yyyy年MM月dd日') : ''} 进行点名。
+              是否要切换到 {pendingNavigationWeekLabel} 周 ({pendingNavigationDate ? format(pendingNavigationDate, 'yyyy年MM月dd日') : ''}) 的点名记录？
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="default"
+              onClick={handleSaveAndNavigate}
+              className="bg-green-600 hover:bg-green-700"
+              data-testid="button-save-and-navigate"
+            >
+              保存当前点名并跳转
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDiscardAndNavigate}
+              data-testid="button-discard-and-navigate"
+            >
+              放弃当前更改并跳转
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleCancelNavigation}
+              data-testid="button-cancel-navigation"
+            >
+              取消
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

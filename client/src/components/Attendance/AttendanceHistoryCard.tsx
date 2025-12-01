@@ -1,8 +1,7 @@
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, MousePointer } from 'lucide-react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -20,6 +19,7 @@ interface AttendanceHistoryCardProps {
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
+  onWeekClick?: (week: WeeklyAttendancePoint) => void;
 }
 
 const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
@@ -27,10 +27,12 @@ const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
   loading = false,
   error = null,
   onRetry,
+  onWeekClick,
 }) => {
   const hasData = data.length > 0;
   const missingWeeks = data.filter((item) => item.isMissing);
   const holidayWeeks = data.filter((item) => item.isHoliday);
+  const isClickable = !!onWeekClick;
   
   const getBarColor = (entry: WeeklyAttendancePoint) => {
     if (entry.isHoliday) return '#f59e0b';
@@ -44,13 +46,27 @@ const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
     }
     return entry.attendanceCount;
   };
+  
+  const handleBarClick = (weekData: WeeklyAttendancePoint & { displayCount: number }) => {
+    if (onWeekClick && weekData.targetDate) {
+      onWeekClick(weekData);
+    }
+  };
 
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-base font-semibold">
-            <span>历史点名记录概览</span>
+            <div className="flex items-center gap-2">
+              <span>历史点名记录概览</span>
+              {isClickable && (
+                <span className="flex items-center gap-1 text-xs font-normal text-muted-foreground">
+                  <MousePointer className="h-3 w-3" />
+                  点击柱状图可跳转
+                </span>
+              )}
+            </div>
             {loading && <span className="text-xs text-muted-foreground">加载中...</span>}
           </CardTitle>
         </CardHeader>
@@ -71,10 +87,18 @@ const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
           ) : hasData ? (
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.map(entry => ({
-                  ...entry,
-                  displayCount: getBarHeight(entry)
-                }))}>
+                <BarChart 
+                  data={data.map(entry => ({
+                    ...entry,
+                    displayCount: getBarHeight(entry)
+                  }))}
+                  onClick={(chartState) => {
+                    if (chartState?.activePayload?.[0]?.payload) {
+                      handleBarClick(chartState.activePayload[0].payload);
+                    }
+                  }}
+                  style={{ cursor: isClickable ? 'pointer' : 'default' }}
+                >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="weekLabel" tick={{ fontSize: 12 }} interval={0} angle={-15} textAnchor="end" height={60} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 12 }} label={{ value: '出席人数', angle: -90, position: 'insideLeft', offset: 10 }} />
@@ -93,6 +117,7 @@ const AttendanceHistoryCard: React.FC<AttendanceHistoryCardProps> = ({
                       <Cell
                         key={entry.weekKey}
                         fill={getBarColor(entry)}
+                        style={{ cursor: isClickable ? 'pointer' : 'default' }}
                       />
                     ))}
                   </Bar>

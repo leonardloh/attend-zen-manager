@@ -5,4 +5,5 @@ export interface WeeklyAttendancePoint {
   isMissing: boolean;
   isHoliday?: boolean;
   holidayCount?: number;
+  targetDate?: string;
 }
