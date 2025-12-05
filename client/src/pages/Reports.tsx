@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
-import { format, startOfMonth } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
@@ -26,7 +26,7 @@ interface WeeklyAttendanceData {
 
 const Reports: FC = () => {
   const { toast } = useToast();
-  const [startDate, setStartDate] = useState<Date>(() => startOfMonth(new Date()));
+  const [startDate, setStartDate] = useState<Date>(() => subMonths(new Date(), 1));
   const [endDate, setEndDate] = useState<Date>(() => new Date());
   const [selectedClass, setSelectedClass] = useState('all');
   const [classFilterOpen, setClassFilterOpen] = useState(false);
