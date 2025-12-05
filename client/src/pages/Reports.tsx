@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback, type FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Download, Calendar as CalendarIcon, TrendingUp, Users, CheckCircle, Check, ChevronsUpDown, Search } from 'lucide-react';
 import { useDatabase } from '@/contexts/DatabaseContext';
 import { getAttendanceStats } from '@/lib/database/attendance';
@@ -231,16 +231,6 @@ const Reports: FC = () => {
     return [];
   }, [hasSearched, weeklyAttendanceData]);
 
-  // Generate class attendance data from real classes
-  const classAttendanceData = useMemo(() => {
-    return classes.slice(0, 8).map((cls, index) => ({
-      name: cls.name,
-      value: cls.attendance_rate,
-      color: ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316', '#06B6D4'][index % 8]
-    }));
-  }, [classes]);
-
-  const COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316', '#06B6D4'];
 
   // Handle loading state
   if (isLoading) {
@@ -486,65 +476,36 @@ const Reports: FC = () => {
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>周点名趋势</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {attendanceData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={attendanceData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="present" fill="#10B981" name="实体出席" />
-                  <Bar dataKey="online" fill="#3B82F6" name="线上出席" />
-                  <Bar dataKey="leave" fill="#F59E0B" name="请假" />
-                  <Bar dataKey="absent" fill="#EF4444" name="缺席" />
-                  <Bar dataKey="holiday" fill="#8B5CF6" name="放假" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[300px] text-gray-500">
-                <div className="text-center">
-                  <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p>请选择日期范围和班级后点击"搜索"按钮查看数据</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>各班级出席率</CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>周点名趋势</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {attendanceData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={classAttendanceData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({name, value}) => `${name}: ${value}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {classAttendanceData.map((_entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
+              <BarChart data={attendanceData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
                 <Tooltip />
-              </PieChart>
+                <Bar dataKey="present" fill="#10B981" name="实体出席" />
+                <Bar dataKey="online" fill="#3B82F6" name="线上出席" />
+                <Bar dataKey="leave" fill="#F59E0B" name="请假" />
+                <Bar dataKey="absent" fill="#EF4444" name="缺席" />
+                <Bar dataKey="holiday" fill="#8B5CF6" name="放假" />
+              </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+          ) : (
+            <div className="flex items-center justify-center h-[300px] text-gray-500">
+              <div className="text-center">
+                <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p>请选择日期范围和班级后点击"搜索"按钮查看数据</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Detailed Report Table */}
       <Card>
