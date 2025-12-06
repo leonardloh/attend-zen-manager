@@ -24,12 +24,16 @@ interface WeeklyAttendanceData {
   holiday: number;
 }
 
+type StudentTypeFilter = 'all' | 'cadre' | 'regular';
+
 const Reports: FC = () => {
   const { toast } = useToast();
   const [startDate, setStartDate] = useState<Date>(() => subMonths(new Date(), 1));
   const [endDate, setEndDate] = useState<Date>(() => new Date());
   const [selectedClass, setSelectedClass] = useState('all');
   const [classFilterOpen, setClassFilterOpen] = useState(false);
+  const [studentTypeFilter, setStudentTypeFilter] = useState<StudentTypeFilter>('all');
+  const [studentTypeFilterOpen, setStudentTypeFilterOpen] = useState(false);
   const [weeklyAttendanceData, setWeeklyAttendanceData] = useState<WeeklyAttendanceData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -103,16 +107,99 @@ const Reports: FC = () => {
       const startStr = format(startDate, 'yyyy-MM-dd');
       const endStr = format(endDate, 'yyyy-MM-dd');
       
+      // If filtering by student type, first get the relevant student IDs
+      let studentIdFilter: number[] | null = null;
+      
+      if (studentTypeFilter !== 'all') {
+        // Fetch all cadre student IDs (optionally filtered by class)
+        let cadreQuery = supabase
+          .from('class_cadres')
+          .select('student_id');
+        
+        if (selectedClass !== 'all') {
+          cadreQuery = cadreQuery.eq('class_id', Number(selectedClass));
+        }
+        
+        const { data: cadreData, error: cadreError } = await cadreQuery;
+        
+        if (cadreError) {
+          console.error('Error fetching cadre data:', cadreError);
+          toast({
+            title: '查询失败',
+            description: '获取班干部数据失败',
+            variant: 'destructive'
+          });
+          setIsSearching(false);
+          return;
+        }
+        
+        const cadreStudentIds = [...new Set((cadreData || []).map(c => c.student_id))];
+        
+        if (studentTypeFilter === 'cadre') {
+          // Only include cadre students
+          studentIdFilter = cadreStudentIds;
+          if (studentIdFilter.length === 0) {
+            toast({
+              title: '无数据',
+              description: '所选范围内没有班干部'
+            });
+            setWeeklyAttendanceData([]);
+            setHasSearched(true);
+            setIsSearching(false);
+            return;
+          }
+        } else if (studentTypeFilter === 'regular') {
+          // Need to get all student IDs and exclude cadres
+          let studentQuery = supabase
+            .from('students')
+            .select('id');
+          
+          const { data: allStudentsData, error: studentError } = await studentQuery;
+          
+          if (studentError) {
+            console.error('Error fetching students:', studentError);
+            toast({
+              title: '查询失败',
+              description: '获取学员数据失败',
+              variant: 'destructive'
+            });
+            setIsSearching(false);
+            return;
+          }
+          
+          // Exclude cadre student IDs
+          studentIdFilter = (allStudentsData || [])
+            .map(s => s.id)
+            .filter(id => !cadreStudentIds.includes(id));
+            
+          if (studentIdFilter.length === 0) {
+            toast({
+              title: '无数据',
+              description: '所选范围内没有普通学员'
+            });
+            setWeeklyAttendanceData([]);
+            setHasSearched(true);
+            setIsSearching(false);
+            return;
+          }
+        }
+      }
+      
       // Fetch attendance records directly from Supabase (RLS will filter by user's scope)
       let query = supabase
         .from('class_attendance')
-        .select('attendance_status, attendance_date')
+        .select('attendance_status, attendance_date, student_id')
         .gte('attendance_date', startStr)
         .lte('attendance_date', endStr);
       
       // Filter by class if not "all"
       if (selectedClass !== 'all') {
         query = query.eq('class_id', Number(selectedClass));
+      }
+      
+      // Filter by student IDs if applicable
+      if (studentIdFilter !== null) {
+        query = query.in('student_id', studentIdFilter);
       }
       
       const { data, error } = await query;
@@ -176,7 +263,7 @@ const Reports: FC = () => {
     } finally {
       setIsSearching(false);
     }
-  }, [startDate, endDate, selectedClass, toast, calculateWeeklyRanges]);
+  }, [startDate, endDate, selectedClass, studentTypeFilter, toast, calculateWeeklyRanges]);
 
   // Fetch real attendance statistics for each class
   useEffect(() => {
@@ -385,6 +472,82 @@ const Reports: FC = () => {
                             {cls.name}
                           </CommandItem>
                         ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                人员筛选
+              </label>
+              <Popover open={studentTypeFilterOpen} onOpenChange={setStudentTypeFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={studentTypeFilterOpen}
+                    className="w-full justify-between"
+                    data-testid="button-student-type-filter"
+                  >
+                    {studentTypeFilter === 'all' ? '整体出席' : 
+                     studentTypeFilter === 'cadre' ? '班干部出席' : '学员出席'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                  <Command>
+                    <CommandList>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setStudentTypeFilter('all');
+                            setStudentTypeFilterOpen(false);
+                          }}
+                          data-testid="option-student-type-all"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              studentTypeFilter === 'all' ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          整体出席
+                        </CommandItem>
+                        <CommandItem
+                          value="cadre"
+                          onSelect={() => {
+                            setStudentTypeFilter('cadre');
+                            setStudentTypeFilterOpen(false);
+                          }}
+                          data-testid="option-student-type-cadre"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              studentTypeFilter === 'cadre' ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          班干部出席
+                        </CommandItem>
+                        <CommandItem
+                          value="regular"
+                          onSelect={() => {
+                            setStudentTypeFilter('regular');
+                            setStudentTypeFilterOpen(false);
+                          }}
+                          data-testid="option-student-type-regular"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              studentTypeFilter === 'regular' ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          学员出席
+                        </CommandItem>
                       </CommandGroup>
                     </CommandList>
                   </Command>

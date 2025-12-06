@@ -25,3 +25,14 @@ The system employs a client-server architecture:
 - **shadcn/ui**: UI component library.
 - **Tailwind CSS**: Utility-first CSS framework.
 - **Google OAuth**: For Google Sign-In integration.
+
+## Recent Changes
+- **2025-12-06**: Reports Page Enhancements
+  - **Student type filter**: Added "人员筛选" dropdown with 3 options:
+    - 整体出席 (All - default): Shows attendance for all students
+    - 班干部出席 (Cadres only): Shows attendance for class cadres (班长、副班长、关怀员)
+    - 学员出席 (Regular students only): Shows attendance for non-cadre students
+  - **Default start date change**: Changed default "开始日期" from first day of current month to 1 month before current date
+  - **Removed "各班级出席率" pie chart**: Simplified the Reports page layout
+  - **Query logic**: Joins class_attendance with class_cadres table to filter by student type
+  - **Files updated**: client/src/pages/Reports.tsx
